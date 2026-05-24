@@ -140,7 +140,7 @@ class AppTheme {
         labelStyle: _bodyMedium.copyWith(color: primaryColor),
         errorStyle: _bodySmall.copyWith(color: errorColor),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surfaceColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -219,7 +219,7 @@ class AppTheme {
           ),
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.grey[850],
         elevation: 0,
         shape: RoundedRectangleBorder(

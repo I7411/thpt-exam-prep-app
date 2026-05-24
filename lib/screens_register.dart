@@ -188,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<UserRole>(
                     value: _selectedRole,
-                    enabled: !authProvider.isLoading,
+                    // ĐÃ XÓA DÒNG ENABLED BỊ LỖI Ở ĐÂY
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.security),
                       border: OutlineInputBorder(
@@ -209,13 +209,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: const Text('Quản trị viên'),
                       ),
                     ],
-                    onChanged: (role) {
-                      if (role != null) {
-                        setState(() {
-                          _selectedRole = role;
-                        });
-                      }
-                    },
+                    // FIX TẠI ĐÂY: Nếu isLoading là true thì gán null để disable dropdown
+                    onChanged: authProvider.isLoading
+                        ? null
+                        : (role) {
+                            if (role != null) {
+                              setState(() {
+                                _selectedRole = role;
+                              });
+                            }
+                          },
                   ),
                   const SizedBox(height: 20),
 
@@ -287,10 +290,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: authProvider.isLoading ? null : () => _handleRegister(context),
                       child: authProvider.isLoading
                           ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Đăng ký'),
                     ),
                   ),

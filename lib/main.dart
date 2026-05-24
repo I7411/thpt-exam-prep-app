@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:timezone/data/latest.dart' as tz; // <-- THÊM DÒNG NÀY ĐỂ IMPORT MÚI GIỜ
 import 'app.dart';
 import 'app_navigation.dart';
 import 'data/local/notification_service.dart';
@@ -12,6 +13,10 @@ import 'providers_auth.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // KHỞI TẠO MÚI GIỜ TRƯỚC KHI INIT NOTIFICATION SERVICE
+  tz.initializeTimeZones(); // <-- THÊM DÒNG NÀY ĐỂ SỬA LỖI ASIA/SAIGON
+
   await NotificationService.instance.initialize(
     onNotificationTap: (payload) async {
       if (payload == null || payload.isEmpty) return;

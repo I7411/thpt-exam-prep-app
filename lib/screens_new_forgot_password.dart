@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thpt_exam_prep_app/providers_auth.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -37,39 +39,49 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _isLoading = true;
       });
 
-      // Simulate sending reset email
-      await Future.delayed(const Duration(seconds: 2));
+      // GỌI THỰC TẾ: Kết nối đến AuthProvider để xử lý logic
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.sendPasswordReset(_emailController.text);
 
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _emailSent = true;
         });
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Hướng dẫn đặt lại mật khẩu đã được gửi đến ${_emailController.text}',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        if (success) {
+          setState(() {
+            _emailSent = true;
+          });
 
-        // Navigate back after 3 seconds
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) {
-          Navigator.of(context).pop();
+          // Hiển thị thông báo thành công
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Hướng dẫn đặt lại mật khẩu đã được gửi đến ${_emailController.text}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } else {
+          // Hiển thị thông báo lỗi từ hệ thống nếu email không tồn tại
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.errorMessage.isNotEmpty 
+                  ? authProvider.errorMessage 
+                  : 'Gửi yêu cầu thất bại. Vui lòng kiểm tra lại email!'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     }
@@ -185,7 +197,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
-                    enabled: !_isLoading,
+                    enabled: !_isLoading, // SỬA LỖI: Nằm ngoài InputDecoration
                     decoration: InputDecoration(
                       hintText: 'Nhập email của bạn',
                       prefixIcon: const Icon(Icons.email_outlined),
@@ -252,10 +264,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       onPressed: _isLoading ? null : _handleSendReset,
                       icon: _isLoading
                           ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
                           : const Icon(Icons.send),
                       label: Text(
                         _isLoading ? 'Đang gửi...' : 'Gửi hướng dẫn',

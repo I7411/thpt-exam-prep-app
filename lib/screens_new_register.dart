@@ -73,39 +73,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _handleRegister(BuildContext context) async {
-    if (_formKey.currentState!.validate()) {
-      final authProvider = context.read<AuthProvider>();
-      final success = await authProvider.register(
-        _emailController.text.trim(),
-        _passwordController.text,
-        _confirmPasswordController.text,
-        _nameController.text.trim(),
-        _selectedRole,
-      );
+    if (!_formKey.currentState!.validate()) return;
 
-      if (success && mounted) {
-        final user = authProvider.currentUser;
-        if (user != null) {
-          String nextRoute = AppRoutes.studentHome;
-          if (user.role == UserRole.teacher) {
-            nextRoute = AppRoutes.teacherDashboard;
-          } else if (user.role == UserRole.admin) {
-            nextRoute = AppRoutes.adminDashboard;
-          }
-          Navigator.of(context).pushReplacementNamed(nextRoute);
+    final authProvider = context.read<AuthProvider>();
+    final navigator = Navigator.of(context);
+
+    final success = await authProvider.register(
+      _emailController.text.trim(),
+      _passwordController.text,
+      _confirmPasswordController.text,
+      _nameController.text.trim(),
+      _selectedRole,
+    );
+
+    if (success && mounted) {
+      final user = authProvider.currentUser;
+      if (user != null) {
+        String nextRoute = AppRoutes.studentHome;
+        if (user.role == UserRole.teacher) {
+          nextRoute = AppRoutes.teacherDashboard;
+        } else if (user.role == UserRole.admin) {
+          nextRoute = AppRoutes.adminDashboard;
         }
+        navigator.pushReplacementNamed(nextRoute);
       }
-    }
-  }
-
-  String _getRoleLabel(UserRole role) {
-    switch (role) {
-      case UserRole.student:
-        return 'Học sinh';
-      case UserRole.teacher:
-        return 'Giáo viên';
-      case UserRole.admin:
-        return 'Quản trị viên';
     }
   }
 
@@ -129,7 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header
+                    // Header Logo & Title
                     Center(
                       child: Column(
                         children: [
@@ -158,8 +149,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Error message
-                    if (authProvider.errorMessage.isNotEmpty)
+                    // Error Message Banner
+                    if (authProvider.errorMessage.isNotEmpty) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -180,10 +171,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
-                    if (authProvider.errorMessage.isNotEmpty)
                       const SizedBox(height: 20),
+                    ],
 
-                    // Full Name
+                    // Input Field: Full Name
                     Text(
                       'Họ tên',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -206,7 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Email
+                    // Input Field: Email
                     Text(
                       'Email',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -230,7 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Role selection
+                    // Input Field: Role Selection
                     Text(
                       'Vai trò',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -238,45 +229,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButtonFormField<UserRole>(
-                        value: _selectedRole,
-                        enabled: !authProvider.isLoading,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.security),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    DropdownButtonFormField<UserRole>(
+                      value: _selectedRole,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.security),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        items: [
-                          DropdownMenuItem(
-                            value: UserRole.student,
-                            child: const Text('📚 Học sinh'),
-                          ),
-                          DropdownMenuItem(
-                            value: UserRole.teacher,
-                            child: const Text('👨‍🏫 Giáo viên'),
-                          ),
-                          DropdownMenuItem(
-                            value: UserRole.admin,
-                            child: const Text('🔐 Quản trị viên'),
-                          ),
-                        ],
-                        onChanged: (role) {
-                          if (role != null) {
-                            setState(() {
-                              _selectedRole = role;
-                            });
-                          }
-                        },
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: UserRole.student,
+                          child: Text('📚 Học sinh'),
+                        ),
+                        DropdownMenuItem(
+                          value: UserRole.teacher,
+                          child: Text('👨‍🏫 Giáo viên'),
+                        ),
+                        DropdownMenuItem(
+                          value: UserRole.admin,
+                          child: Text('🔐 Quản trị viên'),
+                        ),
+                      ],
+                      // FIX TẠI ĐÂY: Nếu đang load thì truyền null để tự động disable dropdown
+                      onChanged: authProvider.isLoading
+                          ? null
+                          : (role) {
+                              if (role != null) {
+                                setState(() {
+                                  _selectedRole = role;
+                                });
+                              }
+                            },
                     ),
                     const SizedBox(height: 20),
 
-                    // Password
+                    // Input Field: Password
                     Text(
                       'Mật khẩu',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -311,7 +300,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Confirm Password
+                    // Input Field: Confirm Password
                     Text(
                       'Xác nhận mật khẩu',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -346,7 +335,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Register button
+                    // Action Button: Register
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -354,10 +343,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: authProvider.isLoading ? null : () => _handleRegister(context),
                         icon: authProvider.isLoading
                             ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
                             : const Icon(Icons.person_add),
                         label: Text(
                           authProvider.isLoading ? 'Đang đăng ký...' : 'Đăng ký',
@@ -366,7 +355,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Login link
+                    // Footer Link: Navigate to Login
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

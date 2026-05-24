@@ -231,4 +231,39 @@ class AuthProvider extends ChangeNotifier {
     }
     return UserRole.student; // Default
   }
+  /// Thêm hàm này vào cuối lớp AuthProvider của bạn (trước dấu đóng ngoặc } cuối cùng)
+  /// Send password reset email
+  Future<bool> sendPasswordReset(String email) async {
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      if (!_isValidEmail(email)) {
+        _errorMessage = 'Email không hợp lệ';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Gọi hàm từ repository thông qua dịch vụ
+      final success = await _repositoryService.auth.sendPasswordResetEmail(email);
+
+      if (success) {
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = 'Email này không tồn tại trên hệ thống';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Lỗi gửi yêu cầu: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
 }

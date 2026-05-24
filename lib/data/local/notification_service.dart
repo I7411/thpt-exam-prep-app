@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz; // <-- Đổi sang bản latest_all để nạp đầy đủ alias múi giờ
 import 'package:timezone/timezone.dart' as tz;
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
@@ -26,8 +26,20 @@ class NotificationService {
 
     _onNotificationTap = onNotificationTap;
     tz.initializeTimeZones();
-    final timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    
+    // Bọc cơ chế an toàn chống sập app (Crash) gây trắng màn hình trên Web
+    try {
+      final timeZoneName = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (e) {
+      try {
+        // Nếu "Asia/Saigon" bị từ chối, ép buộc sử dụng tên chính thức "Asia/Ho_Chi_Minh"
+        tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
+      } catch (_) {
+        // Giải pháp an toàn cuối cùng: Dùng múi giờ chuẩn quốc tế UTC
+        tz.setLocalLocation(tz.getLocation('UTC'));
+      }
+    }
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initializationSettings = InitializationSettings(android: androidSettings);
@@ -110,7 +122,7 @@ class NotificationService {
 
   Future<void> _requestPermissions() async {
     final androidImplementation = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.requestNotificationsPermission();
+    await androidImplementation?.requestPermission();
   }
 
   Future<void> _loadInitialLaunchPayload() async {

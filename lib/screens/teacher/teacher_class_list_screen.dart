@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/models.dart';
 
 class TeacherClassListScreen extends StatefulWidget {
   const TeacherClassListScreen({super.key});
