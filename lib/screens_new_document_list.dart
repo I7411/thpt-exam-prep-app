@@ -9,9 +9,9 @@ class DocumentListScreen extends StatefulWidget {
   final String? initialSubjectId;
 
   const DocumentListScreen({
-    Key? key,
+    super.key,
     this.initialSubjectId,
-  }) : super(key: key);
+  });
 
   @override
   State<DocumentListScreen> createState() => _DocumentListScreenState();

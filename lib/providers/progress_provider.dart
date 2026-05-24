@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:thpt_exam_prep_app/data/local/app_database.dart';
-import 'package:thpt_exam_prep_app/mock_exams.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
@@ -164,7 +163,7 @@ class ProgressProvider extends ChangeNotifier {
       final wrongCount = questions.length - correctCount;
       final startedAt = DateTime.now().subtract(const Duration(days: 2, minutes: 30));
       final completedAt = startedAt.add(const Duration(minutes: 28));
-      final score = questions.isEmpty ? 0 : (correctCount / questions.length) * exam.totalScore;
+      final double score = questions.isEmpty ? 0.0 : (correctCount / questions.length) * exam.totalScore;
       final attempt = ExamAttempt(
         id: 'mock_attempt_${exam.id}',
         examId: exam.id,

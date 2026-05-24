@@ -8,9 +8,9 @@ class ExamListScreen extends StatefulWidget {
   final String? initialSubjectId;
 
   const ExamListScreen({
-    Key? key,
+    super.key,
     this.initialSubjectId,
-  }) : super(key: key);
+  });
 
   @override
   State<ExamListScreen> createState() => _ExamListScreenState();

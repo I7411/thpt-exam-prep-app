@@ -1,4 +1,5 @@
 /// Service Locator for dependency injection of repositories
+library;
 import 'package:thpt_exam_prep_app/repo_auth.dart';
 import 'package:thpt_exam_prep_app/repo_subject.dart';
 import 'package:thpt_exam_prep_app/repo_document.dart';

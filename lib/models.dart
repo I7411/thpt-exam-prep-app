@@ -1,4 +1,5 @@
 /// Central export file for all models
+library;
 export 'models_user_role.dart';
 export 'models_app_user.dart';
 export 'models_subject.dart';

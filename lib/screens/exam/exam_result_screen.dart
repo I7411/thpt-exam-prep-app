@@ -6,7 +6,7 @@ import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
 
 class ExamResultScreen extends StatelessWidget {
-  const ExamResultScreen({Key? key}) : super(key: key);
+  const ExamResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

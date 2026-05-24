@@ -1,4 +1,5 @@
 /// Exam repository for managing exams and questions
+library;
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_exams.dart';
 

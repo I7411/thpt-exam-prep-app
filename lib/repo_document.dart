@@ -1,4 +1,5 @@
 /// Document repository for study materials
+library;
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_documents.dart';
 

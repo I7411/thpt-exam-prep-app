@@ -38,13 +38,11 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         tertiary: tertiaryColor,
-        background: backgroundColor,
         surface: surfaceColor,
         error: errorColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onTertiary: Colors.white,
-        onBackground: Colors.black87,
         onSurface: Colors.black87,
         onError: Colors.white,
       ),
@@ -140,7 +138,7 @@ class AppTheme {
         labelStyle: _bodyMedium.copyWith(color: primaryColor),
         errorStyle: _bodySmall.copyWith(color: errorColor),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surfaceColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -175,13 +173,11 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         tertiary: tertiaryColor,
-        background: Colors.grey[900]!,
         surface: Colors.grey[850]!,
         error: errorColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onTertiary: Colors.white,
-        onBackground: Colors.grey[100]!,
         onSurface: Colors.grey[100]!,
         onError: Colors.white,
       ),
@@ -219,7 +215,7 @@ class AppTheme {
           ),
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.grey[850],
         elevation: 0,
         shape: RoundedRectangleBorder(

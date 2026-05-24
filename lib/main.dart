@@ -12,19 +12,25 @@ import 'providers_auth.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.instance.initialize(
-    onNotificationTap: (payload) async {
-      if (payload == null || payload.isEmpty) return;
+  try {
+    await NotificationService.instance.initialize(
+      onNotificationTap: (payload) async {
+        if (payload == null || payload.isEmpty) return;
 
-      final navigator = appNavigatorKey.currentState;
-      if (navigator == null) {
-        NotificationService.instance.queuePendingPayload(payload);
-        return;
-      }
+        final navigator = appNavigatorKey.currentState;
+        if (navigator == null) {
+          NotificationService.instance.queuePendingPayload(payload);
+          return;
+        }
 
-      navigator.pushNamed(payload);
-    },
-  );
+        navigator.pushNamed(payload);
+      },
+    );
+  } catch (e, stackTrace) {
+    debugPrint('Notification init failed: $e');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+
   runApp(
     MultiProvider(
       providers: [

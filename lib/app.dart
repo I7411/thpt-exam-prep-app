@@ -29,7 +29,6 @@ import 'screens_new_forgot_password.dart';
 import 'screens_new_login.dart';
 import 'screens_new_register.dart';
 import 'screens_new_splash.dart';
-import 'screens_new_student_home.dart';
 import 'screens_new_student_main.dart';
 import 'screens_new_subject_list.dart';
 

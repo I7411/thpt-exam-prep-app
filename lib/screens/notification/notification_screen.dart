@@ -8,7 +8,7 @@ import 'package:thpt_exam_prep_app/providers/notification_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({Key? key}) : super(key: key);
+  const NotificationScreen({super.key});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -372,6 +372,8 @@ class _ChipLabel extends StatelessWidget {
 }
 
 class _EmptyNotificationState extends StatelessWidget {
+  const _EmptyNotificationState({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Center(

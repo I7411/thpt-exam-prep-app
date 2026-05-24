@@ -8,13 +8,13 @@ class SubjectCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const SubjectCard({
-    Key? key,
+    super.key,
     required this.name,
     required this.icon,
     required this.color,
     this.progress,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

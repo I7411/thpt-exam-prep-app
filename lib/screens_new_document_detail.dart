@@ -7,9 +7,9 @@ class DocumentDetailScreen extends StatefulWidget {
   final StudyDocument document;
 
   const DocumentDetailScreen({
-    Key? key,
+    super.key,
     required this.document,
-  }) : super(key: key);
+  });
 
   @override
   State<DocumentDetailScreen> createState() => _DocumentDetailScreenState();

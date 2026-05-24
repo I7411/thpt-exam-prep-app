@@ -7,7 +7,7 @@ import 'package:thpt_exam_prep_app/providers/progress_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 class ProgressScreen extends StatefulWidget {
-  const ProgressScreen({Key? key}) : super(key: key);
+  const ProgressScreen({super.key});
 
   @override
   State<ProgressScreen> createState() => _ProgressScreenState();

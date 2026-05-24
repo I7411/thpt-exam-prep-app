@@ -11,9 +11,9 @@ class ExamTakingScreen extends StatefulWidget {
   final Exam exam;
 
   const ExamTakingScreen({
-    Key? key,
+    super.key,
     required this.exam,
-  }) : super(key: key);
+  });
 
   @override
   State<ExamTakingScreen> createState() => _ExamTakingScreenState();

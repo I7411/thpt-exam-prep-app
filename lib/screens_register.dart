@@ -5,7 +5,7 @@ import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -187,8 +187,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<UserRole>(
-                    value: _selectedRole,
-                    enabled: !authProvider.isLoading,
+                    initialValue: _selectedRole,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.security),
                       border: OutlineInputBorder(
@@ -209,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: const Text('Quản trị viên'),
                       ),
                     ],
-                    onChanged: (role) {
+                    onChanged: authProvider.isLoading ? null : (role) {
                       if (role != null) {
                         setState(() {
                           _selectedRole = role;

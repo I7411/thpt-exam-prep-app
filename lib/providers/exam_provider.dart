@@ -270,7 +270,7 @@ class ExamProvider extends ChangeNotifier {
         subjectId: subjectId,
         totalDocumentsRead: 0,
         totalExamsTaken: 1,
-        examsPassed: result.isPassed ? 1 : 0,
+        examsPassed: result.attempt.isPassed ? 1 : 0,
         averageScore: result.score,
         streakDays: 1,
         lastStudyDate: DateTime.now(),
@@ -285,7 +285,7 @@ class ExamProvider extends ChangeNotifier {
     final newAverageScore = ((existing.averageScore * existing.totalExamsTaken) + result.score) / newTotalExams;
     final updatedProgress = existing.copyWith(
       totalExamsTaken: newTotalExams,
-      examsPassed: existing.examsPassed + (result.isPassed ? 1 : 0),
+      examsPassed: existing.examsPassed + (result.attempt.isPassed ? 1 : 0),
       averageScore: newAverageScore,
       completionPercentage: result.completionPercentage.clamp(existing.completionPercentage, 100),
       lastStudyDate: DateTime.now(),

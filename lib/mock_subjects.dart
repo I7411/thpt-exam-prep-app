@@ -1,4 +1,5 @@
 /// Mock data for 9 THPT subjects
+library;
 import 'package:thpt_exam_prep_app/models.dart';
 
 class MockSubjectsData {

@@ -1,4 +1,5 @@
 /// Teacher repository for teacher-specific operations
+library;
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
 

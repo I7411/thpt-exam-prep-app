@@ -1,4 +1,5 @@
 /// Mock data for progress, notifications, and users
+library;
 import 'package:thpt_exam_prep_app/models.dart';
 
 class MockProgressData {

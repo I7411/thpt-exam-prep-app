@@ -6,7 +6,7 @@ import 'repository_service.dart';
 import 'widgets_subject_card.dart';
 
 class SubjectListScreen extends StatefulWidget {
-  const SubjectListScreen({Key? key}) : super(key: key);
+  const SubjectListScreen({super.key});
 
   @override
   State<SubjectListScreen> createState() => _SubjectListScreenState();

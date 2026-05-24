@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:thpt_exam_prep_app/mock_documents.dart';
 import 'package:thpt_exam_prep_app/mock_exams.dart';
-import 'package:thpt_exam_prep_app/mock_progress.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
 

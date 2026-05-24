@@ -46,7 +46,7 @@ class _AdminExamQuestionManagementScreenState extends State<AdminExamQuestionMan
                 padding: const EdgeInsets.all(16),
                 children: [
                   DropdownButtonFormField<String>(
-                    value: _selectedSubjectId,
+                    initialValue: _selectedSubjectId,
                     decoration: InputDecoration(
                       labelText: 'Lọc theo môn',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),

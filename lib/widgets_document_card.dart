@@ -10,7 +10,7 @@ class DocumentCard extends StatelessWidget {
   final VoidCallback? onMarkTap;
 
   const DocumentCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.subject,
     required this.duration,
@@ -18,7 +18,7 @@ class DocumentCard extends StatelessWidget {
     this.isMarked = false,
     this.onTap,
     this.onMarkTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

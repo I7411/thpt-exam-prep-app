@@ -10,7 +10,7 @@ import 'widgets_stat_card.dart';
 import 'widgets_subject_card.dart';
 
 class StudentHomeScreen extends StatefulWidget {
-  const StudentHomeScreen({Key? key}) : super(key: key);
+  const StudentHomeScreen({super.key});
 
   @override
   State<StudentHomeScreen> createState() => _StudentHomeScreenState();
