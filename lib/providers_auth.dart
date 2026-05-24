@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AuthProvider extends ChangeNotifier {
   final RepositoryService _repositoryService = RepositoryService.getInstance();
@@ -103,7 +105,61 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
+Future<bool> resetPassword(
+  String token,
+  String newPassword,
+) async {
+  _isLoading = true;
+  _errorMessage = '';
+  notifyListeners();
 
+  try {
+    print('TOKEN GUI LEN: $token');
+    print('PASSWORD MOI: $newPassword');
+
+    final response = await http.post(
+      Uri.parse(
+        'https://localhost:7129/api/auth/reset-password',
+      ),
+
+      headers: {
+        'Content-Type': 'application/json',
+      },
+
+      body: jsonEncode({
+        'token': token,
+        'newPassword': newPassword,
+      }),
+    );
+
+    print('STATUS CODE: ${response.statusCode}');
+    print('BODY: ${response.body}');
+
+    _isLoading = false;
+
+    if (response.statusCode == 200) {
+      notifyListeners();
+      return true;
+    } else {
+      final data = jsonDecode(response.body);
+
+      _errorMessage =
+          data['message'] ??
+          'Đặt lại mật khẩu thất bại';
+
+      notifyListeners();
+      return false;
+    }
+  } catch (e) {
+    _isLoading = false;
+
+    _errorMessage =
+        'Không thể kết nối đến máy chủ: $e';
+
+    notifyListeners();
+    return false;
+  }
+}
   /// Register a new user
   Future<bool> register(
     String email,
@@ -234,36 +290,42 @@ class AuthProvider extends ChangeNotifier {
   /// Thêm hàm này vào cuối lớp AuthProvider của bạn (trước dấu đóng ngoặc } cuối cùng)
   /// Send password reset email
   Future<bool> sendPasswordReset(String email) async {
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
+  _isLoading = true;
+  _errorMessage = '';
+  notifyListeners();
 
-    try {
-      if (!_isValidEmail(email)) {
-        _errorMessage = 'Email không hợp lệ';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
+  try {
+    if (!_isValidEmail(email)) {
+      _errorMessage = 'Email không hợp lệ';
 
-      // Gọi hàm từ repository thông qua dịch vụ
-      final success = await _repositoryService.auth.sendPasswordResetEmail(email);
-
-      if (success) {
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      } else {
-        _errorMessage = 'Email này không tồn tại trên hệ thống';
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
-    } catch (e) {
-      _errorMessage = 'Lỗi gửi yêu cầu: ${e.toString()}';
       _isLoading = false;
+      notifyListeners();
+
+      return false;
+    }
+
+    final success =
+        await _repositoryService.auth.sendPasswordResetEmail(email);
+
+    _isLoading = false;
+
+    if (success) {
+      notifyListeners();
+      return true;
+    } else {
+      _errorMessage = 'Gửi email thất bại';
+
       notifyListeners();
       return false;
     }
+  } catch (e) {
+    _isLoading = false;
+
+    _errorMessage =
+        'Lỗi gửi yêu cầu: ${e.toString()}';
+
+    notifyListeners();
+    return false;
   }
+}
 }

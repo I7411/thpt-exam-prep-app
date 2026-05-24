@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
-import 'package:thpt_exam_prep_app/app_routes.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -39,7 +38,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _isLoading = true;
       });
 
-      // GỌI THỰC TẾ: Kết nối đến AuthProvider để xử lý logic
+      // Kết nối đến AuthProvider xử lý logic gọi API Backend
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.sendPasswordReset(_emailController.text);
 
@@ -53,7 +52,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             _emailSent = true;
           });
 
-          // Hiển thị thông báo thành công
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -73,7 +71,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           );
         } else {
-          // Hiển thị thông báo lỗi từ hệ thống nếu email không tồn tại
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(authProvider.errorMessage.isNotEmpty 
@@ -105,7 +102,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
+                // ---------------- HEADER ----------------
                 Center(
                   child: Column(
                     children: [
@@ -142,8 +139,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 40),
 
+                // ---------------- THÂN TRẠNG THÁI GIAO DIỆN ----------------
                 if (_emailSent) ...[
-                  // Success state
+                  // Trạng thái 1: Đã gửi email thành công
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -153,11 +151,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 64,
-                          color: Colors.green[600],
-                        ),
+                        Icon(Icons.check_circle, size: 64, color: Colors.green[600]),
                         const SizedBox(height: 16),
                         Text(
                           'Email đã được gửi!',
@@ -187,7 +181,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
                 ] else ...[
-                  // Form state
+                  // Trạng thái 2: Form nhập email ban đầu
                   Text(
                     'Email',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -197,7 +191,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
-                    enabled: !_isLoading, // SỬA LỖI: Nằm ngoài InputDecoration
+                    enabled: !_isLoading,
                     decoration: InputDecoration(
                       hintText: 'Nhập email của bạn',
                       prefixIcon: const Icon(Icons.email_outlined),
@@ -222,11 +216,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.blue[600],
-                          size: 24,
-                        ),
+                        Icon(Icons.info_outline, color: Colors.blue[600], size: 24),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -256,7 +246,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Send button
+                  // Nút Gửi
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -269,14 +259,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.send),
-                      label: Text(
-                        _isLoading ? 'Đang gửi...' : 'Gửi hướng dẫn',
-                      ),
+                      label: Text(_isLoading ? 'Đang gửi...' : 'Gửi hướng dẫn'),
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // Back to login
+                  // Nút quay lại đăng nhập
                   Center(
                     child: TextButton(
                       onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
@@ -287,7 +275,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
                 const SizedBox(height: 24),
 
-                // Security note
+                // ---------------- SECURITY NOTE (Luôn hiển thị ở dưới cùng) ----------------
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -296,11 +284,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.security,
-                        color: Colors.grey[600],
-                        size: 20,
-                      ),
+                      Icon(Icons.security, color: Colors.grey[600], size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

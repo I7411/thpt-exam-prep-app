@@ -1,5 +1,7 @@
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 abstract class AuthRepository {
   Future<AppUser?> login(String email, String password);
@@ -65,11 +67,27 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+@override
 Future<bool> sendPasswordResetEmail(String email) async {
-  await Future.delayed(const Duration(milliseconds: 800)); // Giả lập độ trễ mạng
-  
-  // Sửa thành true để nhập email nào cũng test được giao diện thành công
-  return true; 
+  try {
+    final response = await http.post(
+      Uri.parse('https://localhost:7129/api/auth/forgot-password'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+      }),
+    );
+
+    print("STATUS CODE: ${response.statusCode}");
+    print("BODY: ${response.body}");
+
+    return response.statusCode == 200;
+  } catch (e) {
+    print("Lỗi API: $e");
+    return false;
+  }
 }
 
   @override
