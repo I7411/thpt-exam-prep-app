@@ -55,12 +55,10 @@ class ThptSmartLearnApp extends StatefulWidget {
   const ThptSmartLearnApp({super.key});
 
   @override
-  State<ThptSmartLearnApp> createState() =>
-      _ThptSmartLearnAppState();
+  State<ThptSmartLearnApp> createState() => _ThptSmartLearnAppState();
 }
 
-class _ThptSmartLearnAppState
-    extends State<ThptSmartLearnApp> {
+class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
   @override
   void initState() {
     super.initState();
@@ -89,27 +87,21 @@ class _ThptSmartLearnAppState
     );
   }
 
-  Route<dynamic>? _generateRoute(
-      RouteSettings settings) {
+  Route<dynamic>? _generateRoute(RouteSettings settings) {
     final args = settings.arguments;
 
     // =========================================================
     // FIX WEB RESET PASSWORD URL
     // =========================================================
-    final uri = Uri.parse(
-      settings.name ?? '',
-    );
+    final uri = Uri.parse(settings.name ?? '');
 
     // Ví dụ:
     // /reset-password?token=abc123
     if (uri.path == '/reset-password') {
-      final token =
-          uri.queryParameters['token'] ?? '';
+      final token = uri.queryParameters['token'] ?? '';
 
       return MaterialPageRoute(
-        builder: (_) => ResetPasswordScreen(
-          token: token,
-        ),
+        builder: (_) => ResetPasswordScreen(email: token),
         settings: settings,
       );
     }
@@ -138,8 +130,7 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.register:
         return MaterialPageRoute(
-          builder: (_) =>
-              const RegisterScreen(),
+          builder: (_) => const RegisterScreen(),
           settings: settings,
         );
 
@@ -148,8 +139,7 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.forgotPassword:
         return MaterialPageRoute(
-          builder: (_) =>
-              const ForgotPasswordScreen(),
+          builder: (_) => const ForgotPasswordScreen(),
           settings: settings,
         );
 
@@ -158,23 +148,20 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.studentHome:
         return MaterialPageRoute(
-          builder: (_) =>
-              const StudentMainScreen(),
+          builder: (_) => const StudentMainScreen(),
           settings: settings,
         );
 
       case AppRoutes.studentSubjects:
         return MaterialPageRoute(
-          builder: (_) =>
-              const SubjectListScreen(),
+          builder: (_) => const SubjectListScreen(),
           settings: settings,
         );
 
       case AppRoutes.studentDocuments:
         return MaterialPageRoute(
           builder: (_) => DocumentListScreen(
-            initialSubjectId:
-                args is String ? args : null,
+            initialSubjectId: args is String ? args : null,
           ),
           settings: settings,
         );
@@ -184,18 +171,14 @@ class _ThptSmartLearnAppState
           return MaterialPageRoute(
             builder: (_) => const PlaceholderScreen(
               routeName: 'Document Detail',
-              description:
-                  'Dữ liệu tài liệu không hợp lệ.',
+              description: 'Dữ liệu tài liệu không hợp lệ.',
             ),
             settings: settings,
           );
         }
 
         return MaterialPageRoute(
-          builder: (_) =>
-              DocumentDetailScreen(
-            document: args,
-          ),
+          builder: (_) => DocumentDetailScreen(document: args),
           settings: settings,
         );
 
@@ -204,10 +187,8 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.studentExams:
         return MaterialPageRoute(
-          builder: (_) => ExamListScreen(
-            initialSubjectId:
-                args is String ? args : null,
-          ),
+          builder: (_) =>
+              ExamListScreen(initialSubjectId: args is String ? args : null),
           settings: settings,
         );
 
@@ -216,23 +197,20 @@ class _ThptSmartLearnAppState
           return MaterialPageRoute(
             builder: (_) => const PlaceholderScreen(
               routeName: 'Taking Exam',
-              description:
-                  'Thiếu dữ liệu đề thi.',
+              description: 'Thiếu dữ liệu đề thi.',
             ),
             settings: settings,
           );
         }
 
         return MaterialPageRoute(
-          builder: (_) =>
-              ExamTakingScreen(exam: args),
+          builder: (_) => ExamTakingScreen(exam: args),
           settings: settings,
         );
 
       case AppRoutes.studentExamResult:
         return MaterialPageRoute(
-          builder: (_) =>
-              const ExamResultScreen(),
+          builder: (_) => const ExamResultScreen(),
           settings: settings,
         );
 
@@ -241,8 +219,7 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.studentProgress:
         return MaterialPageRoute(
-          builder: (_) =>
-              const ProgressScreen(),
+          builder: (_) => const ProgressScreen(),
           settings: settings,
         );
 
@@ -251,8 +228,7 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.studentNotifications:
         return MaterialPageRoute(
-          builder: (_) =>
-              const NotificationScreen(),
+          builder: (_) => const NotificationScreen(),
           settings: settings,
         );
 
@@ -261,8 +237,7 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.studentProfile:
         return MaterialPageRoute(
-          builder: (_) =>
-              const StudentProfileScreen(),
+          builder: (_) => const StudentProfileScreen(),
           settings: settings,
         );
 
@@ -271,46 +246,38 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.teacherDashboard:
         return MaterialPageRoute(
-          builder: (_) =>
-              const TeacherDashboardScreen(),
+          builder: (_) => const TeacherDashboardScreen(),
           settings: settings,
         );
 
       case AppRoutes.teacherClasses:
         return MaterialPageRoute(
-          builder: (_) =>
-              const TeacherClassListScreen(),
+          builder: (_) => const TeacherClassListScreen(),
           settings: settings,
         );
 
       case AppRoutes.teacherClassDetail:
         return MaterialPageRoute(
           builder: (_) =>
-              TeacherClassDetailScreen(
-            classId:
-                args is String ? args : null,
-          ),
+              TeacherClassDetailScreen(classId: args is String ? args : null),
           settings: settings,
         );
 
       case AppRoutes.teacherQuestions:
         return MaterialPageRoute(
-          builder: (_) =>
-              const TeacherQuestionBankScreen(),
+          builder: (_) => const TeacherQuestionBankScreen(),
           settings: settings,
         );
 
       case AppRoutes.teacherSchedule:
         return MaterialPageRoute(
-          builder: (_) =>
-              const TeacherScheduleScreen(),
+          builder: (_) => const TeacherScheduleScreen(),
           settings: settings,
         );
 
       case AppRoutes.teacherProfile:
         return MaterialPageRoute(
-          builder: (_) =>
-              const TeacherProfileScreen(),
+          builder: (_) => const TeacherProfileScreen(),
           settings: settings,
         );
 
@@ -319,36 +286,31 @@ class _ThptSmartLearnAppState
       // ===================================================
       case AppRoutes.adminDashboard:
         return MaterialPageRoute(
-          builder: (_) =>
-              const AdminDashboardScreen(),
+          builder: (_) => const AdminDashboardScreen(),
           settings: settings,
         );
 
       case AppRoutes.adminUsers:
         return MaterialPageRoute(
-          builder: (_) =>
-              const AdminUserManagementScreen(),
+          builder: (_) => const AdminUserManagementScreen(),
           settings: settings,
         );
 
       case AppRoutes.adminDocuments:
         return MaterialPageRoute(
-          builder: (_) =>
-              const AdminDocumentManagementScreen(),
+          builder: (_) => const AdminDocumentManagementScreen(),
           settings: settings,
         );
 
       case AppRoutes.adminExams:
         return MaterialPageRoute(
-          builder: (_) =>
-              const AdminExamQuestionManagementScreen(),
+          builder: (_) => const AdminExamQuestionManagementScreen(),
           settings: settings,
         );
 
       case AppRoutes.adminReports:
         return MaterialPageRoute(
-          builder: (_) =>
-              const AdminReportsScreen(),
+          builder: (_) => const AdminReportsScreen(),
           settings: settings,
         );
 
@@ -358,15 +320,8 @@ class _ThptSmartLearnAppState
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
-            appBar: AppBar(
-              title:
-                  const Text('Page Not Found'),
-            ),
-            body: Center(
-              child: Text(
-                '404 - ${settings.name}',
-              ),
-            ),
+            appBar: AppBar(title: const Text('Page Not Found')),
+            body: Center(child: Text('404 - ${settings.name}')),
           ),
         );
     }

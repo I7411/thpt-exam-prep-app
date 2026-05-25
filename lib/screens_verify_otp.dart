@@ -1,59 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class ResetPasswordScreen
-    extends StatefulWidget {
+import 'providers_auth.dart';
+import 'screens_new_reset_password.dart';
 
+class VerifyOtpScreen extends StatefulWidget {
   final String email;
 
-  const ResetPasswordScreen({
+  const VerifyOtpScreen({
     super.key,
     required this.email,
   });
 
   @override
-  State<ResetPasswordScreen> createState() =>
-      _ResetPasswordScreenState();
+  State<VerifyOtpScreen> createState() =>
+      _VerifyOtpScreenState();
 }
 
-class _ResetPasswordScreenState
-    extends State<ResetPasswordScreen> {
+class _VerifyOtpScreenState
+    extends State<VerifyOtpScreen> {
 
-  final _passwordController =
-      TextEditingController();
-
-  final _confirmController =
+  final _otpController =
       TextEditingController();
 
   bool _isLoading = false;
 
-  Future<void> _changePassword() async {
+  Future<void> _verifyOtp() async {
 
-    final password =
-        _passwordController.text.trim();
+    final otp =
+        _otpController.text.trim();
 
-    final confirm =
-        _confirmController.text.trim();
-
-    if (password.isEmpty ||
-        confirm.isEmpty) {
-
+    if (otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Vui lòng nhập đầy đủ',
-          ),
-        ),
-      );
-
-      return;
-    }
-
-    if (password != confirm) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Mật khẩu không khớp',
+            'Vui lòng nhập OTP',
           ),
         ),
       );
@@ -65,39 +46,54 @@ class _ResetPasswordScreenState
       _isLoading = true;
     });
 
-    // GIẢ LẬP ĐỔI MẬT KHẨU
+    final authProvider =
+        Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    );
 
-    await Future.delayed(
-      const Duration(seconds: 1),
+    final success =
+        await authProvider.verifyOtp(
+      widget.email,
+      otp,
     );
 
     setState(() {
       _isLoading = false;
     });
 
-    if (!mounted) return;
+    if (success) {
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Đổi mật khẩu thành công',
+      if (!mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              ResetPasswordScreen(
+            email: widget.email,
+          ),
         ),
-        backgroundColor: Colors.green,
-      ),
-    );
+      );
 
-    Navigator.pushReplacementNamed(
-      context,
-      '/login',
-    );
+    } else {
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authProvider.errorMessage,
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-
-    _passwordController.dispose();
-
-    _confirmController.dispose();
+    _otpController.dispose();
 
     super.dispose();
   }
@@ -108,7 +104,7 @@ class _ResetPasswordScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Đổi mật khẩu',
+          'Xác thực OTP',
         ),
       ),
 
@@ -127,6 +123,15 @@ class _ResetPasswordScreenState
               children: [
 
                 Text(
+                  'OTP đã gửi đến:',
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Text(
                   widget.email,
                   style: const TextStyle(
                     fontSize: 18,
@@ -139,32 +144,15 @@ class _ResetPasswordScreenState
 
                 TextField(
                   controller:
-                      _passwordController,
+                      _otpController,
 
-                  obscureText: true,
-
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Mật khẩu mới',
-
-                    border:
-                        OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                TextField(
-                  controller:
-                      _confirmController,
-
-                  obscureText: true,
+                  keyboardType:
+                      TextInputType.number,
 
                   decoration:
                       const InputDecoration(
                     labelText:
-                        'Nhập lại mật khẩu',
+                        'Nhập mã OTP',
 
                     border:
                         OutlineInputBorder(),
@@ -181,7 +169,7 @@ class _ResetPasswordScreenState
                     onPressed:
                         _isLoading
                             ? null
-                            : _changePassword,
+                            : _verifyOtp,
 
                     child:
                         _isLoading
@@ -189,7 +177,7 @@ class _ResetPasswordScreenState
                                 color: Colors.white,
                               )
                             : const Text(
-                                'Đổi mật khẩu',
+                                'Xác nhận OTP',
                               ),
                   ),
                 ),
