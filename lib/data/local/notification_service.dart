@@ -122,7 +122,8 @@ class NotificationService {
 
   Future<void> _requestPermissions() async {
     final androidImplementation = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.requestPermission();
+    await androidImplementation
+    ?.requestNotificationsPermission();
   }
 
   Future<void> _loadInitialLaunchPayload() async {

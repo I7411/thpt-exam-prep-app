@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Dùng để dùng kDebugMode
 
 class AuthService {
-  final String _baseUrl = 'http://192.168.1.166:5185/api/auth';
+  final String _baseUrl = 'http://10.0.2.2:5185/api';
 
   Future<Map<String, dynamic>> sendOtp(String email) async {
     try {
