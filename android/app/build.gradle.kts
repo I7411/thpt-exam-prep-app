@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.example.thpt_exam_prep_app"
 
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
 
     ndkVersion = "28.2.13676358"
 
@@ -15,7 +15,7 @@ android {
         applicationId = "com.example.thpt_exam_prep_app"
 
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
 
         versionCode = flutter.versionCode
         versionName = flutter.versionName

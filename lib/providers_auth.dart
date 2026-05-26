@@ -297,7 +297,7 @@ class AuthProvider extends ChangeNotifier {
 
       final response = await http.post(
         Uri.parse(
-          'http://localhost:5185/api/auth/send-otp',
+          'http://10.0.2.2:5185/api/auth/send-otp',
         ),
 
         headers: {
@@ -361,7 +361,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final response = await http.post(
         Uri.parse(
-          'http://localhost:5185/api/auth/verify-otp',
+          'http://10.0.2.2:5185/api/auth/verify-otp',
         ),
 
         headers: {
@@ -425,7 +425,7 @@ Future<bool> resetPassword(
   try {
     final response = await http.post(
       Uri.parse(
-        'http://localhost:5185/api/auth/reset-password',
+        'http://10.0.2.2:5185/api/auth/reset-password',
       ),
 
       headers: {
