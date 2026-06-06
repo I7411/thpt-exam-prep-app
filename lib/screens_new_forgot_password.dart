@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:thpt_exam_prep_app/app_routes.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});

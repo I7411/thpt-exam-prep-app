@@ -372,7 +372,7 @@ class _ChipLabel extends StatelessWidget {
 }
 
 class _EmptyNotificationState extends StatelessWidget {
-  const _EmptyNotificationState({super.key});
+  const _EmptyNotificationState();
 
   @override
   Widget build(BuildContext context) {

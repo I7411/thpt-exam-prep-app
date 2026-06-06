@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/mock_exams.dart';
-import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
 
 class AdminExamQuestionManagementScreen extends StatefulWidget {
