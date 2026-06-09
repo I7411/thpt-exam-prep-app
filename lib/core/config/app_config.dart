@@ -1,12 +1,14 @@
-﻿/// Application configuration
+import 'package:flutter/foundation.dart';
+
+/// Application configuration
 class AppConfig {
   static const String appName = 'THPT Smart Learn';
   static const String appVersion = '1.0.0';
 
- static const String apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://localhost:5185/api',
-);
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://localhost:5185/api',
+  );
 
   static const int apiTimeout = 30;
   static const bool enableApiLogging = true;
@@ -18,21 +20,13 @@ class AppConfig {
   static const bool enableDevTools = false;
 
   static void printConfig() {
-    // ignore: avoid_print
-    print('=== App Configuration ===');
-    // ignore: avoid_print
-    print('App Name: $appName');
-    // ignore: avoid_print
-    print('App Version: $appVersion');
-    // ignore: avoid_print
-    print('API Base URL: $apiBaseUrl');
-    // ignore: avoid_print
-    print('API Timeout: ${apiTimeout}s');
-    // ignore: avoid_print
-    print('Enable API Logging: $enableApiLogging');
-    // ignore: avoid_print
-    print('Enable Mock Data: $enableMockData');
-    // ignore: avoid_print
-    print('========================');
+    debugPrint('=== Cấu hình Ứng dụng ===');
+    debugPrint('Tên ứng dụng: $appName');
+    debugPrint('Phiên bản: $appVersion');
+    debugPrint('Địa chỉ API: $apiBaseUrl');
+    debugPrint('Thời gian chờ API: ${apiTimeout}s');
+    debugPrint('Ghi log API: $enableApiLogging');
+    debugPrint('Sử dụng dữ liệu giả lập: $enableMockData');
+    debugPrint('========================');
   }
 }
