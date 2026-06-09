@@ -187,7 +187,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<UserRole>(
-                    initialValue: _selectedRole,
+                    value: _selectedRole,
+                    enabled: !authProvider.isLoading,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.security),
                       border: OutlineInputBorder(
@@ -208,7 +209,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: const Text('Quản trị viên'),
                       ),
                     ],
-                    onChanged: authProvider.isLoading ? null : (role) {
+                    onChanged: (role) {
                       if (role != null) {
                         setState(() {
                           _selectedRole = role;
@@ -286,10 +287,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: authProvider.isLoading ? null : () => _handleRegister(context),
                       child: authProvider.isLoading
                           ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Đăng ký'),
                     ),
                   ),

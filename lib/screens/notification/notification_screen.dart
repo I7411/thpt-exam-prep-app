@@ -57,7 +57,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               onCancelAll: () => _cancelAll(context),
                             ),
                             const SizedBox(height: 32),
-                            const _EmptyNotificationState(),
+                             _EmptyNotificationState(),
                           ],
                         )
                       : ListView.separated(

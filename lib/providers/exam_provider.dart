@@ -377,6 +377,9 @@ class ExamResultData {
     required this.autoSubmitted,
   });
 
+  // Bổ sung getter isPassed kết nối từ object attempt
+  bool get isPassed => attempt.isPassed;
+
   Map<String, dynamic> toJson() {
     return {
       'exam': exam.toJson(),

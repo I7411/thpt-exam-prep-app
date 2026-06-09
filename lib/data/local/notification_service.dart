@@ -1,7 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
@@ -24,8 +25,9 @@ class NotificationService {
     if (_initialized) return;
 
     _onNotificationTap = onNotificationTap;
-    tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
+    tz.initializeTimeZones();
+    final timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initializationSettings = InitializationSettings(android: androidSettings);
@@ -108,7 +110,8 @@ class NotificationService {
 
   Future<void> _requestPermissions() async {
     final androidImplementation = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation?.requestNotificationsPermission();
+    await androidImplementation
+    ?.requestNotificationsPermission();
   }
 
   Future<void> _loadInitialLaunchPayload() async {

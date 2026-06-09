@@ -3,10 +3,10 @@ class AppConfig {
   static const String appName = 'THPT Smart Learn';
   static const String appVersion = '1.0.0';
 
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://192.168.1.10:5130/api',
-  );
+ static const String apiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://localhost:5185/api',
+);
 
   static const int apiTimeout = 30;
   static const bool enableApiLogging = true;
