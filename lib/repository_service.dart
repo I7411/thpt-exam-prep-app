@@ -33,9 +33,8 @@ class RepositoryService {
   }
 
   void _initializeRepositories() {
-    // Initialize all mock repositories
-    // To switch to API implementation, just change these lines
-    _authRepo = MockAuthRepository();
+    // Initialize repositories
+    _authRepo = FirebaseAuthRepository();
     _subjectRepo = MockSubjectRepository();
     _documentRepo = MockDocumentRepository();
     _examRepo = MockExamRepository();

@@ -1,8 +1,6 @@
-/// Abstract repository interface for authentication
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/mock_progress.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 abstract class AuthRepository {
   Future<AppUser?> login(String email, String password);
@@ -10,104 +8,118 @@ abstract class AuthRepository {
   Future<AppUser?> getCurrentUser();
   Future<void> logout();
   Future<bool> isLoggedIn();
-  Future<bool> sendPasswordResetEmail(String email); // Thêm hàm này vào mẫu thiết kế
+  Future<bool> sendPasswordResetEmail(String email);
 }
 
-/// Mock implementation of AuthRepository
-class MockAuthRepository implements AuthRepository {
-  AppUser? _currentUser;
-
-  // GIẢI PHÁP: Tạo danh sách lưu trữ tạm thời trên RAM để lưu user mẫu và user mới đăng ký
-  final List<Map<String, dynamic>> _registeredUsers = [
-    {'email': 'student@example.com', 'password': '123456', 'user': MockUsersData.studentUser},
-    {'email': 'teacher@example.com', 'password': '123456', 'user': MockUsersData.teacherUser},
-    {'email': 'teacher@gmail.com', 'password': '123456', 'user': MockUsersData.teacherUser},
-    {'email': 'admin@example.com', 'password': '123456', 'user': MockUsersData.adminUser},
-    {'email': 'admin@gmail.com', 'password': '123456', 'user': MockUsersData.adminUser},
-  ];
+class FirebaseAuthRepository implements AuthRepository {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   Future<AppUser?> login(String email, String password) async {
-    await Future.delayed(Duration(milliseconds: 500)); // Giả lập độ trễ mạng
-
-    // Tìm kiếm tài khoản trong danh sách bộ nhớ tạm
     try {
-      final match = _registeredUsers.firstWhere(
-        (account) => account['email'] == email && account['password'] == password,
+      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
       );
-      _currentUser = match['user'] as AppUser;
-      return _currentUser;
-    } catch (_) {
-      return null; // Không tìm thấy email hoặc sai mật khẩu
+
+      final user = userCredential.user;
+      if (user != null) {
+        // Fetch user details from Firestore
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          return AppUser.fromFirestore(doc);
+        } else {
+          // Document does not exist. Create a fallback user.
+          final fallbackUser = AppUser(
+            id: user.uid,
+            email: email,
+            fullName: 'Người dùng chưa cấu hình',
+            role: UserRole.student,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            isActive: true,
+          );
+          // Auto create in Firestore to avoid errors
+          await _firestore.collection('users').doc(user.uid).set(fallbackUser.toFirestore());
+          return fallbackUser;
+        }
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      rethrow; // Let Provider handle specific Firebase exceptions
+    } catch (e) {
+      throw Exception('Lỗi đăng nhập: $e');
     }
   }
 
   @override
   Future<AppUser?> register(String email, String password, String fullName, UserRole role) async {
-    await Future.delayed(Duration(milliseconds: 500));
+    try {
+      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    final newUser = AppUser(
-      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
-      email: email,
-      fullName: fullName,
-      role: role,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      isActive: true,
-    );
+      final user = userCredential.user;
+      if (user != null) {
+        final newAppUser = AppUser(
+          id: user.uid,
+          email: email,
+          fullName: fullName,
+          role: role,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          isActive: true,
+        );
 
-    // FIX CỦA BẠN: Thêm tài khoản mới này vào danh sách để có thể đăng nhập lại sau đó
-    _registeredUsers.add({
-      'email': email,
-      'password': password,
-      'user': newUser,
-    });
-
-    _currentUser = newUser;
-    return newUser;
+        // Save to Firestore
+        await _firestore.collection('users').doc(user.uid).set(newAppUser.toFirestore());
+        return newAppUser;
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      rethrow; 
+    } catch (e) {
+      throw Exception('Lỗi đăng ký: $e');
+    }
   }
-
-  @override
-@override
-Future<bool> sendPasswordResetEmail(String email) async {
-  try {
-    final response = await http.post(
-      Uri.parse('https://localhost:7129/api/auth/forgot-password'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-      }),
-    );
-
-    print("STATUS CODE: ${response.statusCode}");
-    print("BODY: ${response.body}");
-
-    return response.statusCode == 200;
-  } catch (e) {
-    print("Lỗi API: $e");
-    return false;
-  }
-}
 
   @override
   Future<AppUser?> getCurrentUser() async {
-    await Future.delayed(Duration(milliseconds: 300));
-    return _currentUser;
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user != null) {
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          return AppUser.fromFirestore(doc);
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   @override
   Future<void> logout() async {
-    await Future.delayed(Duration(milliseconds: 300));
-    _currentUser = null;
+    await _firebaseAuth.signOut();
   }
 
   @override
   Future<bool> isLoggedIn() async {
-    await Future.delayed(Duration(milliseconds: 100));
-    return _currentUser != null;
+    return _firebaseAuth.currentUser != null;
   }
 
-  
+  @override
+  Future<bool> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      rethrow;
+    } catch (e) {
+      throw Exception('Lỗi đặt lại mật khẩu: $e');
+    }
+  }
 }

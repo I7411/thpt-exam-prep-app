@@ -12,31 +12,41 @@ class NotificationService {
 
   static final NotificationService instance = NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
+
   Future<void> Function(String? payload)? _onNotificationTap;
   String? _pendingPayload;
   bool _initialized = false;
 
   static const String _channelId = 'study_reminders';
   static const String _channelName = 'Study reminders';
-  static const String _channelDescription = 'Local reminders for study planning';
+  static const String _channelDescription =
+      'Local reminders for study planning';
 
-  Future<void> initialize({required Future<void> Function(String? payload) onNotificationTap}) async {
+  Future<void> initialize({
+    required Future<void> Function(String? payload) onNotificationTap,
+  }) async {
     if (_initialized) return;
 
     _onNotificationTap = onNotificationTap;
-    tz.initializeTimeZones();
-    final timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initializationSettings = InitializationSettings(android: androidSettings);
+    await _configureLocalTimeZone();
+
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
+
+    const initializationSettings = InitializationSettings(
+      android: androidSettings,
+    );
 
     await _plugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (response) async {
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
         final payload = response.payload;
-        if (payload != null) {
+
+        if (payload != null && payload.isNotEmpty) {
           await _handleTap(payload);
         }
       },
@@ -44,21 +54,51 @@ class NotificationService {
 
     await _requestPermissions();
     await _loadInitialLaunchPayload();
+
     _initialized = true;
+  }
+
+  Future<void> _configureLocalTimeZone() async {
+    tz.initializeTimeZones();
+
+    try {
+      final dynamic localTimezone = await FlutterTimezone.getLocalTimezone();
+
+      String timeZoneName;
+
+      if (localTimezone is String) {
+        timeZoneName = localTimezone;
+      } else {
+        final dynamic identifier = localTimezone.identifier;
+        timeZoneName = identifier is String && identifier.isNotEmpty
+            ? identifier
+            : 'Asia/Ho_Chi_Minh';
+      }
+
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (_) {
+      tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
+    }
   }
 
   Future<void> handlePendingLaunchNotification() async {
     final payload = _pendingPayload;
     _pendingPayload = null;
-    if (payload == null) return;
+
+    if (payload == null || payload.isEmpty) return;
+
     await _handleTap(payload);
   }
 
   void queuePendingPayload(String payload) {
+    if (payload.isEmpty) return;
+
     _pendingPayload = payload;
   }
 
-  Future<void> showStudyReminderDemo({String payload = AppRoutes.studentNotifications}) async {
+  Future<void> showStudyReminderDemo({
+    String payload = AppRoutes.studentNotifications,
+  }) async {
     await _plugin.zonedSchedule(
       _randomNotificationId(),
       'Nhắc học',
@@ -67,13 +107,24 @@ class NotificationService {
       _notificationDetails(),
       payload: payload,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
-  Future<void> scheduleDailyStudyReminder({String payload = AppRoutes.studentProgress}) async {
+  Future<void> scheduleDailyStudyReminder({
+    String payload = AppRoutes.studentProgress,
+  }) async {
     final now = tz.TZDateTime.now(tz.local);
-    var scheduledTime = tz.TZDateTime(tz.local, now.year, now.month, now.day, 19);
+
+    var scheduledTime = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      19,
+    );
+
     if (scheduledTime.isBefore(now)) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
@@ -86,7 +137,8 @@ class NotificationService {
       _notificationDetails(),
       payload: payload,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
@@ -109,13 +161,31 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
-    final androidImplementation = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    await androidImplementation
-    ?.requestNotificationsPermission();
+    final androidImplementation =
+        _plugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidImplementation == null) return;
+
+    final dynamic androidPlugin = androidImplementation;
+
+    try {
+      await androidPlugin.requestNotificationsPermission();
+      return;
+    } catch (_) {
+      // Fallback for older flutter_local_notifications versions.
+    }
+
+    try {
+      await androidPlugin.requestPermission();
+    } catch (_) {
+      // Some versions/platforms do not expose a notification permission API.
+    }
   }
 
   Future<void> _loadInitialLaunchPayload() async {
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+
     if (launchDetails?.didNotificationLaunchApp ?? false) {
       _pendingPayload = launchDetails?.notificationResponse?.payload;
     }
@@ -123,12 +193,12 @@ class NotificationService {
 
   Future<void> _handleTap(String payload) async {
     final handler = _onNotificationTap;
+
     if (handler != null) {
       await handler(payload);
       return;
     }
 
-    // Fallback: if navigation isn't ready yet, queue it for the app to consume later.
     _pendingPayload = payload;
   }
 

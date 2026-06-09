@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
+import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -24,35 +25,79 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     await context.read<AdminProvider>().loadData();
   }
 
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có muốn đăng xuất khỏi tài khoản Admin không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      await context.read<AuthProvider>().logout();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AdminProvider>();
     final report = provider.report;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard'),
-        actions: [
-          IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: provider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _HeroCard(report: report),
-                  const SizedBox(height: 16),
-                  _StatsGrid(report: report),
-                  const SizedBox(height: 16),
-                  _QuickActionsCard(),
-                  const SizedBox(height: 16),
-                  _SubjectOverview(provider: provider),
-                ],
-              ),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        _handleLogout();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Admin Dashboard'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _handleLogout,
+          ),
+          actions: [
+            IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
+            IconButton(
+              onPressed: _handleLogout,
+              icon: const Icon(Icons.logout),
+              tooltip: 'Đăng xuất',
+            ),
+          ],
+        ),
+        body: RefreshIndicator(
+          onRefresh: _loadData,
+          child: provider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _HeroCard(report: report),
+                    const SizedBox(height: 16),
+                    _StatsGrid(report: report),
+                    const SizedBox(height: 16),
+                    _QuickActionsCard(),
+                    const SizedBox(height: 16),
+                    _SubjectOverview(provider: provider),
+                  ],
+                ),
+        ),
       ),
     );
   }

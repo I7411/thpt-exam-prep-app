@@ -44,7 +44,6 @@ import 'screens_new_document_list.dart';
 import 'screens_new_forgot_password.dart';
 import 'screens_new_login.dart';
 import 'screens_new_register.dart';
-import 'screens_new_reset_password.dart';
 
 import 'screens_new_splash.dart';
 import 'screens_new_student_main.dart';
@@ -89,26 +88,13 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
   Route<dynamic>? _generateRoute(RouteSettings settings) {
     final args = settings.arguments;
 
-    // =========================================================
-    // FIX WEB RESET PASSWORD URL
-    // =========================================================
     final uri = Uri.parse(settings.name ?? '');
-
-    // Ví dụ:
-    // /reset-password?token=abc123
-    if (uri.path == '/reset-password') {
-      final token = uri.queryParameters['token'] ?? '';
-
-      return MaterialPageRoute(
-        builder: (_) => ResetPasswordScreen(email: token),
-        settings: settings,
-      );
-    }
 
     switch (settings.name) {
       // ===================================================
-      // SPLASH
+      // SPLASH & ROOT
       // ===================================================
+      case '/':
       case AppRoutes.splash:
         return MaterialPageRoute(
           builder: (_) => const SplashScreen(),

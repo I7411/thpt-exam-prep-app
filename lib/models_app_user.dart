@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'models_user_role.dart';
 
 /// Application user model
@@ -48,6 +49,25 @@ class AppUser {
     );
   }
 
+  /// Create AppUser from Firestore DocumentSnapshot
+  factory AppUser.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+    return AppUser(
+      id: data['uid'] as String? ?? doc.id,
+      email: data['email'] as String? ?? '',
+      fullName: data['fullName'] as String? ?? '',
+      profileImageUrl: data['photoUrl'] as String?,
+      phoneNumber: data['phoneNumber'] as String?,
+      bio: data['bio'] as String?,
+      role: UserRole.fromValue(data['role'] as String? ?? 'student'),
+      schoolName: data['schoolName'] as String?,
+      className: data['className'] as String?,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      isActive: data['isActive'] as bool? ?? true,
+    );
+  }
+
   /// Convert AppUser to JSON
   Map<String, dynamic> toJson() {
     return {
@@ -62,6 +82,24 @@ class AppUser {
       'className': className,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'isActive': isActive,
+    };
+  }
+
+  /// Convert AppUser to Firestore Map
+  Map<String, dynamic> toFirestore() {
+    return {
+      'uid': id,
+      'email': email,
+      'fullName': fullName,
+      'photoUrl': profileImageUrl,
+      'phoneNumber': phoneNumber,
+      'bio': bio,
+      'role': role.toValue(),
+      'schoolName': schoolName,
+      'className': className,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
       'isActive': isActive,
     };
   }

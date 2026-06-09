@@ -187,29 +187,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<UserRole>(
-                    value: _selectedRole,
-                    enabled: !authProvider.isLoading,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.security),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: UserRole.student,
-                        child: const Text('Học sinh'),
-                      ),
-                      DropdownMenuItem(
-                        value: UserRole.teacher,
-                        child: const Text('Giáo viên'),
-                      ),
-                      DropdownMenuItem(
-                        value: UserRole.admin,
-                        child: const Text('Quản trị viên'),
-                      ),
-                    ],
-                    onChanged: (role) {
+              initialValue: _selectedRole,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.security),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: UserRole.student,
+                  child: Text('Học sinh'),
+                ),
+                DropdownMenuItem(
+                  value: UserRole.teacher,
+                  child: Text('Giáo viên'),
+                ),
+                DropdownMenuItem(
+                  value: UserRole.admin,
+                  child: Text('Quản trị viên'),
+                ),
+              ],
+              onChanged: authProvider.isLoading
+                  ? null
+                  : (role) {
                       if (role != null) {
                         setState(() {
                           _selectedRole = role;

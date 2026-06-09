@@ -235,34 +235,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: DropdownButtonFormField<UserRole>(
-                        value: _selectedRole,
-                        enabled: !authProvider.isLoading,
+                        initialValue: _selectedRole,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.security),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
-                        items: [
+                        items: const [
                           DropdownMenuItem(
                             value: UserRole.student,
-                            child: const Text('📚 Học sinh'),
+                            child: Text('📚 Học sinh'),
                           ),
                           DropdownMenuItem(
                             value: UserRole.teacher,
-                            child: const Text('👨‍🏫 Giáo viên'),
+                            child: Text('👨‍🏫 Giáo viên'),
                           ),
                           DropdownMenuItem(
                             value: UserRole.admin,
-                            child: const Text('🔐 Quản trị viên'),
+                            child: Text('🔐 Quản trị viên'),
                           ),
                         ],
-                        onChanged: (role) {
-                          if (role != null) {
-                            setState(() {
-                              _selectedRole = role;
-                            });
-                          }
-                        },
+                        onChanged: authProvider.isLoading
+                            ? null
+                            : (role) {
+                                if (role != null) {
+                                  setState(() {
+                                    _selectedRole = role;
+                                  });
+                                }
+                              },
                       ),
                     ),
                     const SizedBox(height: 20),
