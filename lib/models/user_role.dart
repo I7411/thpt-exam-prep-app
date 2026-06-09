@@ -1,4 +1,4 @@
-/// User role enumeration
+﻿/// User role enumeration
 enum UserRole {
   student,
   teacher,
@@ -18,9 +18,10 @@ enum UserRole {
   /// Get Vietnamese display name
   String getDisplayName() {
     return switch (this) {
-      UserRole.student => 'Học sinh',
-      UserRole.teacher => 'Giáo viên',
-      UserRole.admin => 'Quản trị viên',
+      UserRole.student => 'Há»c sinh',
+      UserRole.teacher => 'GiÃ¡o viÃªn',
+      UserRole.admin => 'Quáº£n trá»‹ viÃªn',
     };
   }
 }
+

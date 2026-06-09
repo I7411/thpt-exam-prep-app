@@ -12,7 +12,12 @@
           "package_name": "com.example.thpt_exam_prep_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "529775655888-l8mcjhpu4i4veijhqev9cj60gsjom86n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAunczv2aEIwkv4UYO4Gbh2IOXX0Nr5MYA"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "529775655888-l8mcjhpu4i4veijhqev9cj60gsjom86n.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "529775655888-ch5ief5pk52btse9fle97rvvu7k7eubn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.thptExamPrepApp"
+              }
+            }
+          ]
         }
       }
     }

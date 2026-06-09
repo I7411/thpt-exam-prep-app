@@ -1,4 +1,4 @@
-/// Admin report statistic model (Thống kê báo cáo)
+﻿/// Admin report statistic model (Thá»‘ng kÃª bÃ¡o cÃ¡o)
 class AdminReportStat {
   final String id;
   final int totalUsers;
@@ -104,3 +104,4 @@ class AdminReportStat {
   @override
   String toString() => 'AdminReportStat(id: $id, generatedAt: $generatedAt)';
 }
+

@@ -1,4 +1,4 @@
-
+﻿
 // App Constants
 class AppConstants {
   // App Info
@@ -12,16 +12,16 @@ class AppConstants {
   // Pagination
   static const int pageSize = 20;
   
-  // Subject Names (Tiếng Việt)
+  // Subject Names (Tiáº¿ng Viá»‡t)
   static const List<String> subjects = [
-    'Toán học',
-    'Vật lý',
-    'Hóa học',
-    'Sinh học',
-    'Lịch sử',
-    'Địa lý',
-    'Ngoại ngữ',
-    'Ngữ văn',
+    'ToÃ¡n há»c',
+    'Váº­t lÃ½',
+    'HÃ³a há»c',
+    'Sinh há»c',
+    'Lá»‹ch sá»­',
+    'Äá»‹a lÃ½',
+    'Ngoáº¡i ngá»¯',
+    'Ngá»¯ vÄƒn',
   ];
 }
 
@@ -62,3 +62,4 @@ class DocumentType {
   static const String summary = 'summary';
   static const String reference = 'reference';
 }
+

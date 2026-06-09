@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 /// Material 3 Theme configuration for THPT Smart Learn
 class AppTheme {
@@ -341,3 +341,4 @@ class AppTheme {
     height: 1.27,
   );
 }
+

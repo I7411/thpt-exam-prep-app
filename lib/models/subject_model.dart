@@ -1,4 +1,4 @@
-/// Subject model (Môn học)
+﻿/// Subject model (MÃ´n há»c)
 class Subject {
   final String id;
   final String name;
@@ -80,3 +80,4 @@ class Subject {
   @override
   String toString() => 'Subject(id: $id, name: $name)';
 }
+

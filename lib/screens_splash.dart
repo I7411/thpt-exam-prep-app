@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     // Try to restore session
-    final authProvider = context.read<AuthProvider>();
+    final authProvider = context.read<AuthController>();
     await authProvider.restoreSession();
 
     if (!mounted) return;
@@ -76,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
             // Tagline
             Text(
-              'Ứng dụng ôn thi THPT',
+              'á»¨ng dá»¥ng Ã´n thi THPT',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Colors.white70,
               ),
@@ -98,3 +98,4 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+

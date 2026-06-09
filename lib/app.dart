@@ -2,52 +2,52 @@ import 'package:flutter/material.dart';
 
 import 'app_config.dart';
 import 'app_navigation.dart';
-import 'app_routes.dart';
+import 'core/routes/app_routes.dart';
 import 'app_theme.dart';
 
 import 'models.dart';
-import 'placeholder_screen.dart';
+import 'views/placeholder_screen.dart';
 
 // ================= ADMIN =================
-import 'screens/admin/admin_dashboard_screen.dart';
-import 'screens/admin/admin_document_management_screen.dart';
-import 'screens/admin/admin_exam_question_management_screen.dart';
-import 'screens/admin/admin_reports_screen.dart';
-import 'screens/admin/admin_user_management_screen.dart';
+import 'views/admin/admin_dashboard_screen.dart';
+import 'views/admin/admin_document_management_screen.dart';
+import 'views/admin/admin_exam_question_management_screen.dart';
+import 'views/admin/admin_reports_screen.dart';
+import 'views/admin/admin_user_management_screen.dart';
 
 // ================= EXAM =================
-import 'screens/exam/exam_list_screen.dart';
-import 'screens/exam/exam_result_screen.dart';
-import 'screens/exam/exam_taking_screen.dart';
+import 'views/exam/exam_list_screen.dart';
+import 'views/exam/exam_result_screen.dart';
+import 'views/exam/exam_taking_screen.dart';
 
 // ================= NOTIFICATION =================
-import 'screens/notification/notification_screen.dart';
+import 'views/notification/notification_screen.dart';
 
 // ================= PROGRESS =================
-import 'screens/progress/progress_screen.dart';
+import 'views/progress/progress_screen.dart';
 
 // ================= PROFILE =================
-import 'screens/profile/student_profile_screen.dart';
+import 'views/profile/student_profile_screen.dart';
 
 // ================= TEACHER =================
-import 'screens/teacher/teacher_class_detail_screen.dart';
-import 'screens/teacher/teacher_class_list_screen.dart';
-import 'screens/teacher/teacher_dashboard_screen.dart';
-import 'screens/teacher/teacher_profile_screen.dart';
-import 'screens/teacher/teacher_question_bank_screen.dart';
-import 'screens/teacher/teacher_schedule_screen.dart';
+import 'views/teacher/teacher_class_detail_screen.dart';
+import 'views/teacher/teacher_class_list_screen.dart';
+import 'views/teacher/teacher_dashboard_screen.dart';
+import 'views/teacher/teacher_profile_screen.dart';
+import 'views/teacher/teacher_question_bank_screen.dart';
+import 'views/teacher/teacher_schedule_screen.dart';
 
 // ================= NEW SCREENS =================
-import 'screens_new_document_detail.dart';
-import 'screens_new_document_list.dart';
+import 'views/document_detail_screen.dart';
+import 'views/document_list_screen.dart';
 
-import 'screens_new_forgot_password.dart';
-import 'screens_new_login.dart';
-import 'screens_new_register.dart';
+import 'views/forgot_password_screen.dart';
+import 'views/login_screen.dart';
+import 'views/register_screen.dart';
 
-import 'screens_new_splash.dart';
-import 'screens_new_student_main.dart';
-import 'screens_new_subject_list.dart';
+import 'views/splash_screen.dart';
+import 'views/student_main_screen.dart';
+import 'views/subject_list_screen.dart';
 
 class ThptSmartLearnApp extends StatefulWidget {
   const ThptSmartLearnApp({super.key});
@@ -156,7 +156,7 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           return MaterialPageRoute(
             builder: (_) => const PlaceholderScreen(
               routeName: 'Document Detail',
-              description: 'Dữ liệu tài liệu không hợp lệ.',
+              description: 'Dá»¯ liá»‡u tÃ i liá»‡u khÃ´ng há»£p lá»‡.',
             ),
             settings: settings,
           );
@@ -182,7 +182,7 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           return MaterialPageRoute(
             builder: (_) => const PlaceholderScreen(
               routeName: 'Taking Exam',
-              description: 'Thiếu dữ liệu đề thi.',
+              description: 'Thiáº¿u dá»¯ liá»‡u Ä‘á» thi.',
             ),
             settings: settings,
           );
@@ -312,3 +312,4 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
     }
   }
 }
+

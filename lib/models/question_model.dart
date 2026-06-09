@@ -1,6 +1,6 @@
-import 'models_answer_option.dart';
+﻿import 'answer_model.dart';
 
-/// Question model (Câu hỏi)
+/// Question model (CÃ¢u há»i)
 class Question {
   final String id;
   final String examId;
@@ -80,3 +80,4 @@ class Question {
   @override
   String toString() => 'Question(id: $id, orderNumber: $orderNumber)';
 }
+

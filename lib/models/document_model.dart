@@ -1,4 +1,4 @@
-/// Study document model (Tài liệu ôn tập)
+﻿/// Study document model (TÃ i liá»‡u Ã´n táº­p)
 class StudyDocument {
   final String id;
   final String topicId;
@@ -110,3 +110,4 @@ class StudyDocument {
   @override
   String toString() => 'StudyDocument(id: $id, title: $title)';
 }
+

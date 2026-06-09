@@ -1,4 +1,4 @@
-/// Progress statistic model (Tiến độ học tập)
+﻿/// Progress statistic model (Tiáº¿n Ä‘á»™ há»c táº­p)
 class ProgressStat {
   final String id;
   final String studentId;
@@ -98,3 +98,4 @@ class ProgressStat {
   @override
   String toString() => 'ProgressStat(id: $id, studentId: $studentId)';
 }
+

@@ -1,4 +1,4 @@
-/// Teacher class model (Lớp học của giáo viên)
+﻿/// Teacher class model (Lá»›p há»c cá»§a giÃ¡o viÃªn)
 class TeacherClass {
   final String id;
   final String teacherId;
@@ -74,3 +74,4 @@ class TeacherClass {
   @override
   String toString() => 'TeacherClass(id: $id, className: $className)';
 }
+

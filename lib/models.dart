@@ -1,4 +1,4 @@
-/// Central export file for all models - updated for MVC structure
+﻿/// Central export file for all models - updated for MVC structure
 library;
 
 export 'models/user_role.dart';
@@ -15,3 +15,4 @@ export 'models/progress_model.dart';
 export 'models/notification_model.dart';
 export 'models/teacher_class_model.dart';
 export 'models/admin_report_stat_model.dart';
+

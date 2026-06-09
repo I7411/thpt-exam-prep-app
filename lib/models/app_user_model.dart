@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'models_user_role.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_role.dart';
 
 /// Application user model
 class AppUser {
@@ -138,3 +138,4 @@ class AppUser {
   @override
   String toString() => 'AppUser(id: $id, email: $email, fullName: $fullName, role: ${role.toValue()})';
 }
+

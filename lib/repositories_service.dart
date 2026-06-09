@@ -1,1 +1,1 @@
-export 'repository_service.dart';
+﻿export 'repositories/repository_service.dart';

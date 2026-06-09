@@ -1,4 +1,4 @@
-/// Answer option model (Lựa chọn câu trả lời)
+﻿/// Answer option model (Lá»±a chá»n cÃ¢u tráº£ lá»i)
 class AnswerOption {
   final String id;
   final String label;
@@ -50,3 +50,4 @@ class AnswerOption {
   @override
   String toString() => 'AnswerOption(id: $id, label: $label)';
 }
+

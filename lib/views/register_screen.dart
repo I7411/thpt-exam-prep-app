@@ -1,0 +1,385 @@
+﻿import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/models.dart';
+import 'package:thpt_exam_prep_app/providers_auth.dart';
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  UserRole _selectedRole = UserRole.student;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+    }
+    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Email khÃ´ng há»£p lá»‡';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+    }
+    if (value.length < 6) {
+      return 'Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'XÃ¡c nháº­n máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+    }
+    if (value != _passwordController.text) {
+      return 'Máº­t kháº©u xÃ¡c nháº­n khÃ´ng khá»›p';
+    }
+    return null;
+  }
+
+  String? _validateName(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Há» tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+    }
+    if (value.length < 3) {
+      return 'Há» tÃªn pháº£i cÃ³ Ã­t nháº¥t 3 kÃ½ tá»±';
+    }
+    return null;
+  }
+
+  void _handleRegister(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final authProvider = context.read<AuthController>();
+    final navigator = Navigator.of(context);
+
+    final success = await authProvider.register(
+      _emailController.text.trim(),
+      _passwordController.text,
+      _confirmPasswordController.text,
+      _nameController.text.trim(),
+      _selectedRole,
+    );
+
+    if (success && mounted) {
+      final user = authProvider.currentUser;
+      if (user != null) {
+        String nextRoute = AppRoutes.studentHome;
+        if (user.role == UserRole.teacher) {
+          nextRoute = AppRoutes.teacherDashboard;
+        } else if (user.role == UserRole.admin) {
+          nextRoute = AppRoutes.adminDashboard;
+        }
+        navigator.pushReplacementNamed(nextRoute);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('ÄÄƒng kÃ½'),
+        centerTitle: true,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Consumer<AuthController>(
+          builder: (context, authProvider, _) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Logo & Title
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: theme.primaryColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.person_add,
+                              size: 40,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Táº¡o tÃ i khoáº£n má»›i',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Error Message Banner
+                    if (authProvider.errorMessage.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                authProvider.errorMessage,
+                                style: const TextStyle(color: Colors.red, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Input Field: Full Name
+                    Text(
+                      'Há» tÃªn',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _nameController,
+                      enabled: !authProvider.isLoading,
+                      decoration: InputDecoration(
+                        hintText: 'Nháº­p há» tÃªn Ä‘áº§y Ä‘á»§',
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      validator: _validateName,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Input Field: Email
+                    Text(
+                      'Email',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _emailController,
+                      enabled: !authProvider.isLoading,
+                      decoration: InputDecoration(
+                        hintText: 'Nháº­p email',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: _validateEmail,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Input Field: Role Selection
+                    Text(
+                      'Vai trÃ²',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonFormField<UserRole>(
+                        initialValue: _selectedRole,
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.security),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: UserRole.student,
+                            child: Text('ðŸ“š Há»c sinh'),
+                          ),
+                          DropdownMenuItem(
+                            value: UserRole.teacher,
+                            child: Text('ðŸ‘¨â€ðŸ« GiÃ¡o viÃªn'),
+                          ),
+                          DropdownMenuItem(
+                            value: UserRole.admin,
+                            child: Text('ðŸ” Quáº£n trá»‹ viÃªn'),
+                          ),
+                        ],
+                        onChanged: authProvider.isLoading
+                            ? null
+                            : (role) {
+                                if (role != null) {
+                                  setState(() {
+                                    _selectedRole = role;
+                                  });
+                                }
+                              },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Input Field: Password
+                    Text(
+                      'Máº­t kháº©u',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _passwordController,
+                      enabled: !authProvider.isLoading,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        hintText: 'Nháº­p máº­t kháº©u (tá»‘i thiá»ƒu 6 kÃ½ tá»±)',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      validator: _validatePassword,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Input Field: Confirm Password
+                    Text(
+                      'XÃ¡c nháº­n máº­t kháº©u',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      enabled: !authProvider.isLoading,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: InputDecoration(
+                        hintText: 'Nháº­p láº¡i máº­t kháº©u',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      validator: _validateConfirmPassword,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Action Button: Register
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: authProvider.isLoading ? null : () => _handleRegister(context),
+                        icon: authProvider.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.person_add),
+                        label: Text(
+                          authProvider.isLoading ? 'Äang Ä‘Äƒng kÃ½...' : 'ÄÄƒng kÃ½',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Footer Link: Navigate to Login
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('ÄÃ£ cÃ³ tÃ i khoáº£n? '),
+                          TextButton(
+                            onPressed: authProvider.isLoading
+                                ? null
+                                : () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
+                            child: const Text('ÄÄƒng nháº­p'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}

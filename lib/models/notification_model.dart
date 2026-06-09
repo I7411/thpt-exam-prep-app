@@ -1,4 +1,4 @@
-/// Notification type enumeration
+﻿/// Notification type enumeration
 enum NotificationType {
   info,
   warning,
@@ -18,7 +18,7 @@ enum NotificationType {
   }
 }
 
-/// Notification item model (Thông báo)
+/// Notification item model (ThÃ´ng bÃ¡o)
 class NotificationItem {
   final String id;
   final String userId;
@@ -100,3 +100,4 @@ class NotificationItem {
   @override
   String toString() => 'NotificationItem(id: $id, title: $title)';
 }
+

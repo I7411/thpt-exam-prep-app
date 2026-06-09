@@ -1,4 +1,4 @@
-/// Exam answer model (Câu trả lời của học sinh)
+﻿/// Exam answer model (CÃ¢u tráº£ lá»i cá»§a há»c sinh)
 class ExamAnswer {
   final String id;
   final String examAttemptId;
@@ -68,3 +68,4 @@ class ExamAnswer {
   @override
   String toString() => 'ExamAnswer(id: $id, isCorrect: $isCorrect)';
 }
+

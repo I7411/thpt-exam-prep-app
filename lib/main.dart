@@ -7,15 +7,14 @@ import 'firebase_options.dart';
 import 'app.dart';
 import 'app_navigation.dart';
 
-import 'data/local/notification_service.dart';
+import 'services/notification_service.dart';
 
-import 'providers/exam_provider.dart';
-import 'providers/admin_provider.dart';
-import 'providers/notification_provider.dart';
-import 'providers/progress_provider.dart';
-import 'providers/teacher_provider.dart';
-
-import 'providers_auth.dart';
+import 'controllers/exam_controller.dart';
+import 'controllers/admin_controller.dart';
+import 'controllers/notification_controller.dart';
+import 'controllers/progress_controller.dart';
+import 'controllers/teacher_controller.dart';
+import 'controllers/auth_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,27 +40,27 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(
-          create: (_) => AuthProvider(),
+          create: (_) => AuthController(),
         ),
 
         ChangeNotifierProvider(
-          create: (_) => ExamProvider(),
+          create: (_) => ExamController(),
         ),
 
         ChangeNotifierProvider(
-          create: (_) => AdminProvider(),
+          create: (_) => AdminController(),
         ),
 
         ChangeNotifierProvider(
-          create: (_) => ProgressProvider(),
+          create: (_) => ProgressController(),
         ),
 
         ChangeNotifierProvider(
-          create: (_) => NotificationProvider(),
+          create: (_) => NotificationController(),
         ),
 
         ChangeNotifierProvider(
-          create: (_) => TeacherProvider(),
+          create: (_) => TeacherController(),
         ),
       ],
 

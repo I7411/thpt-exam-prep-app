@@ -1,4 +1,4 @@
-/// Exam attempt model (Lần làm bài thi)
+﻿/// Exam attempt model (Láº§n lÃ m bÃ i thi)
 class ExamAttempt {
   final String id;
   final String examId;
@@ -98,3 +98,4 @@ class ExamAttempt {
   @override
   String toString() => 'ExamAttempt(id: $id, examId: $examId)';
 }
+

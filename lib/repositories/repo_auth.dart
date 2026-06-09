@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 
@@ -34,7 +34,7 @@ class FirebaseAuthRepository implements AuthRepository {
           final fallbackUser = AppUser(
             id: user.uid,
             email: email,
-            fullName: 'Người dùng chưa cấu hình',
+            fullName: 'NgÆ°á»i dÃ¹ng chÆ°a cáº¥u hÃ¬nh',
             role: UserRole.student,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
@@ -46,10 +46,10 @@ class FirebaseAuthRepository implements AuthRepository {
         }
       }
       return null;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow; // Let Provider handle specific Firebase exceptions
     } catch (e) {
-      throw Exception('Lỗi đăng nhập: $e');
+      throw Exception('Lá»—i Ä‘Äƒng nháº­p: $e');
     }
   }
 
@@ -78,10 +78,10 @@ class FirebaseAuthRepository implements AuthRepository {
         return newAppUser;
       }
       return null;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow; 
     } catch (e) {
-      throw Exception('Lỗi đăng ký: $e');
+      throw Exception('Lá»—i Ä‘Äƒng kÃ½: $e');
     }
   }
 
@@ -116,10 +116,10 @@ class FirebaseAuthRepository implements AuthRepository {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
       return true;
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       rethrow;
     } catch (e) {
-      throw Exception('Lỗi đặt lại mật khẩu: $e');
+      throw Exception('Lá»—i Ä‘áº·t láº¡i máº­t kháº©u: $e');
     }
   }
 }

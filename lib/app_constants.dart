@@ -1,4 +1,4 @@
-/// Application-wide constants
+﻿/// Application-wide constants
 class AppConstants {
   // App Info
   static const String appName = 'THPT Smart Learn';
@@ -23,30 +23,30 @@ class AppConstants {
 
   // Subject Names
   static const List<String> subjectNames = [
-    'Toán',
-    'Ngữ Văn',
-    'Tiếng Anh',
-    'Vật Lý',
-    'Hóa Học',
-    'Sinh Học',
-    'Lịch Sử',
-    'Địa Lý',
-    'Công Dân',
-    'Kinh Tế & Pháp Luật',
+    'ToÃ¡n',
+    'Ngá»¯ VÄƒn',
+    'Tiáº¿ng Anh',
+    'Váº­t LÃ½',
+    'HÃ³a Há»c',
+    'Sinh Há»c',
+    'Lá»‹ch Sá»­',
+    'Äá»‹a LÃ½',
+    'CÃ´ng DÃ¢n',
+    'Kinh Táº¿ & PhÃ¡p Luáº­t',
   ];
 
   // Mock Accounts
   static const Map<String, String> mockStudentAccount = {
     'email': 'student@example.com',
     'password': 'student123',
-    'name': 'Nguyễn Văn A',
+    'name': 'Nguyá»…n VÄƒn A',
     'role': roleStudent,
   };
 
   static const Map<String, String> mockTeacherAccount = {
     'email': 'teacher@gmail.com',
     'password': '123456',
-    'name': 'Trần Thị B',
+    'name': 'Tráº§n Thá»‹ B',
     'role': roleTeacher,
   };
 
@@ -73,5 +73,6 @@ class AppConstants {
   static const int notificationChannelId = 1;
   static const String notificationChannelName = 'THPT Smart Learn';
   static const String notificationChannelDescription =
-      'Thông báo từ ứng dụng THPT Smart Learn';
+      'ThÃ´ng bÃ¡o tá»« á»©ng dá»¥ng THPT Smart Learn';
 }
+

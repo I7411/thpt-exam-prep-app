@@ -1,0 +1,923 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:thpt_exam_prep_app/app_config.dart';
+import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/models.dart';
+import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/widgets_document_card.dart';
+import 'package:thpt_exam_prep_app/widgets_stat_card.dart';
+import 'package:thpt_exam_prep_app/widgets_subject_card.dart';
+
+class StudentHomeScreen extends StatefulWidget {
+  const StudentHomeScreen({super.key});
+
+  @override
+  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
+
+class _StudentHomeScreenState extends State<StudentHomeScreen> {
+  late final RepositoryService _repositoryService;
+  Future<_StudentHomeData>? _homeFuture;
+  String? _loadedStudentId;
+
+  @override
+  void initState() {
+    super.initState();
+    _repositoryService = RepositoryService.instance;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthController>(context);
+
+    if (authProvider.isLoading && authProvider.currentUser == null) {
+      return;
+    }
+
+    final studentId = _resolveStudentId(authProvider);
+    if (studentId == null) {
+      _loadedStudentId = null;
+      _homeFuture = null;
+      return;
+    }
+
+    if (_loadedStudentId != studentId) {
+      _loadedStudentId = studentId;
+      _homeFuture = _loadHomeData(studentId);
+    }
+  }
+
+  String? _resolveStudentId(AuthController authProvider) {
+    final currentUserId = authProvider.currentUser?.id.trim();
+    if (currentUserId != null && currentUserId.isNotEmpty) {
+      return currentUserId;
+    }
+
+    if (AppConfig.enableMockData) {
+      return 'student_001';
+    }
+
+    return null;
+  }
+
+  Future<_StudentHomeData> _loadHomeData(String studentId) async {
+    final subjects = await _repositoryService.subject.getAllSubjects();
+    final documents = await _repositoryService.document.getAllDocuments();
+    final exams = await _repositoryService.exam.getAllExams();
+    final progressStats =
+        await _repositoryService.progress.getProgressByStudent(studentId);
+    final averageScore =
+        await _repositoryService.progress.getAverageScoreByStudent(studentId);
+    final totalExams =
+        await _repositoryService.progress.getTotalExamsByStudent(studentId);
+    final examsPassed =
+        await _repositoryService.progress.getExamsPassedByStudent(studentId);
+
+    return _StudentHomeData(
+      subjects: subjects,
+      documents: documents,
+      exams: exams,
+      progressStats: progressStats,
+      averageScore: averageScore,
+      totalExams: totalExams,
+      examsPassed: examsPassed,
+    );
+  }
+
+  void _retryLoad() {
+    final studentId = _resolveStudentId(context.read<AuthController>());
+    if (studentId == null) {
+      setState(() {
+        _loadedStudentId = null;
+        _homeFuture = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _loadedStudentId = studentId;
+      _homeFuture = _loadHomeData(studentId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthController>(context);
+
+    if (authProvider.isLoading && authProvider.currentUser == null) {
+      return const SafeArea(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final studentId = _resolveStudentId(authProvider);
+    if (studentId == null) {
+      return SafeArea(child: _buildLoginRequiredState(context));
+    }
+
+    final future = _homeFuture ??= _loadHomeData(studentId);
+    _loadedStudentId ??= studentId;
+
+    final userName = _displayText(
+      authProvider.currentUser?.fullName.isNotEmpty == true
+          ? authProvider.currentUser?.fullName
+          : authProvider.currentUser?.email,
+      fallback: 'Học sinh',
+    );
+
+    return SafeArea(
+      child: FutureBuilder<_StudentHomeData>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return _buildErrorState(context, snapshot.error);
+          }
+
+          final data = snapshot.data;
+          if (data == null) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.inbox_outlined,
+              title: 'Chưa có dữ liệu trang chủ',
+              message: 'Hãy thử tải lại hoặc kiểm tra kết nối dữ liệu.',
+              actionText: 'Thử lại',
+              onActionTap: _retryLoad,
+            );
+          }
+
+          final recentDocuments = data.documents.toList()
+            ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+          final featuredSubjects = data.subjects.take(4).toList();
+          final highlightedDocuments = recentDocuments.take(3).toList();
+          final suggestedExams = data.exams
+              .where((exam) => exam.isPublished)
+              .toList()
+            ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+          final progressSummary = _ProgressSummary.from(data.progressStats);
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              _retryLoad();
+              await _homeFuture;
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildGreeting(context, userName),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context,
+                    title: 'Tiến độ hôm nay',
+                    actionText: null,
+                    onActionTap: null,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildProgressGrid(context, data, progressSummary),
+                  if (data.progressStats.isEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildCompactMessage(
+                      context,
+                      icon: Icons.insights_outlined,
+                      text:
+                          'Chưa có dữ liệu tiến độ. Hãy đọc tài liệu hoặc làm đề thi để bắt đầu.',
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context,
+                    title: 'Môn học chính',
+                    actionText: 'Xem tất cả',
+                    onActionTap: () {
+                      Navigator.pushNamed(context, AppRoutes.studentSubjects);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  if (featuredSubjects.isEmpty)
+                    _buildSectionEmptyState(
+                      context,
+                      icon: Icons.subject_outlined,
+                      title: 'Chưa có môn học nào',
+                      message:
+                          'Danh sách môn học sẽ hiển thị tại đây khi có dữ liệu.',
+                    )
+                  else
+                    _buildSubjectGrid(context, featuredSubjects),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context,
+                    title: 'Đề thi gợi ý',
+                    actionText: 'Xem tất cả',
+                    onActionTap: () {
+                      Navigator.pushNamed(context, AppRoutes.studentExams);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  if (suggestedExams.isEmpty)
+                    _buildSectionEmptyState(
+                      context,
+                      icon: Icons.quiz_outlined,
+                      title: 'Chưa có đề thi gợi ý',
+                      message: 'Các đề thi mới sẽ xuất hiện tại đây.',
+                    )
+                  else
+                    _buildSuggestedExams(
+                      context,
+                      exams: suggestedExams.take(3).toList(),
+                      subjects: data.subjects,
+                    ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader(
+                    context,
+                    title: 'Tài liệu mới',
+                    actionText: 'Xem tất cả',
+                    onActionTap: () {
+                      Navigator.pushNamed(context, AppRoutes.studentDocuments);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  if (highlightedDocuments.isEmpty)
+                    _buildSectionEmptyState(
+                      context,
+                      icon: Icons.description_outlined,
+                      title: 'Chưa có tài liệu mới',
+                      message: 'Tài liệu học tập mới sẽ hiển thị tại đây.',
+                    )
+                  else
+                    ...highlightedDocuments.map((document) {
+                      final subjectName =
+                          _findSubjectName(data.subjects, document.subjectId);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: SizedBox(
+                          height: 168,
+                          child: DocumentCard(
+                            title: _displayText(document.title),
+                            subject: subjectName,
+                            duration:
+                                '${_estimateReadingTime(document)} phút đọc',
+                            preview: _displayText(document.description),
+                            isMarked: false,
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.studentDocumentDetail,
+                                arguments: document,
+                              );
+                            },
+                            onMarkTap: () {},
+                          ),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProgressGrid(
+    BuildContext context,
+    _StudentHomeData data,
+    _ProgressSummary progressSummary,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 700 ? 4 : 2;
+        final aspectRatio = columns == 4 ? 1.15 : 1.0;
+        return GridView.count(
+          crossAxisCount: columns,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: aspectRatio,
+          children: [
+            StatCard(
+              title: 'Tài liệu đã đọc',
+              value: '${progressSummary.totalDocumentsRead}',
+              icon: Icons.description,
+              color: Colors.blue,
+            ),
+            StatCard(
+              title: 'Đề thi đã làm',
+              value: '${data.totalExams}',
+              icon: Icons.quiz,
+              color: Colors.orange,
+            ),
+            StatCard(
+              title: 'Đã đạt',
+              value: '${data.examsPassed}',
+              icon: Icons.check_circle,
+              color: Colors.green,
+            ),
+            StatCard(
+              title: 'Điểm TB',
+              value: data.averageScore.toStringAsFixed(1),
+              icon: Icons.star,
+              color: Colors.amber,
+            ),
+            StatCard(
+              title: 'Chuỗi ngày',
+              value: '${progressSummary.maxStreakDays}',
+              icon: Icons.local_fire_department,
+              color: Colors.red,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSubjectGrid(BuildContext context, List<Subject> subjects) {
+    return GridView.builder(
+      itemCount: subjects.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 190,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 0.92,
+      ),
+      itemBuilder: (context, index) {
+        final subject = subjects[index];
+        final subjectName = _displayText(subject.name);
+        final config = _subjectCardConfig(subjectName);
+        return SubjectCard(
+          name: subjectName,
+          icon: config.icon,
+          color: config.color,
+          progress: '${subject.totalDocuments} tài liệu',
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              AppRoutes.studentDocuments,
+              arguments: subject.id,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSuggestedExams(
+    BuildContext context, {
+    required List<Exam> exams,
+    required List<Subject> subjects,
+  }) {
+    return SizedBox(
+      height: 178,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: exams.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final exam = exams[index];
+          final subjectName = _findSubjectName(subjects, exam.subjectId);
+          return _buildExamCard(
+            context,
+            exam: exam,
+            subject: subjectName,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGreeting(BuildContext context, String userName) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.indigo.shade600,
+            Colors.blue.shade500,
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Xin chào, $userName!',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.studentNotifications);
+                },
+                icon: const Icon(Icons.notifications_none, color: Colors.white),
+                tooltip: 'Thông báo',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Hôm nay là ngày tốt để học thêm một chút và giữ nhịp tiến độ.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withOpacity(0.9),
+                  height: 1.4,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    BuildContext context, {
+    required String title,
+    required String? actionText,
+    required VoidCallback? onActionTap,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+        if (actionText != null)
+          TextButton(
+            onPressed: onActionTap,
+            child: Text(actionText),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildExamCard(
+    BuildContext context, {
+    required Exam exam,
+    required String subject,
+  }) {
+    return Container(
+      width: 220,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.deepPurple.withOpacity(0.18),
+            Colors.blue.withOpacity(0.12),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.deepPurple.withOpacity(0.22),
+        ),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.studentExamTaking,
+            arguments: exam,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.quiz, color: Colors.deepPurple, size: 30),
+              const SizedBox(height: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      _displayText(exam.title, fallback: 'Đề thi thử'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Chip(
+                          visualDensity: VisualDensity.compact,
+                          label: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 112),
+                            child: Text(
+                              subject,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          labelStyle: const TextStyle(
+                            color: Colors.deepPurple,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          backgroundColor: Colors.deepPurple.withOpacity(0.12),
+                          side: BorderSide.none,
+                        ),
+                        Chip(
+                          visualDensity: VisualDensity.compact,
+                          label: Text('${exam.durationMinutes} phút'),
+                          backgroundColor: Colors.white.withOpacity(0.65),
+                          side: BorderSide.none,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(BuildContext context, Object? error) {
+    return _buildEmptyState(
+      context,
+      icon: Icons.error_outline,
+      title: 'Lỗi tải trang chủ',
+      message: '$error',
+      actionText: 'Thử lại',
+      onActionTap: _retryLoad,
+    );
+  }
+
+  Widget _buildLoginRequiredState(BuildContext context) {
+    return _buildEmptyState(
+      context,
+      icon: Icons.lock_outline,
+      title: 'Bạn cần đăng nhập',
+      message: 'Vui lòng đăng nhập để xem tiến độ học tập của bạn.',
+      actionText: 'Đăng nhập',
+      actionIcon: Icons.login,
+      onActionTap: () {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (route) => false,
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+    required String? actionText,
+    IconData actionIcon = Icons.refresh,
+    required VoidCallback? onActionTap,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 56, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[700],
+                    height: 1.4,
+                  ),
+            ),
+            if (actionText != null && onActionTap != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onActionTap,
+                icon: Icon(actionIcon),
+                label: Text(actionText),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionEmptyState(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.grey[500]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[700],
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactMessage(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.indigo.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Colors.indigo),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.indigo.shade700,
+                    height: 1.35,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _estimateReadingTime(StudyDocument document) {
+    final sourceText =
+        document.content.isNotEmpty ? document.content : document.description;
+    final estimatedMinutes = (sourceText.length / 500).ceil();
+    return estimatedMinutes.clamp(5, 30);
+  }
+
+  String _findSubjectName(List<Subject> subjects, String subjectId) {
+    for (final subject in subjects) {
+      if (subject.id == subjectId) {
+        return _displayText(subject.name);
+      }
+    }
+    return 'Môn học';
+  }
+
+  _SubjectCardConfig _subjectCardConfig(String subjectName) {
+    final normalized = _normalizeSubjectName(subjectName);
+
+    switch (normalized) {
+      case 'toán':
+      case 'toan':
+        return const _SubjectCardConfig(Icons.calculate, Colors.blue);
+      case 'ngữ văn':
+      case 'ngu van':
+        return const _SubjectCardConfig(Icons.menu_book, Colors.red);
+      case 'tiếng anh':
+      case 'tieng anh':
+        return const _SubjectCardConfig(Icons.language, Colors.green);
+      case 'vật lý':
+      case 'vat ly':
+        return const _SubjectCardConfig(Icons.science, Colors.purple);
+      case 'hóa học':
+      case 'hoa hoc':
+        return const _SubjectCardConfig(Icons.science, Colors.orange);
+      case 'sinh học':
+      case 'sinh hoc':
+        return const _SubjectCardConfig(Icons.biotech, Colors.pink);
+      case 'lịch sử':
+      case 'lich su':
+        return const _SubjectCardConfig(Icons.history_edu, Colors.brown);
+      case 'địa lý':
+      case 'dia ly':
+        return const _SubjectCardConfig(Icons.public, Colors.teal);
+      case 'gdcd':
+      case 'giáo dục công dân':
+      case 'giao duc cong dan':
+      case 'giáo dục kinh tế và pháp luật':
+      case 'giao duc kinh te va phap luat':
+        return const _SubjectCardConfig(Icons.gavel, Colors.indigo);
+      default:
+        return const _SubjectCardConfig(Icons.subject, Colors.grey);
+    }
+  }
+
+  String _normalizeSubjectName(String value) {
+    return _displayText(value)
+        .toLowerCase()
+        .trim()
+        .replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String _displayText(String? value, {String fallback = ''}) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return fallback;
+    }
+
+    return _repairMojibake(trimmed).trim();
+  }
+
+  String _repairMojibake(String value) {
+    var current = value;
+
+    for (var i = 0; i < 2; i++) {
+      if (!_looksLikeMojibake(current)) {
+        break;
+      }
+
+      final decoded = _tryDecodeUtf8AsLatin1(current);
+      if (decoded == null || _mojibakeScore(decoded) >= _mojibakeScore(current)) {
+        break;
+      }
+
+      current = decoded;
+    }
+
+    return current;
+  }
+
+  bool _looksLikeMojibake(String value) => _mojibakeScore(value) > 0;
+
+  int _mojibakeScore(String value) {
+    const markers = <int>{
+      0x00C2,
+      0x00C3,
+      0x00C4,
+      0x00C6,
+      0x00C5,
+      0x00E2,
+      0x00F0,
+      0x00BE,
+      0x00BA,
+      0x00BB,
+      0x00BC,
+      0x00BD,
+      0x0178,
+      0x201A,
+      0x201E,
+      0x2020,
+      0x2021,
+      0x2030,
+      0x2039,
+      0x0152,
+      0x017D,
+      0x2018,
+      0x2019,
+      0x201C,
+      0x201D,
+      0x2022,
+      0x2013,
+      0x2014,
+      0x02DC,
+      0x2122,
+      0x0161,
+      0x203A,
+      0x0153,
+      0x017E,
+    };
+
+    var score = 0;
+    for (final rune in value.runes) {
+      if (markers.contains(rune) || (rune >= 0x0080 && rune <= 0x009F)) {
+        score++;
+      }
+    }
+    return score;
+  }
+
+  String? _tryDecodeUtf8AsLatin1(String value) {
+    try {
+      return utf8.decode(latin1.encode(value));
+    } on FormatException {
+      return null;
+    } on ArgumentError {
+      return null;
+    }
+  }
+}
+
+class _StudentHomeData {
+  final List<Subject> subjects;
+  final List<StudyDocument> documents;
+  final List<Exam> exams;
+  final List<ProgressStat> progressStats;
+  final double averageScore;
+  final int totalExams;
+  final int examsPassed;
+
+  const _StudentHomeData({
+    required this.subjects,
+    required this.documents,
+    required this.exams,
+    required this.progressStats,
+    required this.averageScore,
+    required this.totalExams,
+    required this.examsPassed,
+  });
+}
+
+class _ProgressSummary {
+  final int totalDocumentsRead;
+  final int maxStreakDays;
+
+  const _ProgressSummary({
+    required this.totalDocumentsRead,
+    required this.maxStreakDays,
+  });
+
+  factory _ProgressSummary.from(List<ProgressStat> progressStats) {
+    var totalDocumentsRead = 0;
+    var maxStreakDays = 0;
+
+    for (final stat in progressStats) {
+      totalDocumentsRead += stat.totalDocumentsRead;
+      if (stat.streakDays > maxStreakDays) {
+        maxStreakDays = stat.streakDays;
+      }
+    }
+
+    return _ProgressSummary(
+      totalDocumentsRead: totalDocumentsRead,
+      maxStreakDays: maxStreakDays,
+    );
+  }
+}
+
+class _SubjectCardConfig {
+  final IconData icon;
+  final Color color;
+
+  const _SubjectCardConfig(this.icon, this.color);
+}

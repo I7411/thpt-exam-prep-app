@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin(BuildContext context) async {
-    final authProvider = context.read<AuthProvider>();
+    final authProvider = context.read<AuthController>();
     final success = await authProvider.login(
       _emailController.text.trim(),
       _passwordController.text,
@@ -54,12 +54,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đăng nhập'),
+        title: const Text('ÄÄƒng nháº­p'),
         centerTitle: true,
         elevation: 0,
       ),
       body: SafeArea(
-        child: Consumer<AuthProvider>(
+        child: Consumer<AuthController>(
           builder: (context, authProvider, _) {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Ứng dụng ôn thi THPT',
+                          'á»¨ng dá»¥ng Ã´n thi THPT',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey,
                           ),
@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     enabled: !authProvider.isLoading,
                     decoration: InputDecoration(
-                      hintText: 'Nhập email',
+                      hintText: 'Nháº­p email',
                       prefixIcon: const Icon(Icons.email),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -149,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Password field
                   Text(
-                    'Mật khẩu',
+                    'Máº­t kháº©u',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -158,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     enabled: !authProvider.isLoading,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      hintText: 'Nhập mật khẩu',
+                      hintText: 'Nháº­p máº­t kháº©u',
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -184,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: authProvider.isLoading
                           ? null
                           : () => Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
-                      child: const Text('Quên mật khẩu?'),
+                      child: const Text('QuÃªn máº­t kháº©u?'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -201,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 24,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                          : const Text('Đăng nhập'),
+                          : const Text('ÄÄƒng nháº­p'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -211,12 +211,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Chưa có tài khoản? '),
+                        const Text('ChÆ°a cÃ³ tÃ i khoáº£n? '),
                         TextButton(
                           onPressed: authProvider.isLoading
                               ? null
                               : () => Navigator.of(context).pushNamed(AppRoutes.register),
-                          child: const Text('Đăng ký ngay'),
+                          child: const Text('ÄÄƒng kÃ½ ngay'),
                         ),
                       ],
                     ),
@@ -239,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Icon(Icons.info, color: Colors.blue, size: 16),
                             const SizedBox(width: 8),
                             Text(
-                              'Tài khoản demo',
+                              'TÃ i khoáº£n demo',
                               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                 color: Colors.blue,
                                 fontWeight: FontWeight.bold,
@@ -249,17 +249,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          '📚 Học sinh: student@example.com / 123456',
+                          'ðŸ“š Há»c sinh: student@example.com / 123456',
                           style: TextStyle(fontSize: 12),
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          '👨‍🏫 Giáo viên: teacher@gmail.com / 123456',
+                          'ðŸ‘¨â€ðŸ« GiÃ¡o viÃªn: teacher@gmail.com / 123456',
                           style: TextStyle(fontSize: 12),
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          '🔐 Admin: admin@gmail.com / 123456',
+                          'ðŸ” Admin: admin@gmail.com / 123456',
                           style: TextStyle(fontSize: 12),
                         ),
                       ],
@@ -274,3 +274,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
