@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:thpt_exam_prep_app/mock_documents.dart';
 import 'package:thpt_exam_prep_app/mock_exams.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -118,7 +118,7 @@ class AdminController extends ChangeNotifier {
       final status = document.updatedAt != null ? 'Updated' : 'Draft';
       return AdminDocumentSummary(
         document: document,
-        subjectName: subject?.name ?? 'MÃ´n há»c',
+        subjectName: subject?.name ?? 'Môn học',
         status: status,
       );
     }).toList();

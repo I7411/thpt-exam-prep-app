@@ -156,7 +156,7 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           return MaterialPageRoute(
             builder: (_) => const PlaceholderScreen(
               routeName: 'Document Detail',
-              description: 'Dá»¯ liá»‡u tÃ i liá»‡u khÃ´ng há»£p lá»‡.',
+              description: 'Dữ liệu tài liệu không hợp lệ.',
             ),
             settings: settings,
           );
@@ -182,7 +182,7 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           return MaterialPageRoute(
             builder: (_) => const PlaceholderScreen(
               routeName: 'Taking Exam',
-              description: 'Thiáº¿u dá»¯ liá»‡u Ä‘á» thi.',
+              description: 'Thiếu dữ liệu đề thi.',
             ),
             settings: settings,
           );

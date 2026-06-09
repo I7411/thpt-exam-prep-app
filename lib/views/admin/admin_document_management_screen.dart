@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
 
@@ -28,7 +28,7 @@ class _AdminDocumentManagementScreenState extends State<AdminDocumentManagementS
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quáº£n lÃ½ tÃ i liá»‡u'),
+        title: const Text('Quản lý tài liệu'),
         actions: [
           IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
         ],
@@ -44,7 +44,7 @@ class _AdminDocumentManagementScreenState extends State<AdminDocumentManagementS
                   _SummaryCard(provider: provider),
                   const SizedBox(height: 16),
                   if (provider.documentSummaries.isEmpty)
-                    const _EmptyState(message: 'ChÆ°a cÃ³ tÃ i liá»‡u nÃ o')
+                    const _EmptyState(message: 'Chưa có tài liệu nào')
                   else
                     ...provider.documentSummaries.map((item) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -54,9 +54,9 @@ class _AdminDocumentManagementScreenState extends State<AdminDocumentManagementS
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thÃªm tÃ i liá»‡u'))),
+        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thêm tài liệu'))),
         icon: const Icon(Icons.add),
-        label: const Text('ThÃªm tÃ i liá»‡u'),
+        label: const Text('Thêm tài liệu'),
       ),
     );
   }
@@ -71,11 +71,11 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _MiniStat(label: 'Tá»•ng tÃ i liá»‡u', value: provider.documents.length.toString(), color: Colors.blue)),
+        Expanded(child: _MiniStat(label: 'Tổng tài liệu', value: provider.documents.length.toString(), color: Colors.blue)),
         const SizedBox(width: 8),
-        Expanded(child: _MiniStat(label: 'MÃ´n', value: provider.subjects.length.toString(), color: Colors.green)),
+        Expanded(child: _MiniStat(label: 'Môn', value: provider.subjects.length.toString(), color: Colors.green)),
         const SizedBox(width: 8),
-        Expanded(child: _MiniStat(label: 'Cáº­p nháº­t', value: provider.documentSummaries.where((item) => item.status == 'Updated').length.toString(), color: Colors.orange)),
+        Expanded(child: _MiniStat(label: 'Cập nhật', value: provider.documentSummaries.where((item) => item.status == 'Updated').length.toString(), color: Colors.orange)),
       ],
     );
   }
@@ -128,14 +128,14 @@ class _DocumentCard extends StatelessWidget {
             children: [
               _Tag(label: item.subjectName, color: Colors.blue),
               _Tag(label: item.status, color: item.status == 'Updated' ? Colors.green : Colors.orange),
-              _Tag(label: 'Cáº­p nháº­t: ${item.document.updatedAt?.toLocal().toString().split('.').first ?? '-'}', color: Colors.purple),
+              _Tag(label: 'Cập nhật: ${item.document.updatedAt?.toLocal().toString().split('.').first ?? '-'}', color: Colors.purple),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sá»­a')),
-              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('XÃ³a')),
+              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sửa')),
+              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('Xóa')),
             ],
           ),
         ],

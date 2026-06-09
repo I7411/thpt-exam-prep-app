@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -39,7 +39,7 @@ class _ExamListScreenState extends State<ExamListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thi thá»­'),
+        title: const Text('Thi thử'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -51,7 +51,7 @@ class _ExamListScreenState extends State<ExamListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Lá»—i táº£i Ä‘á» thi: ${snapshot.error}'));
+            return Center(child: Text('Lỗi tải đề thi: ${snapshot.error}'));
           }
 
           final data = snapshot.data;
@@ -81,7 +81,7 @@ class _ExamListScreenState extends State<ExamListScreen> {
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return FilterChip(
-                        label: const Text('Táº¥t cáº£'),
+                        label: const Text('Tất cả'),
                         selected: _selectedSubjectId == null,
                         onSelected: (_) {
                           setState(() {
@@ -117,7 +117,7 @@ class _ExamListScreenState extends State<ExamListScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'ChÆ°a cÃ³ Ä‘á» thi phÃ¹ há»£p',
+                              'Chưa có đề thi phù hợp',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
@@ -129,7 +129,7 @@ class _ExamListScreenState extends State<ExamListScreen> {
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final exam = filteredExams[index];
-                          final subjectName = subjectById[exam.subjectId]?.name ?? 'MÃ´n há»c';
+                          final subjectName = subjectById[exam.subjectId]?.name ?? 'Môn học';
                           return _ExamCard(
                             exam: exam,
                             subjectName: subjectName,
@@ -154,12 +154,12 @@ class _ExamListScreenState extends State<ExamListScreen> {
 
   String _estimateDifficulty(Exam exam) {
     if (exam.durationMinutes <= 60 || exam.questionCount <= 4) {
-      return 'Dá»…';
+      return 'Dễ';
     }
     if (exam.durationMinutes <= 90) {
-      return 'Trung bÃ¬nh';
+      return 'Trung bình';
     }
-    return 'KhÃ³';
+    return 'Khó';
   }
 }
 
@@ -238,8 +238,8 @@ class _ExamCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _InfoChip(label: '${exam.questionCount} cÃ¢u'),
-                _InfoChip(label: '${exam.durationMinutes} phÃºt'),
+                _InfoChip(label: '${exam.questionCount} câu'),
+                _InfoChip(label: '${exam.durationMinutes} phút'),
                 _InfoChip(label: difficulty),
               ],
             ),
@@ -258,7 +258,7 @@ class _ExamCard extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onStart,
                 icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Báº¯t Ä‘áº§u lÃ m bÃ i'),
+                label: const Text('Bắt đầu làm bài'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(

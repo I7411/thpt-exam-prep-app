@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
@@ -30,7 +30,7 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NgÃ¢n hÃ ng cÃ¢u há»i'),
+        title: const Text('Ngân hàng câu hỏi'),
         actions: [
           IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
         ],
@@ -46,7 +46,7 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
                   _buildSummary(teacherProvider),
                   const SizedBox(height: 16),
                   if (teacherProvider.questionBank.isEmpty)
-                    const _EmptyState(message: 'ChÆ°a cÃ³ cÃ¢u há»i nÃ o trong ngÃ¢n hÃ ng')
+                    const _EmptyState(message: 'Chưa có câu hỏi nào trong ngân hàng')
                   else
                     ...teacherProvider.questionBank.map(
                       (entry) => Padding(
@@ -65,9 +65,9 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _MiniStat(label: 'CÃ¢u há»i', value: teacherProvider.questionBank.length.toString(), color: Colors.blue),
-        _MiniStat(label: 'Äá» liÃªn quan', value: teacherProvider.assignedExams.length.toString(), color: Colors.orange),
-        _MiniStat(label: 'MÃ´n phá»¥ trÃ¡ch', value: teacherProvider.subjects.length.toString(), color: Colors.green),
+        _MiniStat(label: 'Câu hỏi', value: teacherProvider.questionBank.length.toString(), color: Colors.blue),
+        _MiniStat(label: 'Đề liên quan', value: teacherProvider.assignedExams.length.toString(), color: Colors.orange),
+        _MiniStat(label: 'Môn phụ trách', value: teacherProvider.subjects.length.toString(), color: Colors.green),
       ],
     );
   }
@@ -118,7 +118,7 @@ class _QuestionCard extends StatelessWidget {
                   children: [
                     Text(entry.question.content, style: const TextStyle(fontWeight: FontWeight.w600, height: 1.4)),
                     const SizedBox(height: 8),
-                    Text('${entry.subject.name} â€¢ ${entry.exam.title}', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                    Text('${entry.subject.name} • ${entry.exam.title}', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
                   ],
                 ),
               ),
@@ -131,7 +131,7 @@ class _QuestionCard extends StatelessWidget {
             children: [
               _Tag(label: entry.difficulty, color: Colors.blue),
               _Tag(label: entry.status, color: entry.exam.isPublished ? Colors.green : Colors.orange),
-              _Tag(label: 'ÄÃ¡p Ã¡n: ${entry.correctAnswer}', color: Colors.purple),
+              _Tag(label: 'Đáp án: ${entry.correctAnswer}', color: Colors.purple),
             ],
           ),
         ],

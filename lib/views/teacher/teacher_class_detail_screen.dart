@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
@@ -35,7 +35,7 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chi tiáº¿t lá»›p'),
+        title: const Text('Chi tiết lớp'),
         actions: [
           IconButton(
             onPressed: _loadData,
@@ -52,7 +52,7 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     children: const [
-                      _EmptyState(message: 'KhÃ´ng tÃ¬m tháº¥y lá»›p há»c phÃ¹ há»£p'),
+                      _EmptyState(message: 'Không tìm thấy lớp học phù hợp'),
                     ],
                   )
                 : ListView(
@@ -113,10 +113,10 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
         childAspectRatio: 1.8,
       ),
       children: [
-        _DetailStatCard(label: 'Há»c sinh', value: teacherClass.studentCount.toString(), icon: Icons.groups, color: Colors.blue),
-        _DetailStatCard(label: 'Tiáº¿n Ä‘á»™ TB', value: '${averageProgress.toStringAsFixed(0)}%', icon: Icons.insights, color: Colors.green),
-        _DetailStatCard(label: 'Äiá»ƒm TB', value: averageScore.toStringAsFixed(1), icon: Icons.grade, color: Colors.orange),
-        _DetailStatCard(label: 'Äáº¡t bÃ i', value: passed.toString(), icon: Icons.verified, color: Colors.purple),
+        _DetailStatCard(label: 'Học sinh', value: teacherClass.studentCount.toString(), icon: Icons.groups, color: Colors.blue),
+        _DetailStatCard(label: 'Tiến độ TB', value: '${averageProgress.toStringAsFixed(0)}%', icon: Icons.insights, color: Colors.green),
+        _DetailStatCard(label: 'Điểm TB', value: averageScore.toStringAsFixed(1), icon: Icons.grade, color: Colors.orange),
+        _DetailStatCard(label: 'Đạt bài', value: passed.toString(), icon: Icons.verified, color: Colors.purple),
       ],
     );
   }
@@ -126,10 +126,10 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Há»c sinh tiÃªu biá»ƒu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Học sinh tiêu biểu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         if (students.isEmpty)
-          const _EmptyState(message: 'ChÆ°a cÃ³ dá»¯ liá»‡u há»c sinh máº«u')
+          const _EmptyState(message: 'Chưa có dữ liệu học sinh mẫu')
         else
           ...students.map(
             (student) => Padding(
@@ -158,13 +158,13 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
                             ],
                           ),
                         ),
-                        Text('${student.averageScore.toStringAsFixed(1)} Ä‘', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text('${student.averageScore.toStringAsFixed(1)} đ', style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 12),
                     LinearProgressIndicator(value: student.completionPercentage / 100),
                     const SizedBox(height: 8),
-                    Text('${student.completionPercentage.toStringAsFixed(0)}% hoÃ n thÃ nh â€¢ ${student.totalExamsTaken} bÃ i â€¢ ${student.streakDays} ngÃ y liÃªn tiáº¿p'),
+                    Text('${student.completionPercentage.toStringAsFixed(0)}% hoàn thành • ${student.totalExamsTaken} bài • ${student.streakDays} ngày liên tiếp'),
                   ],
                 ),
               ),
@@ -179,10 +179,10 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Äá» liÃªn quan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Đề liên quan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         if (exams.isEmpty)
-          const _EmptyState(message: 'ChÆ°a cÃ³ Ä‘á» thi nÃ o cho mÃ´n nÃ y')
+          const _EmptyState(message: 'Chưa có đề thi nào cho môn này')
         else
           ...exams.map(
             (exam) => Padding(
@@ -207,7 +207,7 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
                           children: [
                             Text(exam.title, style: const TextStyle(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 4),
-                            Text('${exam.questionCount} cÃ¢u â€¢ ${exam.durationMinutes} phÃºt'),
+                            Text('${exam.questionCount} câu • ${exam.durationMinutes} phút'),
                           ],
                         ),
                       ),
@@ -222,7 +222,7 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
         FilledButton.icon(
           onPressed: () => Navigator.pushNamed(context, AppRoutes.teacherQuestions),
           icon: const Icon(Icons.quiz),
-          label: const Text('Má»Ÿ ngÃ¢n hÃ ng cÃ¢u há»i'),
+          label: const Text('Mở ngân hàng câu hỏi'),
         ),
       ],
     );

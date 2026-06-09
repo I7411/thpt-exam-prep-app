@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -26,21 +26,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Email không được để trống';
     }
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     if (!emailRegex.hasMatch(value)) {
-      return 'Email khÃ´ng há»£p lá»‡';
+      return 'Email không hợp lệ';
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Mật khẩu không được để trống';
     }
     if (value.length < 6) {
-      return 'Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±';
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
     }
     return null;
   }
@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'á»¨ng dá»¥ng Ã´n thi THPT',
+                            'Ứng dụng ôn thi THPT',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.grey,
                             ),
@@ -167,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _emailController,
                       enabled: !authProvider.isLoading,
                       decoration: InputDecoration(
-                        hintText: 'Nháº­p email',
+                        hintText: 'Nhập email',
                         prefixIcon: const Icon(Icons.email_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Password field
                     Text(
-                      'Máº­t kháº©u',
+                      'Mật khẩu',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       enabled: !authProvider.isLoading,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        hintText: 'Nháº­p máº­t kháº©u',
+                        hintText: 'Nhập mật khẩu',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: authProvider.isLoading
                             ? null
                             : () => Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
-                        child: const Text('QuÃªn máº­t kháº©u?'),
+                        child: const Text('Quên mật khẩu?'),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -242,7 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                             : const Icon(Icons.login),
                         label: Text(
-                          authProvider.isLoading ? 'Äang Ä‘Äƒng nháº­p...' : 'ÄÄƒng nháº­p',
+                          authProvider.isLoading ? 'Đang đăng nhập...' : 'Đăng nhập',
                         ),
                       ),
                     ),
@@ -255,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'Hoáº·c thá»­ demo',
+                            'Hoặc thử demo',
                             style: theme.textTheme.labelMedium?.copyWith(
                               color: Colors.grey,
                             ),
@@ -270,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildDemoButton(
                       context,
                       authProvider,
-                      'ðŸ“š Há»c sinh Demo',
+                      '📚 Học sinh Demo',
                       'student.demo@thptsmartlearn.vn',
                       '123456',
                       Colors.blue,
@@ -279,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildDemoButton(
                       context,
                       authProvider,
-                      'ðŸ‘¨â€ðŸ« GiÃ¡o viÃªn Demo',
+                      '👨‍🏫 Giáo viên Demo',
                       'teacher.demo@thptsmartlearn.vn',
                       '123456',
                       Colors.orange,
@@ -288,7 +288,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildDemoButton(
                       context,
                       authProvider,
-                      'ðŸ” Admin Demo',
+                      '🔐 Admin Demo',
                       'admin.demo@thptsmartlearn.vn',
                       '123456',
                       Colors.red,
@@ -300,12 +300,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('ChÆ°a cÃ³ tÃ i khoáº£n? '),
+                          const Text('Chưa có tài khoản? '),
                           TextButton(
                             onPressed: authProvider.isLoading
                                 ? null
                                 : () => Navigator.of(context).pushNamed(AppRoutes.register),
-                            child: const Text('ÄÄƒng kÃ½ ngay'),
+                            child: const Text('Đăng ký ngay'),
                           ),
                         ],
                       ),

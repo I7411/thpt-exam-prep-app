@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
@@ -39,7 +39,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Há»“ sÆ¡ giÃ¡o viÃªn'),
+        title: const Text('Hồ sơ giáo viên'),
         actions: [
           IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
         ],
@@ -57,35 +57,35 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   _buildStats(teacherProvider),
                   const SizedBox(height: 16),
                   _buildInfoCard(
-                    title: 'ThÃ´ng tin tÃ i khoáº£n',
+                    title: 'Thông tin tài khoản',
                     children: [
                       _InfoRow(label: 'Email', value: teacher?.email ?? '-'),
-                      _InfoRow(label: 'TrÆ°á»ng', value: teacher?.schoolName ?? '-'),
-                      _InfoRow(label: 'Vai trÃ²', value: teacher?.role.getDisplayName() ?? '-'),
+                      _InfoRow(label: 'Trường', value: teacher?.schoolName ?? '-'),
+                      _InfoRow(label: 'Vai trò', value: teacher?.role.getDisplayName() ?? '-'),
                     ],
                   ),
                   const SizedBox(height: 16),
                   _buildInfoCard(
-                    title: 'Thao tÃ¡c nhanh',
+                    title: 'Thao tác nhanh',
                     children: [
                       _ActionRow(
                         icon: Icons.class_,
-                        title: 'Danh sÃ¡ch lá»›p',
+                        title: 'Danh sách lớp',
                         onTap: () => Navigator.pushNamed(context, AppRoutes.teacherClasses),
                       ),
                       _ActionRow(
                         icon: Icons.quiz,
-                        title: 'NgÃ¢n hÃ ng cÃ¢u há»i',
+                        title: 'Ngân hàng câu hỏi',
                         onTap: () => Navigator.pushNamed(context, AppRoutes.teacherQuestions),
                       ),
                       _ActionRow(
                         icon: Icons.event_note,
-                        title: 'Lá»‹ch giáº£ng dáº¡y',
+                        title: 'Lịch giảng dạy',
                         onTap: () => Navigator.pushNamed(context, AppRoutes.teacherSchedule),
                       ),
                       _ActionRow(
                         icon: Icons.logout,
-                        title: 'ÄÄƒng xuáº¥t',
+                        title: 'Đăng xuất',
                         onTap: _logout,
                         destructive: true,
                       ),
@@ -124,12 +124,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  teacher?.fullName ?? 'GiÃ¡o viÃªn',
+                  teacher?.fullName ?? 'Giáo viên',
                   style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  teacher?.bio ?? 'Quáº£n lÃ½ lá»›p vÃ  Ä‘á» thi',
+                  teacher?.bio ?? 'Quản lý lớp và đề thi',
                   style: TextStyle(color: Colors.white.withOpacity(0.9)),
                 ),
               ],
@@ -151,10 +151,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         childAspectRatio: 1.8,
       ),
       children: [
-        _ProfileStat(label: 'Lá»›p', value: teacherProvider.classes.length.toString(), color: Colors.blue),
-        _ProfileStat(label: 'Há»c sinh', value: teacherProvider.totalStudents.toString(), color: Colors.green),
-        _ProfileStat(label: 'Äá»', value: teacherProvider.assignedExams.length.toString(), color: Colors.orange),
-        _ProfileStat(label: 'Tiáº¿n Ä‘á»™', value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%', color: Colors.purple),
+        _ProfileStat(label: 'Lớp', value: teacherProvider.classes.length.toString(), color: Colors.blue),
+        _ProfileStat(label: 'Học sinh', value: teacherProvider.totalStudents.toString(), color: Colors.green),
+        _ProfileStat(label: 'Đề', value: teacherProvider.assignedExams.length.toString(), color: Colors.orange),
+        _ProfileStat(label: 'Tiến độ', value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%', color: Colors.purple),
       ],
     );
   }

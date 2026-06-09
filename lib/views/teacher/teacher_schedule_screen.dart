@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
@@ -30,7 +30,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lá»‹ch giáº£ng dáº¡y'),
+        title: const Text('Lịch giảng dạy'),
         actions: [
           IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
         ],
@@ -46,7 +46,7 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
                   _buildSummary(teacherProvider),
                   const SizedBox(height: 16),
                   if (teacherProvider.schedule.isEmpty)
-                    const _EmptyState(message: 'ChÆ°a cÃ³ lá»‹ch dáº¡y hoáº·c lá»‹ch giao Ä‘á»')
+                    const _EmptyState(message: 'Chưa có lịch dạy hoặc lịch giao đề')
                   else
                     ...teacherProvider.schedule.map(
                       (item) => Padding(
@@ -73,9 +73,9 @@ class _TeacherScheduleScreenState extends State<TeacherScheduleScreen> {
       ),
       child: Row(
         children: [
-          Expanded(child: _SummaryTile(label: 'Sá»± kiá»‡n', value: teacherProvider.schedule.length.toString())),
-          Expanded(child: _SummaryTile(label: 'Lá»›p', value: teacherProvider.classes.length.toString())),
-          Expanded(child: _SummaryTile(label: 'Äá» thi', value: teacherProvider.assignedExams.length.toString())),
+          Expanded(child: _SummaryTile(label: 'Sự kiện', value: teacherProvider.schedule.length.toString())),
+          Expanded(child: _SummaryTile(label: 'Lớp', value: teacherProvider.classes.length.toString())),
+          Expanded(child: _SummaryTile(label: 'Đề thi', value: teacherProvider.assignedExams.length.toString())),
         ],
       ),
     );
@@ -118,7 +118,7 @@ class _ScheduleCard extends StatelessWidget {
                 Text(item.subtitle, style: TextStyle(color: Colors.grey.shade700)),
                 const SizedBox(height: 8),
                 Text(
-                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} â€¢ ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} â€¢ ${item.durationMinutes} phÃºt',
+                  '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')} • ${item.durationMinutes} phút',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
               ],

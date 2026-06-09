@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
@@ -31,7 +31,7 @@ class AuthController extends ChangeNotifier {
         _isAuthenticated = false;
       }
     } catch (e) {
-      _errorMessage = 'Lá»—i khÃ´i phá»¥c phiÃªn báº£n: $e';
+      _errorMessage = 'Lỗi khôi phục phiên bản: $e';
     }
 
     _isLoading = false;
@@ -45,14 +45,14 @@ class AuthController extends ChangeNotifier {
 
     try {
       if (!_isValidEmail(email)) {
-        _errorMessage = 'Email khÃ´ng há»£p lá»‡';
+        _errorMessage = 'Email không hợp lệ';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
       if (password.isEmpty) {
-        _errorMessage = 'Vui lÃ²ng nháº­p máº­t kháº©u';
+        _errorMessage = 'Vui lòng nhập mật khẩu';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -67,14 +67,14 @@ class AuthController extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = 'Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng';
+        _errorMessage = 'Email hoặc mật khẩu không đúng';
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } on FirebaseAuthException catch (e) {
       if ((e.code == 'user-not-found' || e.code == 'invalid-credential') && email.contains('.demo@thptsmartlearn.vn')) {
-        _errorMessage = 'TÃ i khoáº£n demo chÆ°a tá»“n táº¡i trÃªn Firebase Auth. HÃ£y táº¡o tÃ i khoáº£n demo trong Firebase Console hoáº·c cháº¡y chá»©c nÄƒng seed demo account.';
+        _errorMessage = 'Tài khoản demo chưa tồn tại trên Firebase Auth. Hãy tạo tài khoản demo trong Firebase Console hoặc chạy chức năng seed demo account.';
       } else {
         _errorMessage = _getFirebaseErrorMessage(e);
       }
@@ -83,15 +83,15 @@ class AuthController extends ChangeNotifier {
       return false;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        _errorMessage = 'á»¨ng dá»¥ng chÆ°a cÃ³ quyá»n ghi dá»¯ liá»‡u Firestore. HÃ£y kiá»ƒm tra Firestore Rules.';
+        _errorMessage = 'Ứng dụng chưa có quyền ghi dữ liệu Firestore. Hãy kiểm tra Firestore Rules.';
       } else {
-        _errorMessage = 'Lá»—i Firebase: ${e.message}';
+        _errorMessage = 'Lỗi Firebase: ${e.message}';
       }
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Lá»—i Ä‘Äƒng nháº­p: $e';
+      _errorMessage = 'Lỗi đăng nhập: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -111,28 +111,28 @@ class AuthController extends ChangeNotifier {
 
     try {
       if (!_isValidEmail(email)) {
-        _errorMessage = 'Email khÃ´ng há»£p lá»‡';
+        _errorMessage = 'Email không hợp lệ';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
       if (password.isEmpty || password.length < 6) {
-        _errorMessage = 'Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±';
+        _errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
       if (password != confirmPassword) {
-        _errorMessage = 'Máº­t kháº©u xÃ¡c nháº­n khÃ´ng khá»›p';
+        _errorMessage = 'Mật khẩu xác nhận không khớp';
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
       if (fullName.isEmpty) {
-        _errorMessage = 'Vui lÃ²ng nháº­p há» tÃªn';
+        _errorMessage = 'Vui lòng nhập họ tên';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -152,7 +152,7 @@ class AuthController extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _errorMessage = 'ÄÄƒng kÃ½ tháº¥t báº¡i';
+        _errorMessage = 'Đăng ký thất bại';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -164,15 +164,15 @@ class AuthController extends ChangeNotifier {
       return false;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        _errorMessage = 'á»¨ng dá»¥ng chÆ°a cÃ³ quyá»n ghi dá»¯ liá»‡u Firestore. HÃ£y kiá»ƒm tra Firestore Rules.';
+        _errorMessage = 'Ứng dụng chưa có quyền ghi dữ liệu Firestore. Hãy kiểm tra Firestore Rules.';
       } else {
-        _errorMessage = 'Lá»—i Firebase: ${e.message}';
+        _errorMessage = 'Lỗi Firebase: ${e.message}';
       }
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
-      _errorMessage = 'Lá»—i Ä‘Äƒng kÃ½: $e';
+      _errorMessage = 'Lỗi đăng ký: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -186,7 +186,7 @@ class AuthController extends ChangeNotifier {
 
     try {
       if (!_isValidEmail(email)) {
-        _errorMessage = 'Email khÃ´ng há»£p lá»‡';
+        _errorMessage = 'Email không hợp lệ';
         _isLoading = false;
         notifyListeners();
         return false;
@@ -203,16 +203,16 @@ class AuthController extends ChangeNotifier {
       return false;
     } on FirebaseException catch (e) {
       if (e.code == 'permission-denied') {
-        _errorMessage = 'á»¨ng dá»¥ng chÆ°a cÃ³ quyá»n ghi dá»¯ liá»‡u Firestore. HÃ£y kiá»ƒm tra Firestore Rules.';
+        _errorMessage = 'Ứng dụng chưa có quyền ghi dữ liệu Firestore. Hãy kiểm tra Firestore Rules.';
       } else {
-        _errorMessage = 'Lá»—i Firebase: ${e.message}';
+        _errorMessage = 'Lỗi Firebase: ${e.message}';
       }
       _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = 'Lá»—i Ä‘áº·t láº¡i máº­t kháº©u: $e';
+      _errorMessage = 'Lỗi đặt lại mật khẩu: $e';
       notifyListeners();
       return false;
     }
@@ -228,7 +228,7 @@ class AuthController extends ChangeNotifier {
       _isAuthenticated = false;
       _errorMessage = '';
     } catch (e) {
-      _errorMessage = 'Lá»—i Ä‘Äƒng xuáº¥t: $e';
+      _errorMessage = 'Lỗi đăng xuất: $e';
     }
 
     _isLoading = false;
@@ -247,31 +247,31 @@ class AuthController extends ChangeNotifier {
 
   String _getFirebaseErrorMessage(FirebaseAuthException e) {
     if (e.message != null && e.message!.contains('CONFIGURATION_NOT_FOUND')) {
-      return 'Firebase Authentication chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh Ä‘Ãºng. HÃ£y kiá»ƒm tra google-services.json, firebase_options.dart vÃ  báº­t Email/Password trong Firebase Console.';
+      return 'Firebase Authentication chưa được cấu hình đúng. Hãy kiểm tra google-services.json, firebase_options.dart và bật Email/Password trong Firebase Console.';
     }
 
     switch (e.code) {
       case 'CONFIGURATION_NOT_FOUND':
       case 'internal-error':
-        return 'Firebase Authentication chÆ°a Ä‘Æ°á»£c cáº¥u hÃ¬nh Ä‘Ãºng. HÃ£y kiá»ƒm tra google-services.json, firebase_options.dart vÃ  báº­t Email/Password trong Firebase Console.';
+        return 'Firebase Authentication chưa được cấu hình đúng. Hãy kiểm tra google-services.json, firebase_options.dart và bật Email/Password trong Firebase Console.';
       case 'user-not-found':
-        return 'KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n.';
+        return 'Không tìm thấy tài khoản.';
       case 'wrong-password':
-        return 'Máº­t kháº©u khÃ´ng Ä‘Ãºng.';
+        return 'Mật khẩu không đúng.';
       case 'invalid-credential':
-        return 'Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng.';
+        return 'Email hoặc mật khẩu không đúng.';
       case 'invalid-email':
-        return 'Email khÃ´ng há»£p lá»‡.';
+        return 'Email không hợp lệ.';
       case 'user-disabled':
-        return 'TÃ i khoáº£n Ä‘Ã£ bá»‹ vÃ´ hiá»‡u hÃ³a.';
+        return 'Tài khoản đã bị vô hiệu hóa.';
       case 'email-already-in-use':
-        return 'Email Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng.';
+        return 'Email đã được sử dụng.';
       case 'weak-password':
-        return 'Máº­t kháº©u quÃ¡ yáº¿u.';
+        return 'Mật khẩu quá yếu.';
       case 'network-request-failed':
-        return 'KhÃ´ng cÃ³ káº¿t ná»‘i máº¡ng.';
+        return 'Không có kết nối mạng.';
       default:
-        return 'Lá»—i: ${e.message}';
+        return 'Lỗi: ${e.message}';
     }
   }
 }

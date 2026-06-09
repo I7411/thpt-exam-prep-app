@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -63,11 +63,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _getRoleLabel(UserRole role) {
     switch (role) {
       case UserRole.student:
-        return 'Há»c sinh';
+        return 'Học sinh';
       case UserRole.teacher:
-        return 'GiÃ¡o viÃªn';
+        return 'Giáo viên';
       case UserRole.admin:
-        return 'Quáº£n trá»‹ viÃªn';
+        return 'Quản trị viên';
     }
   }
 
@@ -75,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ÄÄƒng kÃ½'),
+        title: const Text('Đăng ký'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -106,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          'Táº¡o tÃ i khoáº£n má»›i',
+                          'Tạo tài khoản mới',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -143,7 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   // Full Name
                   Text(
-                    'Há» tÃªn',
+                    'Họ tên',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -151,7 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _nameController,
                     enabled: !authProvider.isLoading,
                     decoration: InputDecoration(
-                      hintText: 'Nháº­p há» tÃªn Ä‘áº§y Ä‘á»§',
+                      hintText: 'Nhập họ tên đầy đủ',
                       prefixIcon: const Icon(Icons.person),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -170,7 +170,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _emailController,
                     enabled: !authProvider.isLoading,
                     decoration: InputDecoration(
-                      hintText: 'Nháº­p email',
+                      hintText: 'Nhập email',
                       prefixIcon: const Icon(Icons.email),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -182,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   // Role selection
                   Text(
-                    'Vai trÃ²',
+                    'Vai trò',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -197,15 +197,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               items: const [
                 DropdownMenuItem(
                   value: UserRole.student,
-                  child: Text('Há»c sinh'),
+                  child: Text('Học sinh'),
                 ),
                 DropdownMenuItem(
                   value: UserRole.teacher,
-                  child: Text('GiÃ¡o viÃªn'),
+                  child: Text('Giáo viên'),
                 ),
                 DropdownMenuItem(
                   value: UserRole.admin,
-                  child: Text('Quáº£n trá»‹ viÃªn'),
+                  child: Text('Quản trị viên'),
                 ),
               ],
               onChanged: authProvider.isLoading
@@ -222,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   // Password field
                   Text(
-                    'Máº­t kháº©u',
+                    'Mật khẩu',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -231,7 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     enabled: !authProvider.isLoading,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      hintText: 'Nháº­p máº­t kháº©u (tá»‘i thiá»ƒu 6 kÃ½ tá»±)',
+                      hintText: 'Nhập mật khẩu (tối thiểu 6 ký tự)',
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -252,7 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   // Confirm Password field
                   Text(
-                    'XÃ¡c nháº­n máº­t kháº©u',
+                    'Xác nhận mật khẩu',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -261,7 +261,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     enabled: !authProvider.isLoading,
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
-                      hintText: 'Nháº­p láº¡i máº­t kháº©u',
+                      hintText: 'Nhập lại mật khẩu',
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -292,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               height: 24,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('ÄÄƒng kÃ½'),
+                          : const Text('Đăng ký'),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -302,12 +302,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('ÄÃ£ cÃ³ tÃ i khoáº£n? '),
+                        const Text('Đã có tài khoản? '),
                         TextButton(
                           onPressed: authProvider.isLoading
                               ? null
                               : () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
-                          child: const Text('ÄÄƒng nháº­p'),
+                          child: const Text('Đăng nhập'),
                         ),
                       ],
                     ),

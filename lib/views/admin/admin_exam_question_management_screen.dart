@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/mock_exams.dart';
 import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
@@ -33,7 +33,7 @@ class _AdminExamQuestionManagementScreenState extends State<AdminExamQuestionMan
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Äá» thi & cÃ¢u há»i'),
+        title: const Text('Đề thi & câu hỏi'),
         actions: [IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh))],
       ),
       body: RefreshIndicator(
@@ -47,18 +47,18 @@ class _AdminExamQuestionManagementScreenState extends State<AdminExamQuestionMan
                   DropdownButtonFormField<String>(
                     initialValue: _selectedSubjectId,
                     decoration: InputDecoration(
-                      labelText: 'Lá»c theo mÃ´n',
+                      labelText: 'Lọc theo môn',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Táº¥t cáº£ mÃ´n')),
+                      const DropdownMenuItem(value: null, child: Text('Tất cả môn')),
                       ...subjects.map((subject) => DropdownMenuItem(value: subject.id, child: Text(subject.name))),
                     ],
                     onChanged: (value) => setState(() => _selectedSubjectId = value),
                   ),
                   const SizedBox(height: 16),
                   if (exams.isEmpty)
-                    const _EmptyState(message: 'ChÆ°a cÃ³ Ä‘á» thi nÃ o phÃ¹ há»£p bá»™ lá»c')
+                    const _EmptyState(message: 'Chưa có đề thi nào phù hợp bộ lọc')
                   else
                     ...exams.map((exam) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -68,9 +68,9 @@ class _AdminExamQuestionManagementScreenState extends State<AdminExamQuestionMan
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thÃªm Ä‘á»/cÃ¢u há»i'))),
+        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thêm đề/câu hỏi'))),
         icon: const Icon(Icons.add),
-        label: const Text('ThÃªm Ä‘á»'),
+        label: const Text('Thêm đề'),
       ),
     );
   }
@@ -93,7 +93,7 @@ class _ExamCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: Colors.grey.shade200)),
       collapsedShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: Colors.grey.shade200)),
       title: Text(item.exam.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text('${item.subject.name} â€¢ ${item.difficulty} â€¢ ${item.status}'),
+      subtitle: Text('${item.subject.name} • ${item.difficulty} • ${item.status}'),
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -104,13 +104,13 @@ class _ExamCard extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _Tag(label: '${item.questionCount} cÃ¢u há»i', color: Colors.blue),
-                  _Tag(label: '${item.exam.durationMinutes} phÃºt', color: Colors.orange),
+                  _Tag(label: '${item.questionCount} câu hỏi', color: Colors.blue),
+                  _Tag(label: '${item.exam.durationMinutes} phút', color: Colors.orange),
                   _Tag(label: item.status, color: item.exam.isPublished ? Colors.green : Colors.grey),
                 ],
               ),
               const SizedBox(height: 12),
-              const Text('CÃ¢u há»i máº«u', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text('Câu hỏi mẫu', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               ...MockExamQuestionPreview.fromExam(item.exam.id).map(
                 (question) => Padding(
@@ -123,8 +123,8 @@ class _ExamCard extends StatelessWidget {
                       children: [
                         Text('${question.orderNumber}. ${question.content}', style: const TextStyle(fontWeight: FontWeight.w500)),
                         const SizedBox(height: 6),
-                        Text('ÄÃ¡p Ã¡n Ä‘Ãºng: ${question.correctAnswer}'),
-                        Text('Äá»™ khÃ³: ${question.difficulty}'),
+                        Text('Đáp án đúng: ${question.correctAnswer}'),
+                        Text('Độ khó: ${question.difficulty}'),
                       ],
                     ),
                   ),
@@ -132,12 +132,12 @@ class _ExamCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sá»­a')),
-                  TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('XÃ³a')),
+                  TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sửa')),
+                  TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('Xóa')),
                 ],
               ),
-              Text('Tá»•ng cÃ¢u khá»›p: $relatedQuestions', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-              Text('Äáº¿m Ä‘á» trong repo: $questions', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+              Text('Tổng câu khớp: $relatedQuestions', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+              Text('Đếm đề trong repo: $questions', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
             ],
           ),
         ),
@@ -157,7 +157,7 @@ class MockExamQuestionPreview {
   static List<MockExamQuestionPreview> fromExam(String examId) {
     final preview = MockExamsData.questions.where((question) => question.examId == examId).map((question) {
       final correct = question.options.firstWhere((option) => option.isCorrect).content;
-      final difficulty = question.orderNumber <= 2 ? 'Dá»…' : question.orderNumber <= 4 ? 'Trung bÃ¬nh' : 'KhÃ³';
+      final difficulty = question.orderNumber <= 2 ? 'Dễ' : question.orderNumber <= 4 ? 'Trung bình' : 'Khó';
       return MockExamQuestionPreview(orderNumber: question.orderNumber, content: question.content, correctAnswer: correct, difficulty: difficulty);
     }).toList();
     return preview;

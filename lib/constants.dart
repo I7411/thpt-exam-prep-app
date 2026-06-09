@@ -1,4 +1,4 @@
-﻿
+
 // App Constants
 class AppConstants {
   // App Info
@@ -14,14 +14,14 @@ class AppConstants {
   
   // Subject Names (Tiáº¿ng Viá»‡t)
   static const List<String> subjects = [
-    'ToÃ¡n há»c',
-    'Váº­t lÃ½',
-    'HÃ³a há»c',
-    'Sinh há»c',
-    'Lá»‹ch sá»­',
-    'Äá»‹a lÃ½',
-    'Ngoáº¡i ngá»¯',
-    'Ngá»¯ vÄƒn',
+    'Toán học',
+    'Vật lý',
+    'Hóa học',
+    'Sinh học',
+    'Lịch sử',
+    'Địa lý',
+    'Ngoại ngữ',
+    'Ngữ văn',
   ];
 }
 

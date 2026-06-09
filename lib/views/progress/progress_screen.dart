@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/models.dart';
@@ -39,7 +39,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Tiáº¿n Ä‘á»™ há»c táº­p'),
+            title: const Text('Tiến độ học tập'),
             centerTitle: true,
           ),
           body: RefreshIndicator(
@@ -52,7 +52,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 _buildStrengthCard(context, provider),
                 const SizedBox(height: 24),
                 Text(
-                  'Tiáº¿n Ä‘á»™ theo mÃ´n',
+                  'Tiến độ theo môn',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -71,12 +71,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 if (provider.subjectProgress.isEmpty)
                   _EmptyState(
                     icon: Icons.timeline,
-                    title: 'ChÆ°a cÃ³ tiáº¿n Ä‘á»™',
-                    message: 'HÃ£y lÃ m má»™t vÃ i Ä‘á» thi Ä‘á»ƒ há»‡ thá»‘ng táº¡o dá»¯ liá»‡u tiáº¿n Ä‘á»™.',
+                    title: 'Chưa có tiến độ',
+                    message: 'Hãy làm một vài đề thi để hệ thống tạo dữ liệu tiến độ.',
                   ),
                 const SizedBox(height: 24),
                 Text(
-                  'Lá»‹ch sá»­ bÃ i lÃ m',
+                  'Lịch sử bài làm',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -91,8 +91,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 if (provider.recentHistory().isEmpty)
                   _EmptyState(
                     icon: Icons.history,
-                    title: 'ChÆ°a cÃ³ lá»‹ch sá»­ bÃ i lÃ m',
-                    message: 'Sau khi ná»™p bÃ i thi thá»­, lá»‹ch sá»­ sáº½ xuáº¥t hiá»‡n á»Ÿ Ä‘Ã¢y.',
+                    title: 'Chưa có lịch sử bài làm',
+                    message: 'Sau khi nộp bài thi thử, lịch sử sẽ xuất hiện ở đây.',
                   ),
               ],
             ),
@@ -115,25 +115,25 @@ class _ProgressScreenState extends State<ProgressScreen> {
           childAspectRatio: 1.2,
           children: [
             _SummaryCard(
-              label: 'Tá»•ng Ä‘á» Ä‘Ã£ lÃ m',
+              label: 'Tổng đề đã làm',
               value: '${provider.totalExamsTaken}',
               icon: Icons.quiz,
               color: Colors.indigo,
             ),
             _SummaryCard(
-              label: 'Äiá»ƒm trung bÃ¬nh',
+              label: 'Điểm trung bình',
               value: provider.averageScore.toStringAsFixed(1),
               icon: Icons.star,
               color: Colors.orange,
             ),
             _SummaryCard(
-              label: 'TÃ i liá»‡u Ä‘Ã£ Ä‘á»c',
+              label: 'Tài liệu đã đọc',
               value: '${_estimateDocumentsFromProgress(provider)}',
               icon: Icons.description,
               color: Colors.blue,
             ),
             _SummaryCard(
-              label: 'MÃ´n Ä‘ang cÃ³',
+              label: 'Môn đang có',
               value: '${provider.subjectProgress.length}',
               icon: Icons.menu_book,
               color: Colors.green,
@@ -159,7 +159,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Nháº­n xÃ©t nhanh',
+            'Nhận xét nhanh',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -171,8 +171,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
           const SizedBox(height: 6),
           Text(
             provider.averageScore >= 7.5
-                ? 'Tá»•ng thá»ƒ Ä‘ang á»•n, duy trÃ¬ nhá»‹p lÃ m Ä‘á» Ä‘á»u Ä‘á»ƒ tÄƒng Ä‘á»™ á»•n Ä‘á»‹nh.'
-                : 'Cáº§n lÃ m thÃªm Ä‘á» vÃ  Ã´n láº¡i cÃ¡c mÃ´n Ä‘iá»ƒm tháº¥p Ä‘á»ƒ kÃ©o Ä‘iá»ƒm trung bÃ¬nh lÃªn.',
+                ? 'Tổng thể đang ổn, duy trì nhịp làm đề đều để tăng độ ổn định.'
+                : 'Cần làm thêm đề và ôn lại các môn điểm thấp để kéo điểm trung bình lên.',
           ),
         ],
       ),
@@ -292,9 +292,9 @@ class _SubjectProgressCard extends StatelessWidget {
             spacing: 12,
             runSpacing: 8,
             children: [
-              Text('Äá» Ä‘Ã£ lÃ m: ${progress.totalExamsTaken}'),
-              Text('TÃ i liá»‡u: ${progress.totalDocumentsRead}'),
-              Text('Äiá»ƒm TB: ${progress.averageScore.toStringAsFixed(1)}'),
+              Text('Đề đã làm: ${progress.totalExamsTaken}'),
+              Text('Tài liệu: ${progress.totalDocumentsRead}'),
+              Text('Điểm TB: ${progress.averageScore.toStringAsFixed(1)}'),
             ],
           ),
         ],
@@ -332,18 +332,18 @@ class _HistoryCard extends StatelessWidget {
                 ),
               ),
               _StatusPill(
-                label: passed ? 'Äáº¡t' : 'ChÆ°a Ä‘áº¡t',
+                label: passed ? 'Đạt' : 'Chưa đạt',
                 color: passed ? Colors.green : Colors.orange,
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Äiá»ƒm: ${result.score.toStringAsFixed(1)} | ÄÃºng: ${result.correctCount} | Sai: ${result.wrongCount}',
+            'Điểm: ${result.score.toStringAsFixed(1)} | Đúng: ${result.correctCount} | Sai: ${result.wrongCount}',
           ),
           const SizedBox(height: 4),
           Text(
-            'Thá»i gian: ${_formatDuration(result.timeSpent)} | HoÃ n thÃ nh: ${result.completionPercentage.toStringAsFixed(0)}%',
+            'Thời gian: ${_formatDuration(result.timeSpent)} | Hoàn thành: ${result.completionPercentage.toStringAsFixed(0)}%',
           ),
         ],
       ),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
@@ -22,11 +22,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Email không được để trống';
     }
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     if (!emailRegex.hasMatch(value)) {
-      return 'Email khÃ´ng há»£p lá»‡';
+      return 'Email không hợp lệ';
     }
     return null;
   }
@@ -55,7 +55,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Email Ä‘áº·t láº¡i máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c gá»­i'),
+          content: Text('Email đặt lại mật khẩu đã được gửi'),
           backgroundColor: Colors.green,
         ),
       );
@@ -69,7 +69,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           content: Text(
             authProvider.errorMessage.isNotEmpty
                 ? authProvider.errorMessage
-                : 'Gá»­i email tháº¥t báº¡i',
+                : 'Gửi email thất bại',
           ),
           backgroundColor: Colors.red,
         ),
@@ -81,7 +81,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QuÃªn máº­t kháº©u'),
+        title: const Text('Quên mật khẩu'),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -99,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 30),
                 const Text(
-                  'Nháº­p email Ä‘á»ƒ nháº­n link Ä‘áº·t láº¡i máº­t kháº©u',
+                  'Nhập email để nhận link đặt lại mật khẩu',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -127,7 +127,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     onPressed: _isLoading ? null : _handleSendResetEmail,
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Gá»­i email'),
+                        : const Text('Gửi email'),
                   ),
                 ),
               ],

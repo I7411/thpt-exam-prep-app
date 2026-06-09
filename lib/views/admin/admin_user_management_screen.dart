@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
@@ -51,7 +51,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quáº£n lÃ½ tÃ i khoáº£n'),
+        title: const Text('Quản lý tài khoản'),
         actions: [
           IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
         ],
@@ -67,7 +67,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'TÃ¬m theo tÃªn hoáº·c email',
+                      hintText: 'Tìm theo tên hoặc email',
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
@@ -78,7 +78,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _RoleChip(label: 'Táº¥t cáº£', selected: _selectedRole == null, onTap: () => setState(() => _selectedRole = null)),
+                      _RoleChip(label: 'Tất cả', selected: _selectedRole == null, onTap: () => setState(() => _selectedRole = null)),
                       _RoleChip(label: 'Student', selected: _selectedRole == UserRole.student, onTap: () => setState(() => _selectedRole = UserRole.student)),
                       _RoleChip(label: 'Teacher', selected: _selectedRole == UserRole.teacher, onTap: () => setState(() => _selectedRole = UserRole.teacher)),
                       _RoleChip(label: 'Admin', selected: _selectedRole == UserRole.admin, onTap: () => setState(() => _selectedRole = UserRole.admin)),
@@ -88,7 +88,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   _SummaryBar(total: users.length, students: users.where((u) => u.role == UserRole.student).length, teachers: users.where((u) => u.role == UserRole.teacher).length),
                   const SizedBox(height: 16),
                   if (users.isEmpty)
-                    const _EmptyState(message: 'KhÃ´ng tÃ¬m tháº¥y tÃ i khoáº£n phÃ¹ há»£p')
+                    const _EmptyState(message: 'Không tìm thấy tài khoản phù hợp')
                   else
                     ...users.map((user) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -98,9 +98,9 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thÃªm tÃ i khoáº£n'))),
+        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thêm tài khoản'))),
         icon: const Icon(Icons.person_add),
-        label: const Text('ThÃªm user'),
+        label: const Text('Thêm user'),
       ),
     );
   }
@@ -117,7 +117,7 @@ class _SummaryBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _SummaryCard(label: 'Tá»•ng', value: total.toString(), color: Colors.blue)),
+        Expanded(child: _SummaryCard(label: 'Tổng', value: total.toString(), color: Colors.blue)),
         const SizedBox(width: 8),
         Expanded(child: _SummaryCard(label: 'Student', value: students.toString(), color: Colors.green)),
         const SizedBox(width: 8),
@@ -173,8 +173,8 @@ class _UserCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sá»­a')),
-              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('XÃ³a')),
+              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sửa')),
+              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('Xóa')),
             ],
           ),
         ],

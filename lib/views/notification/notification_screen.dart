@@ -34,12 +34,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
       builder: (context, provider, _) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('ThÃ´ng bÃ¡o'),
+            title: const Text('Thông báo'),
             centerTitle: true,
             actions: [
               TextButton(
                 onPressed: provider.unreadCount == 0 ? null : provider.markAllAsRead,
-                child: const Text('ÄÃ¡nh dáº¥u táº¥t cáº£ Ä‘Ã£ Ä‘á»c'),
+                child: const Text('Đánh dấu tất cả đã đọc'),
               ),
             ],
           ),
@@ -94,7 +94,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     await NotificationService.instance.showStudyReminderDemo(payload: payload);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ÄÃ£ táº¡o nháº¯c há»c demo sau 10 giÃ¢y')),
+      const SnackBar(content: Text('Đã tạo nhắc học demo sau 10 giây')),
     );
   }
 
@@ -102,7 +102,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     await NotificationService.instance.scheduleDailyStudyReminder(payload: AppRoutes.studentProgress);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ÄÃ£ láº­p lá»‹ch nháº¯c há»c má»—i ngÃ y lÃºc 19:00')),
+      const SnackBar(content: Text('Đã lập lịch nhắc học mỗi ngày lúc 19:00')),
     );
   }
 
@@ -110,7 +110,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     await NotificationService.instance.cancelAllNotifications();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ÄÃ£ há»§y táº¥t cáº£ thÃ´ng bÃ¡o')),
+      const SnackBar(content: Text('Đã hủy tất cả thông báo')),
     );
   }
 }
@@ -139,12 +139,12 @@ class _StudyReminderPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Nháº¯c há»c local',
+            'Nhắc học local',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
-            'ThÃ´ng bÃ¡o cháº¡y trÃªn thiáº¿t bá»‹, khÃ´ng dÃ¹ng FCM.',
+            'Thông báo chạy trên thiết bị, không dùng FCM.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
           ),
           const SizedBox(height: 14),
@@ -155,17 +155,17 @@ class _StudyReminderPanel extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onDemoReminder,
                 icon: const Icon(Icons.notifications_active_outlined),
-                label: const Text('Táº¡o nháº¯c há»c demo'),
+                label: const Text('Tạo nhắc học demo'),
               ),
               OutlinedButton.icon(
                 onPressed: onDailyReminder,
                 icon: const Icon(Icons.schedule_outlined),
-                label: const Text('Nháº¯c má»—i ngÃ y 19:00'),
+                label: const Text('Nhắc mỗi ngày 19:00'),
               ),
               TextButton.icon(
                 onPressed: onCancelAll,
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Há»§y táº¥t cáº£ thÃ´ng bÃ¡o'),
+                label: const Text('Hủy tất cả thông báo'),
               ),
             ],
           ),
@@ -254,7 +254,7 @@ class _NotificationTile extends StatelessWidget {
                     children: [
                       _ChipLabel(label: config.label, color: config.color),
                       _ChipLabel(
-                        label: notification.isRead ? 'ÄÃ£ Ä‘á»c' : 'ChÆ°a Ä‘á»c',
+                        label: notification.isRead ? 'Đã đọc' : 'Chưa đọc',
                         color: notification.isRead ? Colors.green : Colors.orange,
                       ),
                       Text(
@@ -278,43 +278,43 @@ class _NotificationTile extends StatelessWidget {
     switch (type) {
       case NotificationType.info:
         return const _NotificationConfig(
-          label: 'Nháº¯c há»c',
+          label: 'Nhắc học',
           icon: Icons.notifications_active_outlined,
           color: Colors.blue,
         );
       case NotificationType.warning:
         return const _NotificationConfig(
-          label: 'Nháº¯c há»c',
+          label: 'Nhắc học',
           icon: Icons.schedule_outlined,
           color: Colors.orange,
         );
       case NotificationType.examReminder:
         return const _NotificationConfig(
-          label: 'Äá» thi má»›i',
+          label: 'Đề thi mới',
           icon: Icons.quiz_outlined,
           color: Colors.indigo,
         );
       case NotificationType.success:
         return const _NotificationConfig(
-          label: 'Káº¿t quáº£ há»c táº­p',
+          label: 'Kết quả học tập',
           icon: Icons.check_circle_outline,
           color: Colors.green,
         );
       case NotificationType.announcement:
         return const _NotificationConfig(
-          label: 'TÃ i liá»‡u má»›i',
+          label: 'Tài liệu mới',
           icon: Icons.description_outlined,
           color: Colors.purple,
         );
       case NotificationType.error:
         return const _NotificationConfig(
-          label: 'Cáº£nh bÃ¡o',
+          label: 'Cảnh báo',
           icon: Icons.warning_amber_outlined,
           color: Colors.red,
         );
       case NotificationType.assignmentDue:
         return const _NotificationConfig(
-          label: 'Nháº¯c há»c',
+          label: 'Nhắc học',
           icon: Icons.assignment_outlined,
           color: Colors.teal,
         );
@@ -382,14 +382,14 @@ class _EmptyNotificationState extends StatelessWidget {
           Icon(Icons.notifications_off_outlined, size: 56, color: Colors.grey[400]),
           const SizedBox(height: 12),
           Text(
-            'KhÃ´ng cÃ³ thÃ´ng bÃ¡o',
+            'Không có thông báo',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 6),
           Text(
-            'CÃ¡c thÃ´ng bÃ¡o má»›i sáº½ xuáº¥t hiá»‡n á»Ÿ Ä‘Ã¢y.',
+            'Các thông báo mới sẽ xuất hiện ở đây.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
                 ),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:thpt_exam_prep_app/data/local/app_database.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
@@ -88,25 +88,25 @@ class ProgressController extends ChangeNotifier {
         return subject.name;
       }
     }
-    return 'MÃ´n há»c';
+    return 'Môn học';
   }
 
   String get strongestSubjectLabel {
-    if (_subjectProgress.isEmpty) return 'ChÆ°a cÃ³ dá»¯ liá»‡u máº¡nh ná»•i báº­t';
+    if (_subjectProgress.isEmpty) return 'Chưa có dữ liệu mạnh nổi bật';
 
     final strongest = _subjectProgress.reduce((left, right) {
       return left.averageScore >= right.averageScore ? left : right;
     });
-    return '${subjectName(strongest.subjectId)} Ä‘ang lÃ  mÃ´n máº¡nh nháº¥t (${strongest.averageScore.toStringAsFixed(1)} Ä‘iá»ƒm)';
+    return '${subjectName(strongest.subjectId)} đang là môn mạnh nhất (${strongest.averageScore.toStringAsFixed(1)} điểm)';
   }
 
   String get weakestSubjectLabel {
-    if (_subjectProgress.isEmpty) return 'ChÆ°a cÃ³ dá»¯ liá»‡u Ä‘á»ƒ xÃ¡c Ä‘á»‹nh mÃ´n yáº¿u';
+    if (_subjectProgress.isEmpty) return 'Chưa có dữ liệu để xác định môn yếu';
 
     final weakest = _subjectProgress.reduce((left, right) {
       return left.averageScore <= right.averageScore ? left : right;
     });
-    return '${subjectName(weakest.subjectId)} cáº§n Æ°u tiÃªn cáº£i thiá»‡n (${weakest.averageScore.toStringAsFixed(1)} Ä‘iá»ƒm)';
+    return '${subjectName(weakest.subjectId)} cần ưu tiên cải thiện (${weakest.averageScore.toStringAsFixed(1)} điểm)';
   }
 
   List<ExamResultData> recentHistory({int limit = 20}) {

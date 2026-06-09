@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
@@ -30,7 +30,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('BÃ¡o cÃ¡o há»‡ thá»‘ng'),
+        title: const Text('Báo cáo hệ thống'),
         actions: [IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh))],
       ),
       body: RefreshIndicator(
@@ -61,10 +61,10 @@ class _TopCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _ReportCard(label: 'LÆ°á»£t lÃ m bÃ i', value: report?.totalExamAttempts.toString() ?? '0', color: Colors.blue),
-      _ReportCard(label: 'Äiá»ƒm TB', value: report?.averageExamScore.toStringAsFixed(1) ?? '0.0', color: Colors.green),
-      _ReportCard(label: 'Tá»· lá»‡ Ä‘áº¡t', value: '${report?.examPassRate ?? 0}%', color: Colors.orange),
-      _ReportCard(label: 'NgÆ°á»i dÃ¹ng hoáº¡t Ä‘á»™ng', value: report?.activeUsersThisWeek.toString() ?? '0', color: Colors.purple),
+      _ReportCard(label: 'Lượt làm bài', value: report?.totalExamAttempts.toString() ?? '0', color: Colors.blue),
+      _ReportCard(label: 'Điểm TB', value: report?.averageExamScore.toStringAsFixed(1) ?? '0.0', color: Colors.green),
+      _ReportCard(label: 'Tỷ lệ đạt', value: '${report?.examPassRate ?? 0}%', color: Colors.orange),
+      _ReportCard(label: 'Người dùng hoạt động', value: report?.activeUsersThisWeek.toString() ?? '0', color: Colors.purple),
     ];
 
     return GridView.builder(
@@ -92,7 +92,7 @@ class _SubjectScores extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Äiá»ƒm trung bÃ¬nh theo mÃ´n', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Điểm trung bình theo môn', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         ...provider.subjectReports.map(
           (item) => Padding(
@@ -114,7 +114,7 @@ class _SubjectScores extends StatelessWidget {
                       children: [
                         Text(item.subject.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
-                        Text('${item.documentCount} tÃ i liá»‡u â€¢ ${item.examCount} Ä‘á» â€¢ ${item.questionCount} cÃ¢u'),
+                        Text('${item.documentCount} tài liệu • ${item.examCount} đề • ${item.questionCount} câu'),
                       ],
                     ),
                   ),
@@ -139,7 +139,7 @@ class _DocumentStats extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Thá»‘ng kÃª sá»‘ tÃ i liá»‡u', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Thống kê số tài liệu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -155,7 +155,7 @@ class _DocumentStats extends StatelessWidget {
                       child: Row(
                         children: [
                           Expanded(child: Text(item.subject.name)),
-                          Text('${item.documentCount} tÃ i liá»‡u'),
+                          Text('${item.documentCount} tài liệu'),
                         ],
                       ),
                     ))

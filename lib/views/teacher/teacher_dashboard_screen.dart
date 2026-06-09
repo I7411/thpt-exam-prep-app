@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
@@ -36,7 +36,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text('Xin chÃ o, ${teacher?.fullName ?? 'GiÃ¡o viÃªn'}'),
+            title: Text('Xin chào, ${teacher?.fullName ?? 'GiÃ¡o viÃªn'}'),
             actions: [
               IconButton(
                 onPressed: _loadData,
@@ -99,12 +99,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      teacher?.fullName ?? 'GiÃ¡o viÃªn',
+                      teacher?.fullName ?? 'Giáo viên',
                       style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      teacher?.bio ?? 'Quáº£n lÃ½ lá»›p há»c, Ä‘á» thi vÃ  lá»‹ch dáº¡y',
+                      teacher?.bio ?? 'Quản lý lớp học, đề thi và lịch dạy',
                       style: TextStyle(color: Colors.white.withOpacity(0.9)),
                     ),
                   ],
@@ -114,7 +114,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '${teacherProvider.classes.length} lá»›p â€¢ ${teacherProvider.totalStudents} há»c sinh â€¢ ${teacherProvider.assignedExams.length} Ä‘á»',
+            '${teacherProvider.classes.length} lớp • ${teacherProvider.totalStudents} học sinh • ${teacherProvider.assignedExams.length} đề',
             style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
         ],
@@ -124,10 +124,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildStatsGrid(TeacherController teacherProvider) {
     final items = [
-      _StatItem('Lá»›p phá»¥ trÃ¡ch', teacherProvider.classes.length.toString(), Icons.class_, Colors.blue),
-      _StatItem('Há»c sinh', teacherProvider.totalStudents.toString(), Icons.groups, Colors.green),
-      _StatItem('Äá» Ä‘Ã£ giao', teacherProvider.assignedExams.length.toString(), Icons.assignment, Colors.orange),
-      _StatItem('Tiáº¿n Ä‘á»™ TB', '${teacherProvider.averageProgress.toStringAsFixed(0)}%', Icons.insights, Colors.purple),
+      _StatItem('Lớp phụ trách', teacherProvider.classes.length.toString(), Icons.class_, Colors.blue),
+      _StatItem('Học sinh', teacherProvider.totalStudents.toString(), Icons.groups, Colors.green),
+      _StatItem('Đề đã giao', teacherProvider.assignedExams.length.toString(), Icons.assignment, Colors.orange),
+      _StatItem('Tiến độ TB', '${teacherProvider.averageProgress.toStringAsFixed(0)}%', Icons.insights, Colors.purple),
     ];
 
     return GridView.builder(
@@ -149,16 +149,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildQuickActions(BuildContext context) {
     final actions = [
-      _ActionItem('Danh sÃ¡ch lá»›p', Icons.class_, AppRoutes.teacherClasses, Colors.blue),
-      _ActionItem('NgÃ¢n hÃ ng cÃ¢u há»i', Icons.quiz, AppRoutes.teacherQuestions, Colors.orange),
-      _ActionItem('Lá»‹ch giáº£ng dáº¡y', Icons.event_note, AppRoutes.teacherSchedule, Colors.green),
-      _ActionItem('Há»“ sÆ¡', Icons.person, AppRoutes.teacherProfile, Colors.purple),
+      _ActionItem('Danh sách lớp', Icons.class_, AppRoutes.teacherClasses, Colors.blue),
+      _ActionItem('Ngân hàng câu hỏi', Icons.quiz, AppRoutes.teacherQuestions, Colors.orange),
+      _ActionItem('Lịch giảng dạy', Icons.event_note, AppRoutes.teacherSchedule, Colors.green),
+      _ActionItem('Hồ sơ', Icons.person, AppRoutes.teacherProfile, Colors.purple),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Thao tÃ¡c nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Thao tác nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -217,16 +217,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Lá»›p Ä‘ang phá»¥ trÃ¡ch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const Text('Lớp đang phụ trách', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             TextButton(
               onPressed: () => Navigator.pushNamed(context, AppRoutes.teacherClasses),
-              child: const Text('Xem táº¥t cáº£'),
+              child: const Text('Xem tất cả'),
             ),
           ],
         ),
         const SizedBox(height: 8),
         if (teacherProvider.classes.isEmpty)
-          const _EmptyState(message: 'ChÆ°a cÃ³ lá»›p nÃ o Ä‘Æ°á»£c gÃ¡n cho giÃ¡o viÃªn nÃ y')
+          const _EmptyState(message: 'Chưa có lớp nào được gán cho giáo viên này')
         else
           ...teacherProvider.classes.take(2).map((teacherClass) {
             final subjectName = teacherProvider.getSubjectName(teacherClass.subjectId);
@@ -270,9 +270,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          _Chip(label: '${teacherClass.studentCount} há»c sinh', color: Colors.blue),
+                          _Chip(label: '${teacherClass.studentCount} học sinh', color: Colors.blue),
                           const SizedBox(width: 8),
-                          _Chip(label: '${teacherProvider.studentsForClass(teacherClass.id).length} máº«u hiá»ƒn thá»‹', color: Colors.green),
+                          _Chip(label: '${teacherProvider.studentsForClass(teacherClass.id).length} mẫu hiển thị', color: Colors.green),
                         ],
                       ),
                     ],
@@ -289,10 +289,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Lá»‹ch sáº¯p tá»›i', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Lịch sắp tới', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         if (teacherProvider.schedule.isEmpty)
-          const _EmptyState(message: 'ChÆ°a cÃ³ lá»‹ch dáº¡y hoáº·c lá»‹ch giao Ä‘á»')
+          const _EmptyState(message: 'Chưa có lịch dạy hoặc lịch giao đề')
         else
           ...teacherProvider.schedule.take(3).map(
                 (item) => Padding(

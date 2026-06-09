@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -29,17 +29,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ÄÄƒng xuáº¥t'),
-        content: const Text('Báº¡n cÃ³ muá»‘n Ä‘Äƒng xuáº¥t khá»i tÃ i khoáº£n Admin khÃ´ng?'),
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có muốn đăng xuất khỏi tài khoản Admin không?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Há»§y'),
+            child: const Text('Hủy'),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ÄÄƒng xuáº¥t'),
+            child: const Text('Đăng xuất'),
           ),
         ],
       ),
@@ -76,7 +76,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             IconButton(
               onPressed: _handleLogout,
               icon: const Icon(Icons.logout),
-              tooltip: 'ÄÄƒng xuáº¥t',
+              tooltip: 'Đăng xuất',
             ),
           ],
         ),
@@ -123,10 +123,10 @@ class _HeroCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Tá»•ng quan há»‡ thá»‘ng', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          const Text('Tổng quan hệ thống', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
-            'Quáº£n lÃ½ ngÆ°á»i dÃ¹ng, tÃ i liá»‡u, Ä‘á» thi vÃ  bÃ¡o cÃ¡o trong má»™t mÃ n hÃ¬nh.',
+            'Quản lý người dùng, tài liệu, đề thi và báo cáo trong một màn hình.',
             style: TextStyle(color: Colors.white.withOpacity(0.9)),
           ),
           const SizedBox(height: 16),
@@ -134,8 +134,8 @@ class _HeroCard extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _MiniBadge(label: 'LÆ°á»£t lÃ m bÃ i: ${report?.totalExamAttempts ?? 0}'),
-              _MiniBadge(label: 'Cáº­p nháº­t: ${report?.generatedAt.toLocal().toString().split('.').first ?? '-'}'),
+              _MiniBadge(label: 'Lượt làm bài: ${report?.totalExamAttempts ?? 0}'),
+              _MiniBadge(label: 'Cập nhật: ${report?.generatedAt.toLocal().toString().split('.').first ?? '-'}'),
             ],
           ),
         ],
@@ -152,12 +152,12 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      _StatItem('Tá»•ng user', report?.totalUsers.toString() ?? '0', Icons.people, Colors.blue),
-      _StatItem('Tá»•ng há»c sinh', report?.totalStudents.toString() ?? '0', Icons.school, Colors.green),
-      _StatItem('Tá»•ng giÃ¡o viÃªn', report?.totalTeachers.toString() ?? '0', Icons.person_pin, Colors.orange),
-      _StatItem('Tá»•ng tÃ i liá»‡u', report?.totalDocuments.toString() ?? '0', Icons.description, Colors.purple),
-      _StatItem('Tá»•ng Ä‘á» thi', report?.totalExams.toString() ?? '0', Icons.assignment, Colors.red),
-      _StatItem('Sá»‘ lÆ°á»£t lÃ m bÃ i', report?.totalExamAttempts.toString() ?? '0', Icons.bar_chart, Colors.teal),
+      _StatItem('Tổng user', report?.totalUsers.toString() ?? '0', Icons.people, Colors.blue),
+      _StatItem('Tổng học sinh', report?.totalStudents.toString() ?? '0', Icons.school, Colors.green),
+      _StatItem('Tổng giáo viên', report?.totalTeachers.toString() ?? '0', Icons.person_pin, Colors.orange),
+      _StatItem('Tổng tài liệu', report?.totalDocuments.toString() ?? '0', Icons.description, Colors.purple),
+      _StatItem('Tổng đề thi', report?.totalExams.toString() ?? '0', Icons.assignment, Colors.red),
+      _StatItem('Số lượt làm bài', report?.totalExamAttempts.toString() ?? '0', Icons.bar_chart, Colors.teal),
     ];
 
     return GridView.builder(
@@ -179,16 +179,16 @@ class _QuickActionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      _ActionItem('NgÆ°á»i dÃ¹ng', Icons.people, AppRoutes.adminUsers, Colors.blue),
-      _ActionItem('TÃ i liá»‡u', Icons.description, AppRoutes.adminDocuments, Colors.purple),
-      _ActionItem('Äá» & cÃ¢u há»i', Icons.quiz, AppRoutes.adminExams, Colors.orange),
-      _ActionItem('BÃ¡o cÃ¡o', Icons.assessment, AppRoutes.adminReports, Colors.green),
+      _ActionItem('Người dùng', Icons.people, AppRoutes.adminUsers, Colors.blue),
+      _ActionItem('Tài liệu', Icons.description, AppRoutes.adminDocuments, Colors.purple),
+      _ActionItem('Đề & câu hỏi', Icons.quiz, AppRoutes.adminExams, Colors.orange),
+      _ActionItem('Báo cáo', Icons.assessment, AppRoutes.adminReports, Colors.green),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Thao tÃ¡c nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Thao tác nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -246,10 +246,10 @@ class _SubjectOverview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Thá»‘ng kÃª theo mÃ´n', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text('Thống kê theo môn', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 12),
         if (provider.subjectReports.isEmpty)
-          const _EmptyState(message: 'ChÆ°a cÃ³ dá»¯ liá»‡u mÃ´n há»c')
+          const _EmptyState(message: 'Chưa có dữ liệu môn học')
         else
           ...provider.subjectReports.take(4).map(
                 (item) => Padding(
@@ -274,7 +274,7 @@ class _SubjectOverview extends StatelessWidget {
                             children: [
                               Text(item.subject.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                               const SizedBox(height: 4),
-                              Text('${item.documentCount} tÃ i liá»‡u â€¢ ${item.examCount} Ä‘á» â€¢ ${item.questionCount} cÃ¢u'),
+                              Text('${item.documentCount} tài liệu • ${item.examCount} đề • ${item.questionCount} câu'),
                             ],
                           ),
                         ),

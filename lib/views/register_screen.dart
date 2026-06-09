@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -33,41 +33,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Email khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Email không được để trống';
     }
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     if (!emailRegex.hasMatch(value)) {
-      return 'Email khÃ´ng há»£p lá»‡';
+      return 'Email không hợp lệ';
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Mật khẩu không được để trống';
     }
     if (value.length < 6) {
-      return 'Máº­t kháº©u pháº£i cÃ³ Ã­t nháº¥t 6 kÃ½ tá»±';
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
     }
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'XÃ¡c nháº­n máº­t kháº©u khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Xác nhận mật khẩu không được để trống';
     }
     if (value != _passwordController.text) {
-      return 'Máº­t kháº©u xÃ¡c nháº­n khÃ´ng khá»›p';
+      return 'Mật khẩu xác nhận không khớp';
     }
     return null;
   }
 
   String? _validateName(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Há» tÃªn khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng';
+      return 'Họ tên không được để trống';
     }
     if (value.length < 3) {
-      return 'Há» tÃªn pháº£i cÃ³ Ã­t nháº¥t 3 kÃ½ tá»±';
+      return 'Họ tên phải có ít nhất 3 ký tự';
     }
     return null;
   }
@@ -106,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ÄÄƒng kÃ½'),
+        title: const Text('Đăng ký'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -139,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Táº¡o tÃ i khoáº£n má»›i',
+                            'Tạo tài khoản mới',
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -176,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Input Field: Full Name
                     Text(
-                      'Há» tÃªn',
+                      'Họ tên',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -186,7 +186,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _nameController,
                       enabled: !authProvider.isLoading,
                       decoration: InputDecoration(
-                        hintText: 'Nháº­p há» tÃªn Ä‘áº§y Ä‘á»§',
+                        hintText: 'Nhập họ tên đầy đủ',
                         prefixIcon: const Icon(Icons.person_outline),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -209,7 +209,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       controller: _emailController,
                       enabled: !authProvider.isLoading,
                       decoration: InputDecoration(
-                        hintText: 'Nháº­p email',
+                        hintText: 'Nhập email',
                         prefixIcon: const Icon(Icons.email_outlined),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -223,7 +223,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Input Field: Role Selection
                     Text(
-                      'Vai trÃ²',
+                      'Vai trò',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -244,15 +244,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         items: const [
                           DropdownMenuItem(
                             value: UserRole.student,
-                            child: Text('ðŸ“š Há»c sinh'),
+                            child: Text('📚 Học sinh'),
                           ),
                           DropdownMenuItem(
                             value: UserRole.teacher,
-                            child: Text('ðŸ‘¨â€ðŸ« GiÃ¡o viÃªn'),
+                            child: Text('👨‍🏫 Giáo viên'),
                           ),
                           DropdownMenuItem(
                             value: UserRole.admin,
-                            child: Text('ðŸ” Quáº£n trá»‹ viÃªn'),
+                            child: Text('🔐 Quản trị viên'),
                           ),
                         ],
                         onChanged: authProvider.isLoading
@@ -270,7 +270,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Input Field: Password
                     Text(
-                      'Máº­t kháº©u',
+                      'Mật khẩu',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -281,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       enabled: !authProvider.isLoading,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        hintText: 'Nháº­p máº­t kháº©u (tá»‘i thiá»ƒu 6 kÃ½ tá»±)',
+                        hintText: 'Nhập mật khẩu (tối thiểu 6 ký tự)',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -305,7 +305,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Input Field: Confirm Password
                     Text(
-                      'XÃ¡c nháº­n máº­t kháº©u',
+                      'Xác nhận mật khẩu',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -316,7 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       enabled: !authProvider.isLoading,
                       obscureText: _obscureConfirmPassword,
                       decoration: InputDecoration(
-                        hintText: 'Nháº­p láº¡i máº­t kháº©u',
+                        hintText: 'Nhập lại mật khẩu',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -352,7 +352,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               )
                             : const Icon(Icons.person_add),
                         label: Text(
-                          authProvider.isLoading ? 'Äang Ä‘Äƒng kÃ½...' : 'ÄÄƒng kÃ½',
+                          authProvider.isLoading ? 'Đang đăng ký...' : 'Đăng ký',
                         ),
                       ),
                     ),
@@ -363,12 +363,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('ÄÃ£ cÃ³ tÃ i khoáº£n? '),
+                          const Text('Đã có tài khoản? '),
                           TextButton(
                             onPressed: authProvider.isLoading
                                 ? null
                                 : () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
-                            child: const Text('ÄÄƒng nháº­p'),
+                            child: const Text('Đăng nhập'),
                           ),
                         ],
                       ),

@@ -32,7 +32,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chi tiáº¿t tÃ i liá»‡u'),
+        title: const Text('Chi tiết tài liệu'),
         centerTitle: true,
         elevation: 0,
         actions: [
@@ -44,7 +44,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isMarked ? 'ÄÃ£ thÃªm vÃ o bá»™ sÆ°u táº­p' : 'ÄÃ£ bá» khá»i bá»™ sÆ°u táº­p',
+                    _isMarked ? 'Đã thêm vào bộ sưu tập' : 'Đã bỏ khỏi bộ sưu tập',
                   ),
                 ),
               );
@@ -59,7 +59,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       body: FutureBuilder<Subject?>(
         future: _subjectFuture,
         builder: (context, snapshot) {
-          final subjectName = snapshot.data?.name ?? 'MÃ´n há»c';
+          final subjectName = snapshot.data?.name ?? 'Môn học';
 
           return SingleChildScrollView(
             child: Padding(
@@ -111,7 +111,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                             Icon(Icons.schedule, size: 16, color: Colors.grey[700]),
                             const SizedBox(width: 6),
                             Text(
-                              '${_estimateReadingTime(widget.document)} phÃºt Ä‘á»c',
+                              '${_estimateReadingTime(widget.document)} phút đọc',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: Colors.grey[700],
                                   ),
@@ -127,7 +127,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                       Expanded(
                         child: _buildInfoCard(
                           context,
-                          label: 'TÃ¡c giáº£',
+                          label: 'Tác giả',
                           value: widget.document.author,
                           color: Colors.blue,
                         ),
@@ -136,7 +136,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                       Expanded(
                         child: _buildInfoCard(
                           context,
-                          label: 'LÆ°á»£t xem',
+                          label: 'Lượt xem',
                           value: '${widget.document.views}',
                           color: Colors.orange,
                         ),
@@ -145,7 +145,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'TÃ³m táº¯t ná»™i dung',
+                    'Tóm tắt nội dung',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -171,7 +171,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Ná»™i dung xem nhanh',
+                    'Nội dung xem nhanh',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -211,7 +211,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('ÄÃ£ Ä‘Ã¡nh dáº¥u tÃ i liá»‡u lÃ  Ä‘Ã£ há»c'),
+                  content: Text('Đã đánh dấu tài liệu là đã học'),
                 ),
               );
             },
@@ -222,7 +222,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               ),
             ),
             child: Text(
-              _isLearned ? 'ÄÃ£ há»c' : 'ÄÃ¡nh dáº¥u Ä‘Ã£ há»c',
+              _isLearned ? 'Đã học' : 'Đánh dấu đã học',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -274,7 +274,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   String _extractSummary(String content) {
     final trimmed = content.trim();
     if (trimmed.isEmpty) {
-      return 'KhÃ´ng cÃ³ ná»™i dung chi tiáº¿t.';
+      return 'Không có nội dung chi tiết.';
     }
 
     final lines = trimmed
@@ -283,7 +283,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         .where((line) => line.isNotEmpty)
         .toList();
     if (lines.isEmpty) {
-      return 'KhÃ´ng cÃ³ ná»™i dung chi tiáº¿t.';
+      return 'Không có nội dung chi tiết.';
     }
 
     final summaryLines = lines.take(8).toList();

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
@@ -143,9 +143,9 @@ class TeacherController extends ChangeNotifier {
             exam: exam,
             subject: subject,
             question: question,
-            correctAnswer: correctOption?.content ?? 'ChÆ°a xÃ¡c Ä‘á»‹nh',
+            correctAnswer: correctOption?.content ?? 'Chưa xác định',
             difficulty: _buildDifficulty(question),
-            status: exam.isPublished ? 'ÄÃ£ phÃ¡t hÃ nh' : 'NhÃ¡p',
+            status: exam.isPublished ? 'Đã phát hành' : 'Nháp',
           ),
         );
       }
@@ -167,7 +167,7 @@ class TeacherController extends ChangeNotifier {
       final subjectStats = progressStats.where((stat) => stat.subjectId == teacherClass.subjectId).toList();
       map[teacherClass.id] = _buildDemoStudents(
         teacherClass: teacherClass,
-        subjectName: subject?.name ?? 'MÃ´n há»c',
+        subjectName: subject?.name ?? 'Môn học',
         progressStats: subjectStats,
       );
     }
@@ -191,7 +191,7 @@ class TeacherController extends ChangeNotifier {
         streakDays: primaryStat?.streakDays ?? 5,
       ),
       const TeacherStudentSummary(
-        name: 'Tráº§n Minh Khang',
+        name: 'Trần Minh Khang',
         email: 'khang12@example.com',
         averageScore: 8.2,
         completionPercentage: 82,
@@ -200,7 +200,7 @@ class TeacherController extends ChangeNotifier {
         streakDays: 8,
       ),
       const TeacherStudentSummary(
-        name: 'LÃª Thu HÃ ',
+        name: 'Lê Thu Hà',
         email: 'ha12@example.com',
         averageScore: 7.4,
         completionPercentage: 74,
@@ -209,7 +209,7 @@ class TeacherController extends ChangeNotifier {
         streakDays: 6,
       ),
       const TeacherStudentSummary(
-        name: 'Pháº¡m HoÃ ng Nam',
+        name: 'Phạm Hoàng Nam',
         email: 'nam12@example.com',
         averageScore: 6.5,
         completionPercentage: 60,
@@ -218,7 +218,7 @@ class TeacherController extends ChangeNotifier {
         streakDays: 3,
       ),
       const TeacherStudentSummary(
-        name: 'Nguyá»…n KhÃ¡nh Vy',
+        name: 'Nguyễn Khánh Vy',
         email: 'vy12@example.com',
         averageScore: 5.9,
         completionPercentage: 48,
@@ -245,8 +245,8 @@ class TeacherController extends ChangeNotifier {
       schedule.add(
         TeacherScheduleItem(
           id: 'lesson_${teacherClass.id}',
-          title: 'Dáº¡y ${teacherClass.className}',
-          subtitle: '${subject?.name ?? 'MÃ´n há»c'} â€¢ ${teacherClass.studentCount} há»c sinh',
+          title: 'Dạy ${teacherClass.className}',
+          subtitle: '${subject?.name ?? 'MÃ´n há»c'} • ${teacherClass.studentCount} học sinh',
           startTime: DateTime(now.year, now.month, now.day + index + 1, 7 + index, 30),
           durationMinutes: 90,
           icon: Icons.class_,
@@ -262,7 +262,7 @@ class TeacherController extends ChangeNotifier {
         TeacherScheduleItem(
           id: 'exam_${exam.id}',
           title: 'Giao ${exam.title}',
-          subtitle: '${subject?.name ?? 'MÃ´n há»c'} â€¢ ${exam.questionCount} cÃ¢u',
+          subtitle: '${subject?.name ?? 'MÃ´n há»c'} • ${exam.questionCount} câu',
           startTime: DateTime(now.year, now.month, now.day + index + 2, 19, 0),
           durationMinutes: exam.durationMinutes,
           icon: Icons.assignment_turned_in,
@@ -304,9 +304,9 @@ class TeacherController extends ChangeNotifier {
   }
 
   String _buildDifficulty(Question question) {
-    if (question.orderNumber <= 2) return 'Dá»…';
-    if (question.orderNumber <= 4) return 'Trung bÃ¬nh';
-    return 'KhÃ³';
+    if (question.orderNumber <= 2) return 'Dễ';
+    if (question.orderNumber <= 4) return 'Trung bình';
+    return 'Khó';
   }
 }
 

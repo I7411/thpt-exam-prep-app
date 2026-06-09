@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -101,8 +101,8 @@ class NotificationService {
   }) async {
     await _plugin.zonedSchedule(
       _randomNotificationId(),
-      'Nháº¯c há»c',
-      'Äáº¿n giá» Ã´n táº­p ngáº¯n trong ngÃ y.',
+      'Nhắc học',
+      'Đến giờ ôn tập ngắn trong ngày.',
       tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10)),
       _notificationDetails(),
       payload: payload,
@@ -131,8 +131,8 @@ class NotificationService {
 
     await _plugin.zonedSchedule(
       1900,
-      'Nháº¯c há»c háº±ng ngÃ y',
-      'Äáº¿n giá» há»c táº­p theo káº¿ hoáº¡ch.',
+      'Nhắc học hằng ngày',
+      'Đến giờ học tập theo kế hoạch.',
       scheduledTime,
       _notificationDetails(),
       payload: payload,

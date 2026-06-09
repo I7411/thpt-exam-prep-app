@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
@@ -25,7 +25,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CÃ¡ nhÃ¢n'),
+        title: const Text('Cá nhân'),
         centerTitle: true,
       ),
       body: ListView(
@@ -34,19 +34,19 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           _buildProfileHeader(context, user, roleLabel),
           const SizedBox(height: 20),
           Text(
-            'ThÃ´ng tin há»c sinh',
+            'Thông tin học sinh',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
           const SizedBox(height: 12),
-          _InfoRow(label: 'Há» tÃªn', value: user?.fullName ?? 'Há»c sinh'),
-          _InfoRow(label: 'Email', value: user?.email ?? 'ChÆ°a cÃ³'),
-          _InfoRow(label: 'Lá»›p', value: user?.className ?? '12A1'),
-          _InfoRow(label: 'Vai trÃ²', value: roleLabel),
+          _InfoRow(label: 'Họ tên', value: user?.fullName ?? 'Học sinh'),
+          _InfoRow(label: 'Email', value: user?.email ?? 'Chưa có'),
+          _InfoRow(label: 'Lớp', value: user?.className ?? '12A1'),
+          _InfoRow(label: 'Vai trò', value: roleLabel),
           const SizedBox(height: 20),
           Text(
-            'CÃ i Ä‘áº·t demo',
+            'Cài đặt demo',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -67,8 +67,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       _receiveLearningNotifications = value;
                     });
                   },
-                  title: const Text('Nháº­n nháº¯c há»c'),
-                  subtitle: const Text('Báº­t/táº¯t demo thÃ´ng bÃ¡o há»c táº­p'),
+                  title: const Text('Nhận nhắc học'),
+                  subtitle: const Text('Bật/tắt demo thông báo học tập'),
                 ),
                 SwitchListTile(
                   value: _autoMarkCompleted,
@@ -77,8 +77,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       _autoMarkCompleted = value;
                     });
                   },
-                  title: const Text('Tá»± Ä‘Ã¡nh dáº¥u hoÃ n thÃ nh'),
-                  subtitle: const Text('MÃ´ phá»ng cÃ i Ä‘áº·t tá»± Ä‘á»™ng lÆ°u tiáº¿n Ä‘á»™'),
+                  title: const Text('Tự đánh dấu hoàn thành'),
+                  subtitle: const Text('Mô phỏng cài đặt tự động lưu tiến độ'),
                 ),
                 SwitchListTile(
                   value: _saveMobileData,
@@ -87,8 +87,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       _saveMobileData = value;
                     });
                   },
-                  title: const Text('Tiáº¿t kiá»‡m dá»¯ liá»‡u'),
-                  subtitle: const Text('Giáº£m táº£i áº£nh vÃ  ná»™i dung náº·ng'),
+                  title: const Text('Tiết kiệm dữ liệu'),
+                  subtitle: const Text('Giảm tải ảnh và nội dung nặng'),
                 ),
               ],
             ),
@@ -104,8 +104,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.notifications_none),
-                  title: const Text('Má»Ÿ thÃ´ng bÃ¡o'),
-                  subtitle: const Text('Xem cÃ¡c thÃ´ng bÃ¡o há»c táº­p gáº§n Ä‘Ã¢y'),
+                  title: const Text('Mở thông báo'),
+                  subtitle: const Text('Xem các thông báo học tập gần đây'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.pushNamed(context, AppRoutes.studentNotifications);
@@ -113,12 +113,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: const Text('Giá»›i thiá»‡u'),
-                  subtitle: const Text('Báº£n demo mÃ n hÃ¬nh cÃ¡ nhÃ¢n'),
+                  title: const Text('Giới thiệu'),
+                  subtitle: const Text('Bản demo màn hình cá nhân'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('ÄÃ¢y lÃ  cÃ i Ä‘áº·t demo.')),
+                      const SnackBar(content: Text('Đây là cài đặt demo.')),
                     );
                   },
                 ),
@@ -140,7 +140,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       );
                     },
               icon: const Icon(Icons.logout),
-              label: const Text('ÄÄƒng xuáº¥t'),
+              label: const Text('Đăng xuất'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 shape: RoundedRectangleBorder(
@@ -189,7 +189,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user?.fullName ?? 'Há»c sinh',
+                  user?.fullName ?? 'Học sinh',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -204,7 +204,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Vai trÃ²: $roleLabel',
+                  'Vai trò: $roleLabel',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.white.withOpacity(0.85),
                       ),

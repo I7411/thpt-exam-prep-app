@@ -41,7 +41,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('TÃ i liá»‡u há»c táº­p'),
+        title: const Text('Tài liệu học tập'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -53,7 +53,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Lá»—i táº£i tÃ i liá»‡u: ${snapshot.error}'));
+            return Center(child: Text('Lỗi tải tài liệu: ${snapshot.error}'));
           }
 
           final data = snapshot.data;
@@ -84,7 +84,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                     if (index == 0) {
                       final isSelected = _selectedSubjectId == null;
                       return FilterChip(
-                        label: const Text('Táº¥t cáº£'),
+                        label: const Text('Tất cả'),
                         selected: isSelected,
                         onSelected: (_) {
                           setState(() {
@@ -121,7 +121,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'KhÃ´ng cÃ³ tÃ i liá»‡u nÃ o',
+                              'Không có tài liệu nào',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
@@ -133,7 +133,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                         separatorBuilder: (context, index) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final document = filteredDocuments[index];
-                          final subjectName = subjectsById[document.subjectId]?.name ?? 'MÃ´n há»c';
+                          final subjectName = subjectsById[document.subjectId]?.name ?? 'Môn học';
                           final isMarked = _markedDocumentIds.contains(document.id);
 
                           return SizedBox(
@@ -141,7 +141,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                             child: DocumentCard(
                               title: document.title,
                               subject: subjectName,
-                              duration: '${_estimateReadingTime(document)} phÃºt Ä‘á»c',
+                              duration: '${_estimateReadingTime(document)} phút đọc',
                               preview: document.description,
                               isMarked: isMarked,
                               onTap: () {
@@ -164,8 +164,8 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                                   SnackBar(
                                     content: Text(
                                       isMarked
-                                          ? 'Bá» Ä‘Ã¡nh dáº¥u: ${document.title}'
-                                          : 'ÄÃ£ Ä‘Ã¡nh dáº¥u: ${document.title}',
+                                          ? 'Bỏ đánh dấu: ${document.title}'
+                                          : 'Đã đánh dấu: ${document.title}',
                                     ),
                                     duration: const Duration(seconds: 1),
                                   ),

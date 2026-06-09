@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class DocumentCard extends StatelessWidget {
   final String title;
@@ -148,7 +148,7 @@ class DocumentCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      'Äá»c thÃªm',
+                      'Đọc thêm',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Colors.purple,
                             fontWeight: FontWeight.w600,

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -137,13 +137,13 @@ class ApiService {
 
       return _handleResponse<T>(response);
     } on TimeoutException {
-      throw const ApiException('Káº¿t ná»‘i quÃ¡ thá»i gian chá». Vui lÃ²ng thá»­ láº¡i sau.');
+      throw const ApiException('Kết nối quá thời gian chờ. Vui lòng thử lại sau.');
     } on SocketException {
-      throw const ApiException('KhÃ´ng cÃ³ káº¿t ná»‘i máº¡ng hoáº·c khÃ´ng truy cáº­p Ä‘Æ°á»£c backend.');
+      throw const ApiException('Không có kết nối mạng hoặc không truy cập được backend.');
     } on HttpException {
-      throw const ApiException('Lá»—i giao thá»©c HTTP khi gá»i API.');
+      throw const ApiException('Lỗi giao thức HTTP khi gọi API.');
     } on FormatException {
-      throw const ApiException('Dá»¯ liá»‡u JSON tá»« server khÃ´ng há»£p lá»‡.');
+      throw const ApiException('Dữ liệu JSON từ server không hợp lệ.');
     }
   }
 
@@ -166,7 +166,7 @@ class ApiService {
         return jsonDecode(responseBody) as T?;
       } on FormatException {
         throw ApiException(
-          'Server tráº£ vá» dá»¯ liá»‡u khÃ´ng pháº£i JSON há»£p lá»‡.',
+          'Server trả về dữ liệu không phải JSON hợp lệ.',
           statusCode: statusCode,
           body: responseBody,
         );
@@ -183,7 +183,7 @@ class ApiService {
     }
 
     throw ApiException(
-      'API tráº£ vá» lá»—i HTTP $statusCode.',
+      'API trả về lỗi HTTP $statusCode.',
       statusCode: statusCode,
       body: errorBody,
     );

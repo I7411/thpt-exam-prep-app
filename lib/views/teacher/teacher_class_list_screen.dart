@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
@@ -32,7 +32,7 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sÃ¡ch lá»›p'),
+        title: const Text('Danh sách lớp'),
         actions: [
           IconButton(
             onPressed: _loadData,
@@ -51,7 +51,7 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
                   _buildSummary(teacherProvider),
                   const SizedBox(height: 16),
                   if (teacherProvider.classes.isEmpty)
-                    const _EmptyState(message: 'ChÆ°a cÃ³ lá»›p nÃ o Ä‘Æ°á»£c gÃ¡n cho giÃ¡o viÃªn nÃ y')
+                    const _EmptyState(message: 'Chưa có lớp nào được gán cho giáo viên này')
                   else
                     ...teacherProvider.classes.map(
                       (teacherClass) => Padding(
@@ -88,13 +88,13 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _SummaryTile(label: 'Lá»›p', value: teacherProvider.classes.length.toString()),
+            child: _SummaryTile(label: 'Lớp', value: teacherProvider.classes.length.toString()),
           ),
           Expanded(
-            child: _SummaryTile(label: 'Há»c sinh', value: teacherProvider.totalStudents.toString()),
+            child: _SummaryTile(label: 'Học sinh', value: teacherProvider.totalStudents.toString()),
           ),
           Expanded(
-            child: _SummaryTile(label: 'Tiáº¿n Ä‘á»™ TB', value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%'),
+            child: _SummaryTile(label: 'Tiến độ TB', value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%'),
           ),
         ],
       ),
@@ -159,13 +159,13 @@ class _ClassCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _Tag(label: '${teacherClass.studentCount} há»c sinh'),
-                _Tag(label: '${sampleStudents.length} há»“ sÆ¡ máº«u'),
+                _Tag(label: '${teacherClass.studentCount} học sinh'),
+                _Tag(label: '${sampleStudents.length} hồ sơ mẫu'),
               ],
             ),
             if (topStudents.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Text('Há»c sinh tiÃªu biá»ƒu', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text('Học sinh tiêu biểu', style: TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               ...topStudents.map(
                 (student) => Padding(
@@ -178,7 +178,7 @@ class _ClassCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Expanded(child: Text(student.name)),
-                      Text('${student.averageScore.toStringAsFixed(1)} Ä‘iá»ƒm'),
+                      Text('${student.averageScore.toStringAsFixed(1)} điểm'),
                     ],
                   ),
                 ),

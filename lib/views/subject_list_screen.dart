@@ -27,7 +27,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CÃ¡c mÃ´n há»c'),
+        title: const Text('Các môn học'),
         centerTitle: true,
         elevation: 0,
       ),
@@ -39,7 +39,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Lá»—i táº£i mÃ´n há»c: ${snapshot.error}'));
+            return Center(child: Text('Lỗi tải môn học: ${snapshot.error}'));
           }
 
           final subjects = snapshot.data ?? const <Subject>[];
@@ -51,7 +51,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                   Icon(Icons.subject, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
                   Text(
-                    'KhÃ´ng cÃ³ mÃ´n há»c nÃ o',
+                    'Không có môn học nào',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ],
@@ -76,7 +76,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                 name: subject.name,
                 icon: config.icon,
                 color: config.color,
-                progress: '${subject.totalDocuments} tÃ i liá»‡u',
+                progress: '${subject.totalDocuments} tài liệu',
                 onTap: () {
                   Navigator.pushNamed(
                     context,
@@ -94,23 +94,23 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
 
   _SubjectConfig _subjectConfig(String subjectName) {
     switch (subjectName.toLowerCase()) {
-      case 'toÃ¡n':
+      case 'toán':
         return const _SubjectConfig(Icons.calculate, Colors.blue);
-      case 'ngá»¯ vÄƒn':
+      case 'ngữ văn':
         return const _SubjectConfig(Icons.menu_book, Colors.red);
-      case 'tiáº¿ng anh':
+      case 'tiếng anh':
         return const _SubjectConfig(Icons.language, Colors.green);
-      case 'váº­t lÃ½':
+      case 'vật lý':
         return const _SubjectConfig(Icons.science, Colors.purple);
-      case 'hÃ³a há»c':
+      case 'hóa học':
         return const _SubjectConfig(Icons.science, Colors.orange);
-      case 'sinh há»c':
+      case 'sinh học':
         return const _SubjectConfig(Icons.favorite, Colors.pink);
-      case 'lá»‹ch sá»­':
+      case 'lịch sử':
         return const _SubjectConfig(Icons.history_edu, Colors.brown);
-      case 'Ä‘á»‹a lÃ½':
+      case 'địa lý':
         return const _SubjectConfig(Icons.public, Colors.teal);
-      case 'giÃ¡o dá»¥c kinh táº¿ vÃ  phÃ¡p luáº­t':
+      case 'giáo dục kinh tế và pháp luật':
         return const _SubjectConfig(Icons.gavel, Colors.indigo);
       default:
         return const _SubjectConfig(Icons.subject, Colors.grey);

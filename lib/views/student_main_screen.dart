@@ -43,27 +43,27 @@ class _StudentMainScreenState extends State<StudentMainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
-            label: 'Trang chá»§',
+            label: 'Trang chủ',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.description_outlined),
             activeIcon: Icon(Icons.description),
-            label: 'TÃ i liá»‡u',
+            label: 'Tài liệu',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.quiz_outlined),
             activeIcon: Icon(Icons.quiz),
-            label: 'Thi thá»­',
+            label: 'Thi thử',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.trending_up_outlined),
             activeIcon: Icon(Icons.trending_up),
-            label: 'Tiáº¿n Ä‘á»™',
+            label: 'Tiến độ',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outlined),
             activeIcon: Icon(Icons.person),
-            label: 'CÃ¡ nhÃ¢n',
+            label: 'Cá nhân',
           ),
         ],
       ),
