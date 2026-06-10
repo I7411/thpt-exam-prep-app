@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "529775655888-2k9uvt636953a1jaii724vmqu105g5mu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.thpt_exam_prep_app",
+            "certificate_hash": "cd55fba937fb0ed6396e57973a9b6fee79ecf415"
+          }
+        },
+        {
           "client_id": "529775655888-l8mcjhpu4i4veijhqev9cj60gsjom86n.apps.googleusercontent.com",
           "client_type": 3
         }

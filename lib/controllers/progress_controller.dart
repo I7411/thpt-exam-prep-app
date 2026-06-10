@@ -15,6 +15,10 @@ class ProgressController extends ChangeNotifier {
   List<ExamResultData> _examHistory = <ExamResultData>[];
   List<Subject> _subjects = <Subject>[];
 
+  /// The source-of-truth document count, loaded from Firestore
+  /// `learned_materials` collection (count query) or `progress_stats`.
+  int _totalLearnedDocuments = 0;
+
   bool get isLoading => _isLoading;
   String? get studentId => _studentId;
   List<ProgressStat> get subjectProgress => List.unmodifiable(_subjectProgress);
@@ -24,10 +28,13 @@ class ProgressController extends ChangeNotifier {
   int get totalExamsTaken =>
       _subjectProgress.fold(0, (total, item) => total + item.totalExamsTaken);
 
-  int get totalDocumentsRead => _subjectProgress.fold(
-    0,
-    (total, item) => total + item.totalDocumentsRead,
-  );
+  /// Total documents learned — comes from `learned_materials` count query,
+  /// NOT from summing ProgressStat.totalDocumentsRead (which is always 0
+  /// because document reads are tracked separately).
+  int get totalLearnedDocuments => _totalLearnedDocuments;
+
+  /// @deprecated — kept for backward-compat. Prefer [totalLearnedDocuments].
+  int get totalDocumentsRead => _totalLearnedDocuments;
 
   double get averageScore {
     var weightedScore = 0.0;
@@ -63,17 +70,68 @@ class ProgressController extends ChangeNotifier {
           .timeout(const Duration(seconds: 12));
       _subjectProgress = firestoreProgress;
 
+      // Load learned-documents count from the repository (Firestore count query).
+      _totalLearnedDocuments = await _repositoryService.progress
+          .getTotalLearnedDocuments(studentId)
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('[Progress] Progress screen loaded documentsRead=$_totalLearnedDocuments');
+
       final localHistory = await _localRepository.getExamHistory(studentId);
       _examHistory = localHistory;
     } catch (e) {
       debugPrint('Không tải được tiến độ học tập: $e');
       _subjectProgress = <ProgressStat>[];
       _examHistory = <ExamResultData>[];
+      // Keep _totalLearnedDocuments as last known value (or 0 on first load).
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
+
+  // ── Mark document as learned ──────────────────────────────────────────────
+
+  /// Marks the given document as learned for the current student.
+  ///
+  /// Behaviour:
+  /// - Writes `learned_materials/{userId}_{documentId}` (idempotent).
+  /// - Recalculates `documentsRead` from source of truth (count query).
+  /// - Updates `progress_stats/{userId}.documentsRead` in Firestore.
+  /// - Updates in-memory `_totalLearnedDocuments` and calls `notifyListeners()`.
+  ///
+  /// Returns `true` on success, `false` on Firestore failure.
+  Future<bool> markDocumentAsLearned(StudyDocument document) async {
+    final uid = _studentId;
+    if (uid == null || uid.isEmpty) {
+      debugPrint('[Progress] markDocumentAsLearned skipped: no studentId');
+      return false;
+    }
+
+    try {
+      await _repositoryService.progress.markDocumentAsLearned(
+        userId: uid,
+        materialId: document.id,
+        title: document.title,
+        subjectId: document.subjectId,
+      );
+
+      // Refresh count from source of truth.
+      final count = await _repositoryService.progress
+          .getTotalLearnedDocuments(uid)
+          .timeout(const Duration(seconds: 8));
+
+      _totalLearnedDocuments = count;
+      notifyListeners();
+      debugPrint('[Progress] ProgressController updated documentsRead=$count');
+      return true;
+    } catch (e) {
+      debugPrint('[Progress] markDocumentAsLearned error: $e');
+      return false;
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   ProgressStat? progressForSubject(String subjectId) {
     for (final progress in _subjectProgress) {

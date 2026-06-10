@@ -26,6 +26,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   bool _isLoadingExam = true;
   bool _providerAttached = false;
   bool _navigatedToResult = false;
+  /// Local flag to prevent double-tap on submit while dialog is open
+  /// or the submit flow is running.
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -49,6 +52,20 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     final authProvider = context.read<AuthController>();
     final studentId = authProvider.currentUser?.id ?? 'student_001';
     final questions = await _repositoryService.exam.getQuestionsByExam(widget.exam.id);
+    
+    if (questions.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đề thi chưa có câu hỏi.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
     await _examProvider.startExam(
       exam: widget.exam,
       questions: questions,
@@ -61,7 +78,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   }
 
   Future<void> _handleSubmit(ExamController provider) async {
-    if (provider.isSubmitted) return;
+    // Prevent double-submit: check both local flag and provider flag.
+    if (_isSubmitting || provider.isSubmitted || provider.isSubmitting) return;
 
     final totalQuestions = provider.questions.length;
     final answeredQuestions = provider.answeredCount;
@@ -73,8 +91,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     }
     contentText += '\n\nSau khi nộp bài, bạn sẽ xem được kết quả đánh giá.';
 
+    debugPrint('[ExamSubmit] Confirm dialog opened');
+
     final shouldSubmit = await showDialog<bool>(
           context: context,
+          barrierDismissible: false,
           builder: (dialogContext) {
             return AlertDialog(
               title: const Text('Nộp bài'),
@@ -94,25 +115,57 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         ) ??
         false;
 
-    if (!shouldSubmit || !mounted) return;
+    if (!shouldSubmit) {
+      debugPrint('[ExamSubmit] User cancelled');
+      return;
+    }
+    if (!mounted) return;
 
-    await provider.submitExam(confirmed: true);
+    debugPrint('[ExamSubmit] User confirmed');
+
+    // Lock UI immediately to prevent any subsequent taps.
+    setState(() => _isSubmitting = true);
+
+    try {
+      // submitExam() now returns immediately after building the result and
+      // calling notifyListeners(). Background I/O happens inside the controller.
+      await provider.submitExam(confirmed: true);
+      debugPrint('[ExamSubmit] submitExam() returned — navigation will fire via addPostFrameCallback');
+    } catch (e, st) {
+      debugPrint('[ExamSubmit] Error during submit: $e');
+      debugPrint('[ExamSubmit] StackTrace: $st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể nộp bài. Vui lòng thử lại.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        setState(() => _isSubmitting = false);
+      }
+    }
+    // NOTE: We do NOT reset _isSubmitting to false on success because the
+    // screen is replaced by pushReplacementNamed and setState would be a no-op
+    // (or throw a "called after dispose" error).
   }
 
   void _goToResult(ExamController provider) {
     if (_navigatedToResult || !mounted) return;
     _navigatedToResult = true;
+    debugPrint('[ExamSubmit] Navigating to result screen');
     Navigator.pushReplacementNamed(
       context,
       AppRoutes.studentExamResult,
       arguments: provider.currentResult,
     );
+    debugPrint('[ExamSubmit] Navigation done');
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ExamController>(
       builder: (context, provider, _) {
+        // Trigger navigation on the next frame when the exam is marked submitted.
         if (provider.isSubmitted && !_navigatedToResult) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _goToResult(provider);
@@ -135,6 +188,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           );
         }
 
+        // True when we should block the submit button.
+        final submitBlocked = provider.isSubmitted || provider.isSubmitting || _isSubmitting;
+
         return Scaffold(
           appBar: AppBar(
             title: Text(widget.exam.title),
@@ -143,21 +199,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: provider.remainingTime.inSeconds <= 60
-                          ? AppColors.error.withOpacity(0.1)
-                          : AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      provider.remainingTimeLabel,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: provider.remainingTime.inSeconds <= 60 ? AppColors.error : AppColors.primary,
-                          ),
-                    ),
+                  child: _TimerBadge(
+                    label: provider.remainingTimeLabel,
+                    isUrgent: provider.remainingTime.inSeconds <= 60,
                   ),
                 ),
               ),
@@ -287,9 +331,25 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: provider.isSubmitted ? null : () => _handleSubmit(provider),
-                icon: const Icon(Icons.send_rounded),
-                label: Text(provider.isSubmitted ? 'Đã nộp bài' : 'Nộp bài'),
+                // Disable button while submitting or already submitted.
+                onPressed: submitBlocked ? null : () => _handleSubmit(provider),
+                icon: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.send_rounded),
+                label: Text(
+                  provider.isSubmitted
+                      ? 'Đã nộp bài'
+                      : _isSubmitting
+                          ? 'Đang nộp bài...'
+                          : 'Nộp bài',
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
@@ -501,6 +561,34 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       return AppColors.error.withOpacity(0.08);
     }
     return Colors.white;
+  }
+}
+
+/// Timer badge extracted as a const-friendly widget to avoid full rebuilds.
+class _TimerBadge extends StatelessWidget {
+  final String label;
+  final bool isUrgent;
+
+  const _TimerBadge({required this.label, required this.isUrgent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isUrgent
+            ? AppColors.error.withOpacity(0.1)
+            : AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: isUrgent ? AppColors.error : AppColors.primary,
+            ),
+      ),
+    );
   }
 }
 

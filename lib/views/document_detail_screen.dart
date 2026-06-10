@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/providers/progress_provider.dart';
 
 import '../app_theme.dart';
 import '../models.dart';
@@ -39,6 +40,16 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkIsMarked();
+    // Ensure ProgressController knows about the current student so that
+    // markDocumentAsLearned() can update state and notify listeners.
+    final authProvider = context.read<AuthController>();
+    final uid = authProvider.currentUser?.id;
+    if (uid != null && uid.isNotEmpty) {
+      final progressCtrl = context.read<ProgressController>();
+      if (progressCtrl.studentId != uid) {
+        progressCtrl.initialize(uid);
+      }
+    }
   }
 
   Future<void> _checkIsMarked() async {
@@ -242,31 +253,65 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           child: ElevatedButton.icon(
             onPressed: () async {
               final authProvider = context.read<AuthController>();
-              final userId = authProvider.currentUser?.id ?? 'student_001';
-              
+              final userId = authProvider.currentUser?.id ?? '';
+
+              if (userId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Bạn cần đăng nhập để đánh dấu tài liệu đã học.'),
+                  ),
+                );
+                return;
+              }
+
               try {
-                await FirebaseFirestore.instance
-                    .collection('learned_materials')
-                    .doc('${userId}_${widget.document.id}')
-                    .set({
-                      'userId': userId,
-                      'materialId': widget.document.id,
-                      'learnedAt': FieldValue.serverTimestamp(),
-                    });
-                
+                // Step 1: optimistic UI update
                 setState(() {
                   _isLearned = true;
                 });
-                
-                if (mounted) {
+
+                // Step 2: delegate to ProgressController which handles
+                //   learned_materials write + progress_stats update + notifyListeners
+                final progressCtrl = context.read<ProgressController>();
+                final success = await progressCtrl.markDocumentAsLearned(
+                  widget.document,
+                );
+
+                if (!mounted) return;
+
+                if (success) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Đã đánh dấu tài liệu là đã học'),
                     ),
                   );
+                } else {
+                  // Revert optimistic UI on failure
+                  setState(() {
+                    _isLearned = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Không thể cập nhật tiến độ tài liệu. Vui lòng thử lại.',
+                      ),
+                    ),
+                  );
                 }
               } catch (e) {
                 debugPrint('Lỗi khi đánh dấu tài liệu đã học: $e');
+                if (mounted) {
+                  setState(() {
+                    _isLearned = false;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Không thể cập nhật tiến độ tài liệu. Vui lòng thử lại.',
+                      ),
+                    ),
+                  );
+                }
               }
             },
             icon: Icon(_isLearned ? Icons.check_circle : Icons.done_rounded),

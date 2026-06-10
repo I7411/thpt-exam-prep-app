@@ -191,6 +191,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         AppColors.success,
       ),
       _ActionItem(
+        'Quản lý đề thi',
+        Icons.assignment,
+        AppRoutes.teacherExams,
+        AppColors.accent,
+      ),
+      _ActionItem(
         'Ngân hàng câu hỏi',
         Icons.quiz,
         AppRoutes.teacherQuestions,

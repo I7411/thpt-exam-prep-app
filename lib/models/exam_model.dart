@@ -1,4 +1,4 @@
-﻿/// Exam model (Äá» thi)
+/// Exam model (Äá» thi)
 class Exam {
   final String id;
   final String subjectId;
@@ -8,7 +8,7 @@ class Exam {
   final int durationMinutes;
   final double totalScore;
   final double passingScore;
-  final bool isPublished;
+  final String status; // 'draft' or 'published'
   final String creatorId;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -22,11 +22,13 @@ class Exam {
     required this.durationMinutes,
     required this.totalScore,
     required this.passingScore,
-    required this.isPublished,
+    required this.status,
     required this.creatorId,
     required this.createdAt,
     this.updatedAt,
   });
+
+  bool get isPublished => status == 'published';
 
   /// Create Exam from JSON
   factory Exam.fromJson(Map<String, dynamic> json) {
@@ -39,7 +41,7 @@ class Exam {
       durationMinutes: json['durationMinutes'] as int? ?? 60,
       totalScore: (json['totalScore'] as num? ?? 10).toDouble(),
       passingScore: (json['passingScore'] as num? ?? 5).toDouble(),
-      isPublished: json['isPublished'] as bool? ?? false,
+      status: json['status'] as String? ?? (json['isPublished'] == true ? 'published' : 'draft'),
       creatorId: json['creatorId'] as String? ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
@@ -57,7 +59,7 @@ class Exam {
       'durationMinutes': durationMinutes,
       'totalScore': totalScore,
       'passingScore': passingScore,
-      'isPublished': isPublished,
+      'status': status,
       'creatorId': creatorId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
@@ -74,7 +76,7 @@ class Exam {
     int? durationMinutes,
     double? totalScore,
     double? passingScore,
-    bool? isPublished,
+    String? status,
     String? creatorId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -88,7 +90,7 @@ class Exam {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       totalScore: totalScore ?? this.totalScore,
       passingScore: passingScore ?? this.passingScore,
-      isPublished: isPublished ?? this.isPublished,
+      status: status ?? this.status,
       creatorId: creatorId ?? this.creatorId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

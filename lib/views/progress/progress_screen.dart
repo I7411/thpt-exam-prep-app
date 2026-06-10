@@ -127,9 +127,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
               icon: Icons.star,
               color: AppColors.accent,
             ),
+            // Uses the source-of-truth count from learned_materials collection,
+            // NOT from ProgressStat.totalDocumentsRead (always 0).
             _SummaryCard(
               label: 'Tài liệu đã đọc',
-              value: '${_estimateDocumentsFromProgress(provider)}',
+              value: '${provider.totalLearnedDocuments}',
               icon: Icons.description,
               color: AppColors.secondary,
             ),
@@ -178,10 +180,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
         ],
       ),
     );
-  }
-
-  int _estimateDocumentsFromProgress(ProgressController provider) {
-    return provider.subjectProgress.fold(0, (total, progress) => total + progress.totalDocumentsRead);
   }
 }
 

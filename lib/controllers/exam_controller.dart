@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -18,6 +18,8 @@ class ExamController extends ChangeNotifier {
   final Map<String, String> _selectedOptionIds = <String, String>{};
   int _currentQuestionIndex = 0;
   bool _isSubmitted = false;
+  /// Guard to prevent double-submit while the async flow is running.
+  bool _isSubmitting = false;
   bool _isLoading = false;
   Duration _remainingTime = Duration.zero;
   DateTime? _startedAt;
@@ -32,6 +34,8 @@ class ExamController extends ChangeNotifier {
   List<Question> get questions => List.unmodifiable(_questions);
   int get currentQuestionIndex => _currentQuestionIndex;
   bool get isSubmitted => _isSubmitted;
+  /// True while the submit async flow is running (prevents double-tap).
+  bool get isSubmitting => _isSubmitting;
   bool get isLoading => _isLoading;
   Duration get remainingTime => _remainingTime;
   DateTime? get startedAt => _startedAt;
@@ -39,6 +43,13 @@ class ExamController extends ChangeNotifier {
   ExamAttempt? get currentAttempt => _currentAttempt;
   ExamResultData? get currentResult => _currentResult;
   List<ExamResultData> get history => List.unmodifiable(_history);
+
+  List<ExamResultData> get passedExams {
+    return _history.where((result) {
+      final passingScore = result.exam.passingScore > 0 ? result.exam.passingScore : 5.0;
+      return result.score >= passingScore;
+    }).toList();
+  }
 
   Question? get currentQuestion {
     if (_questions.isEmpty || _currentQuestionIndex < 0 || _currentQuestionIndex >= _questions.length) {
@@ -72,6 +83,17 @@ class ExamController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> loadStudentExamHistory(String studentId) async {
+    debugPrint('[StudentHistory] currentUserId=$studentId');
+    debugPrint('[StudentHistory] loading exam history...');
+    _studentId = studentId;
+    _history = await _loadHistory(studentId);
+    debugPrint('[StudentHistory] loaded exam attempts count=${_history.length}');
+    final passedCount = passedExams.length;
+    debugPrint('[StudentHistory] passed exams count=$passedCount');
+    notifyListeners();
+  }
+
   Future<void> startExam({
     required Exam exam,
     required List<Question> questions,
@@ -86,6 +108,7 @@ class ExamController extends ChangeNotifier {
     _selectedOptionIds.clear();
     _currentQuestionIndex = 0;
     _isSubmitted = false;
+    _isSubmitting = false;
     _isLoading = false;
     _startedAt = DateTime.now();
     _submittedAt = null;
@@ -117,6 +140,7 @@ class ExamController extends ChangeNotifier {
     if (_remainingTime.inSeconds <= 1) {
       _remainingTime = Duration.zero;
       notifyListeners();
+      // Fire-and-forget: auto-submit when time runs out.
       _submitExam(autoSubmitted: true);
       return;
     }
@@ -161,30 +185,115 @@ class ExamController extends ChangeNotifier {
     return _selectedOptionIds.containsKey(questionId);
   }
 
+  /// Public entry-point called by the UI.
+  /// Returns the result immediately; background I/O proceeds after.
   Future<ExamResultData?> submitExam({bool confirmed = true}) async {
     if (!confirmed) return null;
     return _submitExam(autoSubmitted: false);
   }
 
+  /// Core submit logic.
+  ///
+  /// Phase 1 (synchronous): build result, mark submitted, notify UI → navigation fires.
+  /// Phase 2 (async/background): persist to SQLite + Firestore with timeout protection.
   Future<ExamResultData?> _submitExam({required bool autoSubmitted}) async {
-    if (_currentExam == null || _studentId == null || _isSubmitted) {
+    // Guard: already submitted or another submit in flight.
+    if (_currentExam == null || _studentId == null || _isSubmitted || _isSubmitting) {
       return _currentResult;
     }
 
+    debugPrint('[ExamSubmit] Starting submission flow…');
+
+    _isSubmitting = true;
     _stopTimer();
     _submittedAt = DateTime.now();
     _isSubmitted = true;
 
+    // ── Phase 1: calculate result synchronously ──────────────────────────────
     final result = _buildResult(autoSubmitted: autoSubmitted);
     _currentResult = result;
     _currentAttempt = result.attempt;
 
-    final updatedProgress = await _updateProgress(result);
-    await _persistResult(result, updatedProgress);
-    await _clearDraft();
+    debugPrint('[ExamSubmit] Result calculated. Score=${result.score.toStringAsFixed(1)}, '
+        'correct=${result.correctCount}, wrong=${result.wrongCount}');
 
+    // Notify immediately so the build() → addPostFrameCallback → _goToResult
+    // fires WITHOUT waiting for Firestore/SQLite.
     notifyListeners();
+    debugPrint('[ExamSubmit] notifyListeners() called — navigation will trigger on next frame');
+
+    // ── Phase 2: persist in background ──────────────────────────────────────
+    // We deliberately do NOT await these; the result screen is already
+    // showing. A failure here is non-fatal (data is also in memory).
+    _persistInBackground(result);
+
+    _isSubmitting = false;
     return result;
+  }
+
+  /// Saves progress + attempt to Firestore and SQLite with timeout protection.
+  /// Runs in the background after UI navigation has already started.
+  void _persistInBackground(ExamResultData result) {
+    Future<void> doSave() async {
+      debugPrint('[ExamSubmit] Background save started…');
+      
+      // Step 1: Persist exam attempt to SQLite first (independent of Firestore)
+      debugPrint('[ExamHistory] Saving attempt to SQLite...');
+      ProgressStat? localProgressStat;
+      try {
+        localProgressStat = ProgressStat(
+          id: 'prog_${result.exam.id}_${result.studentId}',
+          studentId: result.studentId,
+          subjectId: result.exam.subjectId,
+          totalDocumentsRead: 0,
+          totalExamsTaken: 1,
+          examsPassed: result.attempt.isPassed ? 1 : 0,
+          averageScore: result.score,
+          streakDays: 1,
+          lastStudyDate: DateTime.now(),
+          completionPercentage: result.completionPercentage,
+          updatedAt: DateTime.now(),
+        );
+
+        await _persistResult(result, localProgressStat)
+            .timeout(const Duration(seconds: 8));
+        debugPrint('[ExamHistory] Attempt saved to SQLite.');
+        debugPrint('[StudentHistory] exam attempt saved: examId=${result.exam.id}, score=${result.score}');
+      } catch (e, st) {
+        debugPrint('[ExamSubmit] ⚠ SQLite persistence failed: $e');
+        debugPrint('[ExamSubmit] StackTrace: $st');
+      }
+
+      // Step 2: Clear local draft
+      try {
+        await _clearDraft();
+        debugPrint('[ExamSubmit] Draft cleared.');
+      } catch (e) {
+        debugPrint('[ExamSubmit] ⚠ Draft clear failed: $e');
+      }
+
+      // Step 3: Run Firestore progress update separately
+      debugPrint('[ExamHistory] Updating Firestore progress...');
+      try {
+        final progressStat = await _updateProgress(result)
+            .timeout(const Duration(seconds: 8));
+        debugPrint('[ExamHistory] Firestore progress updated.');
+        
+        // If Firestore returned a more accurate progress stat, sync it back to SQLite
+        try {
+          await _localRepository.upsertProgressStat(progressStat)
+              .timeout(const Duration(seconds: 5));
+          debugPrint('[ExamSubmit] Updated progress stat synced to SQLite.');
+        } catch (e) {
+          debugPrint('[ExamSubmit] ⚠ Syncing progress stat to SQLite failed: $e');
+        }
+      } catch (e) {
+        debugPrint('[ExamHistory] Firestore progress update failed: $e');
+      }
+    }
+
+    // Intentionally un-awaited — fire and forget.
+    doSave();
   }
 
   ExamResultData _buildResult({required bool autoSubmitted}) {
@@ -299,6 +408,7 @@ class ExamController extends ChangeNotifier {
     await _localRepository.saveExamResult(result: result, progressStat: progressStat);
     final currentItems = await _loadHistory(result.studentId);
     _history = <ExamResultData>[result, ...currentItems.where((item) => item.attempt.id != result.attempt.id)];
+    notifyListeners();
   }
 
   Future<List<ExamResultData>> _loadHistory(String studentId) async {
@@ -428,4 +538,3 @@ class ExamResultData {
     return null;
   }
 }
-

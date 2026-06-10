@@ -97,6 +97,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         .get()
         .timeout(const Duration(seconds: 10));
 
+    final learnedCountFuture = _repositoryService.progress
+        .getTotalLearnedDocuments(studentId)
+        .timeout(const Duration(seconds: 10));
+
     final subjects = await subjectsFuture;
     final documents = (await documentsFuture).take(20).toList();
     final exams = (await examsFuture).take(20).toList();
@@ -122,6 +126,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       }
     }
 
+    final totalLearnedDocuments = await learnedCountFuture;
+
     return _StudentHomeData(
       subjects: subjects,
       documents: documents,
@@ -130,6 +136,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       averageScore: averageScore,
       totalExams: totalExams,
       examsPassed: examsPassed,
+      totalLearnedDocuments: totalLearnedDocuments,
       favoritesMap: favoritesMap,
     );
   }
@@ -226,7 +233,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               data.exams.where((exam) => exam.isPublished).toList()..sort(
                 (left, right) => right.createdAt.compareTo(left.createdAt),
               );
-          final progressSummary = _ProgressSummary.from(data.progressStats);
+          final progressSummary = _ProgressSummary.from(
+            data.progressStats,
+            learnedDocumentsCount: data.totalLearnedDocuments,
+          );
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -448,7 +458,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             onTap: () => Navigator.pushNamed(
               context,
               AppRoutes.studentHistory,
-              arguments: 2,
+              arguments: 1,
             ),
           ),
           const SizedBox(width: 10),
@@ -461,7 +471,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             onTap: () => Navigator.pushNamed(
               context,
               AppRoutes.studentHistory,
-              arguments: 2,
+              arguments: 1,
             ),
           ),
           const SizedBox(width: 10),
@@ -474,7 +484,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             onTap: () => Navigator.pushNamed(
               context,
               AppRoutes.studentHistory,
-              arguments: 3,
+              arguments: 1,
             ),
           ),
         ],
@@ -1107,6 +1117,7 @@ class _StudentHomeData {
   final double averageScore;
   final int totalExams;
   final int examsPassed;
+  final int totalLearnedDocuments;
   final Map<String, DateTime> favoritesMap;
 
   const _StudentHomeData({
@@ -1117,6 +1128,7 @@ class _StudentHomeData {
     required this.averageScore,
     required this.totalExams,
     required this.examsPassed,
+    required this.totalLearnedDocuments,
     required this.favoritesMap,
   });
 }
@@ -1130,19 +1142,20 @@ class _ProgressSummary {
     required this.maxStreakDays,
   });
 
-  factory _ProgressSummary.from(List<ProgressStat> progressStats) {
-    var totalDocumentsRead = 0;
+  factory _ProgressSummary.from(
+    List<ProgressStat> progressStats, {
+    int learnedDocumentsCount = 0,
+  }) {
     var maxStreakDays = 0;
-
     for (final stat in progressStats) {
-      totalDocumentsRead += stat.totalDocumentsRead;
       if (stat.streakDays > maxStreakDays) {
         maxStreakDays = stat.streakDays;
       }
     }
-
+    // Use the authoritative count from Firestore learned_materials instead of
+    // ProgressStat.totalDocumentsRead (which is always 0 for docs-only reads).
     return _ProgressSummary(
-      totalDocumentsRead: totalDocumentsRead,
+      totalDocumentsRead: learnedDocumentsCount,
       maxStreakDays: maxStreakDays,
     );
   }

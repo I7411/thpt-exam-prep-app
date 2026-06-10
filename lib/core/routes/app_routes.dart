@@ -35,6 +35,9 @@ class AppRoutes {
   static const String teacherSchedule = '/teacher/schedule';
   static const String teacherProfile = '/teacher/profile';
   static const String teacherStudents = '/teacher/students';
+  static const String teacherExams = '/teacher/exams';
+  static const String teacherExamCreate = '/teacher/exam-create';
+  static const String teacherQuestionCreate = '/teacher/question-create';
 
   // Admin Routes
   static const String adminDashboard = '/admin/dashboard';
@@ -74,6 +77,9 @@ class AppRoutes {
       teacherSchedule,
       teacherProfile,
       teacherStudents,
+      teacherExams,
+      teacherExamCreate,
+      teacherQuestionCreate,
       adminDashboard,
       adminUsers,
       adminDocuments,

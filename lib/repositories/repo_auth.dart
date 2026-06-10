@@ -1,10 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 
 const Duration _authTimeout = Duration(seconds: 15);
 const Duration _firestoreTimeout = Duration(seconds: 15);
+
+/// The Web/Server OAuth 2.0 client_id from google-services.json
+/// (the entry with client_type = 3). Required on Android so that
+/// GoogleSignIn returns an idToken that Firebase Auth can verify.
+const String _googleServerClientId =
+    '529775655888-l8mcjhpu4i4veijhqev9cj60gsjom86n.apps.googleusercontent.com';
 
 abstract class AuthRepository {
   Future<AppUser?> login(String email, String password);
@@ -107,6 +114,11 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> logout() async {
+    // Sign out of Google as well so the account picker shows next time.
+    final googleSignIn = GoogleSignIn(serverClientId: _googleServerClientId);
+    if (await googleSignIn.isSignedIn()) {
+      await googleSignIn.signOut();
+    }
     await _firebaseAuth.signOut();
   }
 
@@ -257,13 +269,46 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser?> signInWithGoogle() async {
-    final googleSignIn = GoogleSignIn();
-    final googleUser = await googleSignIn.signIn();
+    // serverClientId is the Web OAuth 2.0 client_id (client_type=3) from
+    // google-services.json. Without it, Android GoogleSignIn does NOT return
+    // an idToken, causing Firebase Auth signInWithCredential to fail.
+    final googleSignIn = GoogleSignIn(serverClientId: _googleServerClientId);
+
+    GoogleSignInAccount? googleUser;
+    try {
+      googleUser = await googleSignIn.signIn();
+    } on PlatformException catch (e) {
+      // Log the exact platform error code for diagnosis
+      throw FirebaseAuthException(
+        code: 'google-sign-in-platform-error',
+        message:
+            'PlatformException during Google Sign-In. '
+            'code=${e.code}, message=${e.message}. '
+            'Make sure SHA-1 is registered in Firebase Console and '
+            'google-services.json is up to date.',
+      );
+    }
+
     if (googleUser == null) {
+      // User dismissed the picker — not an error.
       return null;
     }
 
     final googleAuth = await googleUser.authentication;
+
+    // If idToken is null the Web/Android OAuth client is missing or the
+    // SHA-1 fingerprint has not been registered yet.
+    if (googleAuth.idToken == null) {
+      throw FirebaseAuthException(
+        code: 'missing-google-id-token',
+        message:
+            'Google Sign-In succeeded but idToken is null. '
+            'Register SHA-1 (${const String.fromEnvironment('DEBUG_SHA1', defaultValue: 'CD:55:FB:A9:37:FB:0E:D6:39:6E:57:97:3A:9B:6F:EE:79:EC:F4:15')}) '
+            'in Firebase Console → Project Settings → Your Android App → SHA certificate fingerprints, '
+            'then download and replace google-services.json.',
+      );
+    }
+
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
@@ -286,13 +331,16 @@ class FirebaseAuthRepository implements AuthRepository {
     final doc = await userDoc.get().timeout(_firestoreTimeout);
 
     if (doc.exists) {
-      // If it exists, update safely.
+      // Document exists: update safe fields only.
+      // Do NOT overwrite role or isActive set by admin.
+      final existingData = doc.data()!;
       final updates = <String, dynamic>{
         'uid': user.uid,
         'email': user.email ?? '',
-        'fullName': doc.data()?['fullName'] ?? user.displayName ?? 'Học sinh',
+        // Only fill fullName if it is missing in Firestore.
+        if ((existingData['fullName'] as String?)?.trim().isEmpty ?? true)
+          'fullName': user.displayName ?? 'Học sinh',
         'updatedAt': FieldValue.serverTimestamp(),
-        'isActive': doc.data()?['isActive'] ?? true,
         // ignore: use_null_aware_elements
         if (photoUrl != null) 'photoUrl': photoUrl,
       };
@@ -300,7 +348,7 @@ class FirebaseAuthRepository implements AuthRepository {
       return AppUser.fromFirestore(await userDoc.get().timeout(_firestoreTimeout));
     }
 
-    // Otherwise, create first profile
+    // Document does not exist: create a new student profile.
     final now = DateTime.now();
     await _setUserDocument(
       uid: user.uid,

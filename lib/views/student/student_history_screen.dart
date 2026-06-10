@@ -6,9 +6,9 @@ import 'package:thpt_exam_prep_app/providers_auth.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
-import 'package:thpt_exam_prep_app/app_config.dart';
+
 import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
-import 'package:thpt_exam_prep_app/data/local/app_database.dart';
+
 import 'package:thpt_exam_prep_app/widgets/document_card.dart';
 import 'package:intl/intl.dart';
 
@@ -27,7 +27,7 @@ class StudentHistoryScreen extends StatefulWidget {
 class _StudentHistoryScreenState extends State<StudentHistoryScreen> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final RepositoryService _repositoryService;
-  final AppLocalRepository _localRepository = AppLocalRepository.instance;
+
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -41,12 +41,17 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 4,
+      length: 2,
       vsync: this,
-      initialIndex: widget.initialTab.clamp(0, 3),
+      initialIndex: _mapInitialTab(widget.initialTab),
     );
     _repositoryService = RepositoryService.instance;
     _loadAllHistoryData();
+  }
+
+  int _mapInitialTab(int original) {
+    if (original == 0) return 0;
+    return 1;
   }
 
   @override
@@ -96,9 +101,8 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       learnedList.sort((a, b) => (b['learnedAt'] as DateTime).compareTo(a['learnedAt'] as DateTime));
       _learnedHistory = learnedList;
 
-      // 3. Fetch exam history from SQLite
-      final sqliteHistory = await _localRepository.getExamHistory(userId);
-      _examHistory = sqliteHistory..sort((a, b) => b.attempt.startedAt.compareTo(a.attempt.startedAt));
+      // 3. Fetch exam history from SQLite via ExamController
+      await context.read<ExamController>().loadStudentExamHistory(userId);
 
       // 4. Fetch progress stats for streak count
       final stats = await _repositoryService.progress.getProgressByStudent(userId);
@@ -122,20 +126,23 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
 
   @override
   Widget build(BuildContext context) {
+    final examController = context.watch<ExamController>();
+    final examHistoryList = examController.history;
+    
+    // Sync for backwards compatibility with tabs that read _examHistory
+    _examHistory = examHistoryList.toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lịch sử học tập'),
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: true,
           labelColor: AppColors.primary,
           unselectedLabelColor: Colors.grey[600],
           indicatorColor: AppColors.primary,
           tabs: const [
             Tab(text: 'Tài liệu đã học'),
-            Tab(text: 'Lịch sử đề thi'),
-            Tab(text: 'Đề thi đã đạt'),
             Tab(text: 'Chuỗi học tập'),
           ],
         ),
@@ -166,8 +173,6 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
                   controller: _tabController,
                   children: [
                     _buildLearnedMaterialsTab(),
-                    _buildExamHistoryTab(onlyPassed: false),
-                    _buildExamHistoryTab(onlyPassed: true),
                     _buildStreakTab(),
                   ],
                 ),
@@ -249,105 +254,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
     );
   }
 
-  Widget _buildExamHistoryTab({required bool onlyPassed}) {
-    final list = onlyPassed
-        ? _examHistory.where((res) => res.score >= res.exam.passingScore).toList()
-        : _examHistory;
 
-    if (list.isEmpty) {
-      return _buildEmptyState(
-        icon: onlyPassed ? Icons.emoji_events_outlined : Icons.quiz_outlined,
-        title: onlyPassed ? 'Chưa có đề thi đạt' : 'Chưa có lịch sử làm đề',
-        message: onlyPassed
-            ? 'Hãy đạt từ ${AppConfig.enableMockData ? "5.0" : "5.0"} điểm trở lên để lưu danh hiệu tại đây!'
-            : 'Mọi đề thi bạn đã hoàn thành sẽ xuất hiện đầy đủ ở đây.',
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: list.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final result = list[index];
-        final passed = result.score >= result.exam.passingScore;
-        final timeStr = DateFormat('dd/MM/yyyy HH:mm').format(result.attempt.startedAt);
-
-        return Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: InkWell(
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.studentExamResult,
-                arguments: result,
-              );
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          result.exam.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: passed ? AppColors.success.withOpacity(0.12) : AppColors.error.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          passed ? 'ĐẠT' : 'CHƯA ĐẠT',
-                          style: TextStyle(
-                            color: passed ? AppColors.success : AppColors.error,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Điểm số: ${result.score.toStringAsFixed(1)} / 10.0', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 4),
-                          Text('Thời gian làm: ${_formatDuration(result.timeSpent)}'),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('Đúng: ${result.correctCount} | Sai: ${result.wrongCount}'),
-                          const SizedBox(height: 4),
-                          Text('Ngày làm: $timeStr', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildStreakTab() {
     int maxStreak = 0;
@@ -555,11 +462,5 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
         ),
       ),
     );
-  }
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
   }
 }

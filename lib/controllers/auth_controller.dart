@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -291,13 +292,27 @@ class AuthController extends ChangeNotifier {
         return true;
       }
 
+      // user == null means the picker was dismissed — not an error.
       _currentUser = null;
       _isAuthenticated = false;
-      _errorMessage = 'Đăng nhập bằng Google bị hủy hoặc thất bại.';
+      _errorMessage = 'Bạn đã hủy đăng nhập Google.';
       return false;
     } on FirebaseAuthException catch (e, stackTrace) {
-      _errorMessage = _getLoginFirebaseAuthErrorMessage(e);
       _logFirebaseAuthException('Lỗi khi đăng nhập bằng Google', e, stackTrace);
+      _errorMessage = _getGoogleSignInErrorMessage(e);
+      return false;
+    } on PlatformException catch (e, stackTrace) {
+      debugPrint('PlatformException khi đăng nhập Google: code=${e.code}, message=${e.message}');
+      debugPrint('stackTrace: $stackTrace');
+      if (e.code == 'sign_in_canceled' || e.code == 'network_error') {
+        _errorMessage = e.code == 'network_error'
+            ? 'Không có kết nối mạng. Vui lòng kiểm tra mạng và thử lại.'
+            : 'Bạn đã hủy đăng nhập Google.';
+      } else {
+        _errorMessage =
+            'Lỗi Google Sign-In (${e.code}). '
+            'Vui lòng kiểm tra cấu hình Firebase và SHA-1.';
+      }
       return false;
     } on FirebaseException catch (e, stackTrace) {
       _errorMessage = _getFirestoreErrorMessage(e);
@@ -504,6 +519,29 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  String _getGoogleSignInErrorMessage(FirebaseAuthException e) {
+    debugPrint('[Google Sign-In] FirebaseAuthException.code: ${e.code}');
+    debugPrint('[Google Sign-In] FirebaseAuthException.message: ${e.message}');
+    switch (e.code) {
+      case 'account-exists-with-different-credential':
+        return 'Email này đã được đăng ký bằng phương thức khác. Vui lòng dùng email/mật khẩu để đăng nhập.';
+      case 'network-request-failed':
+        return 'Không có kết nối mạng. Vui lòng thử lại.';
+      case 'sign_in_canceled':
+        return 'Bạn đã hủy đăng nhập Google.';
+      case 'invalid-credential':
+        return 'Thông tin đăng nhập Google không hợp lệ. Vui lòng thử lại.';
+      case 'user-disabled':
+        return 'Tài khoản này đã bị vô hiệu hóa.';
+      case 'missing-google-id-token':
+        return 'Google Sign-In chưa được cấu hình đúng. ';
+      case 'google-sign-in-platform-error':
+        return 'Lỗi cấu hình Google Sign-In. Vui lòng kiểm tra SHA-1 trong Firebase Console.';
+      default:
+        return 'Không thể đăng nhập bằng Google (${e.code}). Vui lòng kiểm tra cấu hình Firebase.';
+    }
+  }
+
   String _getLoginFirebaseAuthErrorMessage(FirebaseAuthException e) {
     if (e.message != null && e.message!.contains('CONFIGURATION_NOT_FOUND')) {
       return 'Firebase Authentication chưa được cấu hình đúng. Hãy kiểm tra google-services.json, firebase_options.dart và bật Email/Password trong Firebase Console.';
@@ -601,6 +639,63 @@ class AuthController extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Không thể cập nhật thông tin: $e';
       debugPrint('Lỗi cập nhật thông tin cá nhân: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    _setLoading(true);
+    _errorMessage = '';
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        _errorMessage = 'Không tìm thấy tài khoản.';
+        return false;
+      }
+      final email = user.email;
+      if (email == null) {
+        _errorMessage = 'Không tìm thấy tài khoản.';
+        return false;
+      }
+
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential).timeout(const Duration(seconds: 15));
+      await user.updatePassword(newPassword).timeout(const Duration(seconds: 15));
+      return true;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Lỗi đổi mật khẩu: code=${e.code}, message=${e.message}');
+      switch (e.code) {
+        case 'wrong-password':
+          _errorMessage = 'Mật khẩu hiện tại không đúng.';
+          break;
+        case 'requires-recent-login':
+          _errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi đổi mật khẩu.';
+          break;
+        case 'weak-password':
+          _errorMessage = 'Mật khẩu mới quá yếu.';
+          break;
+        case 'network-request-failed':
+          _errorMessage = 'Không có kết nối mạng. Vui lòng thử lại.';
+          break;
+        case 'user-not-found':
+          _errorMessage = 'Không tìm thấy tài khoản.';
+          break;
+        default:
+          _errorMessage = 'Không thể đổi mật khẩu. Vui lòng thử lại.';
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Lỗi đổi mật khẩu không xác định: $e');
+      _errorMessage = 'Không thể đổi mật khẩu. Vui lòng thử lại.';
       return false;
     } finally {
       _setLoading(false);

@@ -13,6 +13,16 @@ abstract class ProgressRepository {
   Future<double> getAverageScoreByStudent(String studentId);
   Future<int> getTotalExamsByStudent(String studentId);
   Future<int> getExamsPassedByStudent(String studentId);
+  /// Returns the number of unique documents learned by this student.
+  Future<int> getTotalLearnedDocuments(String studentId);
+  /// Writes the document to learned_materials (idempotent) and updates
+  /// progress_stats.documentsRead for the student.
+  Future<void> markDocumentAsLearned({
+    required String userId,
+    required String materialId,
+    required String title,
+    required String subjectId,
+  });
 }
 
 /// Mock implementation
@@ -86,6 +96,27 @@ class MockProgressRepository implements ProgressRepository {
       passed += stat.examsPassed;
     }
     return passed;
+  }
+
+  // ── Mock implementations of new document-learned methods ──
+
+  final Set<String> _learnedDocKeys = {};
+
+  @override
+  Future<int> getTotalLearnedDocuments(String studentId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return _learnedDocKeys.where((k) => k.startsWith('${studentId}_')).length;
+  }
+
+  @override
+  Future<void> markDocumentAsLearned({
+    required String userId,
+    required String materialId,
+    required String title,
+    required String subjectId,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    _learnedDocKeys.add('${userId}_$materialId');
   }
 }
 
@@ -191,5 +222,79 @@ class FirestoreProgressRepository implements ProgressRepository {
   Future<int> getExamsPassedByStudent(String studentId) async {
     final progress = await _getOrCreateStudentProgress(studentId);
     return progress.subjectProgress.fold<int>(0, (total, p) => total + p.examsPassed);
+  }
+
+  // ── Document learned tracking ─────────────────────────────────────────────
+
+  @override
+  Future<int> getTotalLearnedDocuments(String studentId) async {
+    try {
+      final snap = await _firestore
+          .collection('learned_materials')
+          .where('userId', isEqualTo: studentId)
+          .count()
+          .get()
+          .timeout(const Duration(seconds: 10));
+      final count = snap.count ?? 0;
+      debugPrint('[Progress] getTotalLearnedDocuments: userId=$studentId, count=$count');
+      return count;
+    } catch (e) {
+      debugPrint('[Progress] getTotalLearnedDocuments error: $e');
+      return 0;
+    }
+  }
+
+  @override
+  Future<void> markDocumentAsLearned({
+    required String userId,
+    required String materialId,
+    required String title,
+    required String subjectId,
+  }) async {
+    debugPrint('[Progress] markDocumentAsLearned: userId=$userId, documentId=$materialId');
+
+    // ── Step 1: write learned_materials/{userId}_{materialId} (idempotent) ──
+    final docRef = _firestore
+        .collection('learned_materials')
+        .doc('${userId}_$materialId');
+
+    final existing = await docRef.get().timeout(const Duration(seconds: 8));
+    if (!existing.exists) {
+      await docRef.set({
+        'userId': userId,
+        'materialId': materialId,
+        'title': title,
+        'subjectId': subjectId,
+        'learnedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
+      }).timeout(const Duration(seconds: 8));
+      debugPrint('[Progress] learned_materials written');
+    } else {
+      // Update learnedAt timestamp even on re-open; do NOT increment counter.
+      await docRef.update({'learnedAt': FieldValue.serverTimestamp()})
+          .timeout(const Duration(seconds: 8));
+      debugPrint('[Progress] learned_materials already exists — updated learnedAt only');
+    }
+
+    // ── Step 2: recalculate total from source of truth ───────────────────────
+    final count = await getTotalLearnedDocuments(userId);
+    debugPrint('[Progress] documentsRead recalculated: $count');
+
+    // ── Step 3: update progress_stats/{userId}.documentsRead ─────────────────
+    try {
+      await _firestore
+          .collection('progress_stats')
+          .doc(userId)
+          .set({
+            'studentId': userId,
+            'documentsRead': count,
+            'totalDocumentsRead': count, // legacy compat
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 8));
+      debugPrint('[Progress] progress_stats updated');
+    } catch (e) {
+      debugPrint('[Progress] Failed to update progress_stats: $e');
+    }
   }
 }

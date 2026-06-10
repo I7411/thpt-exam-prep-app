@@ -40,6 +40,9 @@ import 'views/teacher/teacher_profile_screen.dart';
 import 'views/teacher/teacher_question_bank_screen.dart';
 import 'views/teacher/teacher_schedule_screen.dart';
 import 'views/teacher/teacher_students_screen.dart';
+import 'views/teacher/teacher_exam_management_screen.dart';
+import 'views/teacher/teacher_exam_create_screen.dart';
+import 'views/teacher/teacher_question_create_screen.dart';
 
 // ================= NEW SCREENS =================
 import 'views/document_detail_screen.dart';
@@ -285,6 +288,66 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
       case AppRoutes.teacherStudents:
         return MaterialPageRoute(
           builder: (_) => const TeacherStudentsScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.teacherExams:
+        return MaterialPageRoute(
+          builder: (_) => const TeacherExamManagementScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.teacherExamCreate:
+        return MaterialPageRoute(
+          builder: (_) => const TeacherExamCreateScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.teacherQuestionCreate:
+        final mapArgs = args as Map<String, dynamic>?;
+        final examId = mapArgs?['examId'] as String?;
+        final examTitle = mapArgs?['examTitle'] as String?;
+        if (examId == null || examId.isEmpty) {
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text('Lỗi')),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Không tìm thấy ID đề thi.',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Vui lòng chọn đề thi hợp lệ để tạo câu hỏi.',
+                        style: TextStyle(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => appNavigatorKey.currentState?.pop(),
+                        child: const Text('Quay lại'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            settings: settings,
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => TeacherQuestionCreateScreen(
+            examId: examId,
+            examTitle: examTitle ?? 'Đề thi',
+          ),
           settings: settings,
         );
 

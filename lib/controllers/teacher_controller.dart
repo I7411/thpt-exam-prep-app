@@ -53,6 +53,11 @@ class TeacherScheduleItem {
   final int durationMinutes;
   final IconData icon;
   final Color color;
+  final String type; // 'class', 'exam', 'online', 'cancelled'
+  final String className;
+  final String subjectName;
+  final String? room;
+  final String status;
 
   const TeacherScheduleItem({
     required this.id,
@@ -62,6 +67,11 @@ class TeacherScheduleItem {
     required this.durationMinutes,
     required this.icon,
     required this.color,
+    required this.type,
+    required this.className,
+    required this.subjectName,
+    this.room,
+    required this.status,
   });
 }
 
@@ -76,6 +86,7 @@ class TeacherController extends ChangeNotifier {
   List<TeacherScheduleItem> _schedule = [];
   Map<String, List<TeacherStudentSummary>> _studentsByClass = {};
   int _totalStudents = 0;
+  List<Exam> _createdExams = [];
 
   // Leaderboard fields
   List<ClassLeaderboardItem> _classLeaderboard = [];
@@ -90,6 +101,7 @@ class TeacherController extends ChangeNotifier {
   List<TeacherScheduleItem> get schedule => List.unmodifiable(_schedule);
   Map<String, List<TeacherStudentSummary>> get studentsByClass => _studentsByClass;
   int get totalStudents => _totalStudents;
+  List<Exam> get createdExams => List.unmodifiable(_createdExams);
 
   List<ClassLeaderboardItem> get classLeaderboard => _classLeaderboard;
   bool get isLeaderboardLoading => _isLeaderboardLoading;
@@ -255,6 +267,11 @@ class TeacherController extends ChangeNotifier {
       }
 
       _schedule = _buildSchedule(loadedClasses, loadedSubjects, _assignedExams);
+      
+      // Load teacher's created exams from Firestore
+      final allExamsList = await service.exam.getAllExams();
+      _createdExams = allExamsList.where((exam) => exam.creatorId == teacher.id).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       debugPrint('Không tải được dữ liệu giáo viên: $e');
     } finally {
@@ -623,22 +640,42 @@ class TeacherController extends ChangeNotifier {
     for (var index = 0; index < classes.length; index++) {
       final teacherClass = classes[index];
       final subject = _findSubject(subjects, teacherClass.subjectId);
+      final subjectName = subject?.name ?? 'Môn học';
+      final type = index % 3 == 0 ? 'online' : 'class';
+      final room = index % 2 == 0 ? 'Phòng A111' : 'Phòng A307';
+      final startTime = DateTime(
+        now.year,
+        now.month,
+        now.day + index + 1,
+        7 + index,
+        30,
+      );
+      final duration = 90;
+      final endTime = startTime.add(Duration(minutes: duration));
+      
+      String status;
+      if (now.isAfter(endTime)) {
+        status = 'Đã kết thúc';
+      } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
+        status = 'Đang diễn ra';
+      } else {
+        status = 'Sắp diễn ra';
+      }
+
       schedule.add(
         TeacherScheduleItem(
           id: 'lesson_${teacherClass.id}',
           title: 'Dạy ${teacherClass.className}',
-          subtitle:
-              '${subject?.name ?? 'Môn học'} • ${teacherClass.studentCount} học sinh',
-          startTime: DateTime(
-            now.year,
-            now.month,
-            now.day + index + 1,
-            7 + index,
-            30,
-          ),
-          durationMinutes: 90,
-          icon: Icons.class_,
-          color: Colors.blue,
+          subtitle: '$subjectName • ${teacherClass.studentCount} học sinh',
+          startTime: startTime,
+          durationMinutes: duration,
+          icon: type == 'online' ? Icons.computer : Icons.class_,
+          color: type == 'online' ? Colors.purple : Colors.blue,
+          type: type,
+          className: teacherClass.className,
+          subjectName: subjectName,
+          room: type == 'online' ? 'Online' : room,
+          status: status,
         ),
       );
     }
@@ -646,16 +683,34 @@ class TeacherController extends ChangeNotifier {
     for (var index = 0; index < exams.length; index++) {
       final exam = exams[index];
       final subject = _findSubject(subjects, exam.subjectId);
+      final subjectName = subject?.name ?? 'Môn học';
+      final startTime = DateTime(now.year, now.month, now.day + index + 2, 19, 0);
+      final duration = exam.durationMinutes;
+      final endTime = startTime.add(Duration(minutes: duration));
+
+      String status;
+      if (now.isAfter(endTime)) {
+        status = 'Đã kết thúc';
+      } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
+        status = 'Đang diễn ra';
+      } else {
+        status = 'Đã giao';
+      }
+
       schedule.add(
         TeacherScheduleItem(
           id: 'exam_${exam.id}',
           title: 'Giao ${exam.title}',
-          subtitle:
-              '${subject?.name ?? 'Môn học'} • ${exam.questionCount} câu',
-          startTime: DateTime(now.year, now.month, now.day + index + 2, 19, 0),
-          durationMinutes: exam.durationMinutes,
+          subtitle: '$subjectName • ${exam.questionCount} câu',
+          startTime: startTime,
+          durationMinutes: duration,
           icon: Icons.assignment_turned_in,
           color: Colors.orange,
+          type: 'exam',
+          className: 'Đề thi thử',
+          subjectName: subjectName,
+          room: 'Online',
+          status: status,
         ),
       );
     }
@@ -696,5 +751,185 @@ class TeacherController extends ChangeNotifier {
     if (question.orderNumber <= 2) return 'Dễ';
     if (question.orderNumber <= 4) return 'Trung bình';
     return 'Khó';
+  }
+
+  Future<void> refreshCreatedExams() async {
+    if (_teacherId == null) return;
+    try {
+      final allExamsList = await RepositoryService.instance.exam.getAllExams();
+      _createdExams = allExamsList.where((exam) => exam.creatorId == _teacherId).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Lỗi tải lại danh sách đề thi: $e');
+    }
+  }
+
+  Future<Exam?> createTeacherExam({
+    required String title,
+    required String subjectId,
+    required int durationMinutes,
+    required String description,
+    required double passingScore,
+  }) async {
+    if (_teacherId == null) return null;
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      final examId = 'exam_${DateTime.now().millisecondsSinceEpoch}';
+      final newExam = Exam(
+        id: examId,
+        subjectId: subjectId,
+        title: title,
+        description: description,
+        questionCount: 0,
+        durationMinutes: durationMinutes,
+        totalScore: 0.0,
+        passingScore: passingScore,
+        status: 'draft',
+        creatorId: _teacherId!,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final created = await RepositoryService.instance.exam.createExam(newExam);
+      await refreshCreatedExams();
+      return created;
+    } on FirebaseException catch (e) {
+      _handleFirebaseException(e);
+      return null;
+    } catch (e) {
+      debugPrint('Lỗi tạo đề thi: $e');
+      throw Exception('Không thể tạo đề thi. Vui lòng thử lại.');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> publishExam(String examId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final exam = await RepositoryService.instance.exam.getExamById(examId);
+      if (exam != null) {
+        final updatedExam = exam.copyWith(status: 'published', updatedAt: DateTime.now());
+        await RepositoryService.instance.exam.updateExam(updatedExam);
+        await refreshCreatedExams();
+      }
+    } on FirebaseException catch (e) {
+      _handleFirebaseException(e);
+    } catch (e) {
+      throw Exception('Không thể phát hành đề thi. Vui lòng thử lại.');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> unpublishExam(String examId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final exam = await RepositoryService.instance.exam.getExamById(examId);
+      if (exam != null) {
+        final updatedExam = exam.copyWith(status: 'draft', updatedAt: DateTime.now());
+        await RepositoryService.instance.exam.updateExam(updatedExam);
+        await refreshCreatedExams();
+      }
+    } on FirebaseException catch (e) {
+      _handleFirebaseException(e);
+    } catch (e) {
+      throw Exception('Không thể hủy phát hành đề thi. Vui lòng thử lại.');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteTeacherExam(String examId) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await RepositoryService.instance.exam.deleteExam(examId);
+      await refreshCreatedExams();
+    } on FirebaseException catch (e) {
+      _handleFirebaseException(e);
+    } catch (e) {
+      throw Exception('Không thể xóa đề thi. Vui lòng thử lại.');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> addQuestionToExam({
+    required String examId,
+    required String content,
+    required String correctAnswer,
+    required String wrong1,
+    required String wrong2,
+    required String wrong3,
+    required String difficulty,
+    required String explanation,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final exam = await RepositoryService.instance.exam.getExamById(examId);
+      if (exam == null) {
+        throw Exception('Không tìm thấy đề thi.');
+      }
+
+      final nextOrderNumber = exam.questionCount + 1;
+      final options = [
+        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_0', label: 'A', content: wrong1, isCorrect: false),
+        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_1', label: 'B', content: wrong2, isCorrect: false),
+        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_2', label: 'C', content: correctAnswer, isCorrect: true),
+        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_3', label: 'D', content: wrong3, isCorrect: false),
+      ]..shuffle();
+
+      final labeledOptions = <AnswerOption>[];
+      for (int i = 0; i < options.length; i++) {
+        labeledOptions.add(
+          options[i].copyWith(
+            label: i == 0 ? 'A' : i == 1 ? 'B' : i == 2 ? 'C' : 'D',
+          ),
+        );
+      }
+
+      final newQuestion = Question(
+        id: 'q_${examId}_${DateTime.now().millisecondsSinceEpoch}',
+        examId: examId,
+        content: content,
+        explanation: explanation,
+        orderNumber: nextOrderNumber,
+        score: 1.0,
+        options: labeledOptions,
+        createdAt: DateTime.now(),
+      );
+
+      await RepositoryService.instance.exam.createQuestion(newQuestion);
+      await refreshCreatedExams();
+    } on FirebaseException catch (e) {
+      _handleFirebaseException(e);
+    } catch (e) {
+      debugPrint('Lỗi thêm câu hỏi: $e');
+      throw Exception('Không thể thêm câu hỏi. Vui lòng thử lại.');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void _handleFirebaseException(FirebaseException e) {
+    if (e.code == 'permission-denied') {
+      throw Exception('Bạn không có quyền thực hiện thao tác này.');
+    } else if (e.code == 'network-request-failed') {
+      throw Exception('Không có kết nối mạng. Vui lòng thử lại.');
+    } else {
+      throw Exception('Không thể thực hiện thao tác. Vui lòng thử lại.');
+    }
   }
 }

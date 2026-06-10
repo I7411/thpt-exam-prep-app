@@ -39,23 +39,34 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
         onRefresh: _loadData,
         child: teacherProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildSummary(teacherProvider),
-                  const SizedBox(height: 16),
-                  if (teacherProvider.questionBank.isEmpty)
-                    const _EmptyState(message: 'Chưa có câu hỏi nào trong ngân hàng')
-                  else
-                    ...teacherProvider.questionBank.map(
-                      (entry) => Padding(
+            : teacherProvider.questionBank.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _buildSummary(teacherProvider),
+                      const SizedBox(height: 16),
+                      const _EmptyState(message: 'Chưa có câu hỏi nào trong ngân hàng'),
+                    ],
+                  )
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: teacherProvider.questionBank.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildSummary(teacherProvider),
+                        );
+                      }
+                      final entry = teacherProvider.questionBank[index - 1];
+                      return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _QuestionCard(entry: entry),
-                      ),
-                    ),
-                ],
-              ),
+                      );
+                    },
+                  ),
       ),
     );
   }
