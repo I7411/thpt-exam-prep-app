@@ -38,7 +38,6 @@ import 'views/teacher/teacher_class_list_screen.dart';
 import 'views/teacher/teacher_dashboard_screen.dart';
 import 'views/teacher/teacher_profile_screen.dart';
 import 'views/teacher/teacher_question_bank_screen.dart';
-import 'views/teacher/teacher_schedule_screen.dart';
 import 'views/teacher/teacher_students_screen.dart';
 import 'views/teacher/teacher_exam_management_screen.dart';
 import 'views/teacher/teacher_exam_create_screen.dart';
@@ -273,11 +272,7 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           settings: settings,
         );
 
-      case AppRoutes.teacherSchedule:
-        return MaterialPageRoute(
-          builder: (_) => const TeacherScheduleScreen(),
-          settings: settings,
-        );
+
 
       case AppRoutes.teacherProfile:
         return MaterialPageRoute(

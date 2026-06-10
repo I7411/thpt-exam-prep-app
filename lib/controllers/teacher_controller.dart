@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -45,35 +44,7 @@ class TeacherQuestionSummary {
   });
 }
 
-class TeacherScheduleItem {
-  final String id;
-  final String title;
-  final String subtitle;
-  final DateTime startTime;
-  final int durationMinutes;
-  final IconData icon;
-  final Color color;
-  final String type; // 'class', 'exam', 'online', 'cancelled'
-  final String className;
-  final String subjectName;
-  final String? room;
-  final String status;
 
-  const TeacherScheduleItem({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.startTime,
-    required this.durationMinutes,
-    required this.icon,
-    required this.color,
-    required this.type,
-    required this.className,
-    required this.subjectName,
-    this.room,
-    required this.status,
-  });
-}
 
 class TeacherController extends ChangeNotifier {
   bool _isLoading = false;
@@ -83,7 +54,6 @@ class TeacherController extends ChangeNotifier {
   List<Subject> _subjects = [];
   List<Exam> _assignedExams = [];
   List<TeacherQuestionSummary> _questionBank = [];
-  List<TeacherScheduleItem> _schedule = [];
   Map<String, List<TeacherStudentSummary>> _studentsByClass = {};
   int _totalStudents = 0;
   List<Exam> _createdExams = [];
@@ -98,7 +68,6 @@ class TeacherController extends ChangeNotifier {
   List<Subject> get subjects => List.unmodifiable(_subjects);
   List<Exam> get assignedExams => List.unmodifiable(_assignedExams);
   List<TeacherQuestionSummary> get questionBank => List.unmodifiable(_questionBank);
-  List<TeacherScheduleItem> get schedule => List.unmodifiable(_schedule);
   Map<String, List<TeacherStudentSummary>> get studentsByClass => _studentsByClass;
   int get totalStudents => _totalStudents;
   List<Exam> get createdExams => List.unmodifiable(_createdExams);
@@ -266,7 +235,7 @@ class TeacherController extends ChangeNotifier {
         _studentsByClass[teacherClass.id] = summaries;
       }
 
-      _schedule = _buildSchedule(loadedClasses, loadedSubjects, _assignedExams);
+
       
       // Load teacher's created exams from Firestore
       final allExamsList = await service.exam.getAllExams();
@@ -629,95 +598,7 @@ class TeacherController extends ChangeNotifier {
     return entries;
   }
 
-  List<TeacherScheduleItem> _buildSchedule(
-    List<TeacherClass> classes,
-    List<Subject> subjects,
-    List<Exam> exams,
-  ) {
-    final now = DateTime.now();
-    final schedule = <TeacherScheduleItem>[];
 
-    for (var index = 0; index < classes.length; index++) {
-      final teacherClass = classes[index];
-      final subject = _findSubject(subjects, teacherClass.subjectId);
-      final subjectName = subject?.name ?? 'Môn học';
-      final type = index % 3 == 0 ? 'online' : 'class';
-      final room = index % 2 == 0 ? 'Phòng A111' : 'Phòng A307';
-      final startTime = DateTime(
-        now.year,
-        now.month,
-        now.day + index + 1,
-        7 + index,
-        30,
-      );
-      final duration = 90;
-      final endTime = startTime.add(Duration(minutes: duration));
-      
-      String status;
-      if (now.isAfter(endTime)) {
-        status = 'Đã kết thúc';
-      } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
-        status = 'Đang diễn ra';
-      } else {
-        status = 'Sắp diễn ra';
-      }
-
-      schedule.add(
-        TeacherScheduleItem(
-          id: 'lesson_${teacherClass.id}',
-          title: 'Dạy ${teacherClass.className}',
-          subtitle: '$subjectName • ${teacherClass.studentCount} học sinh',
-          startTime: startTime,
-          durationMinutes: duration,
-          icon: type == 'online' ? Icons.computer : Icons.class_,
-          color: type == 'online' ? Colors.purple : Colors.blue,
-          type: type,
-          className: teacherClass.className,
-          subjectName: subjectName,
-          room: type == 'online' ? 'Online' : room,
-          status: status,
-        ),
-      );
-    }
-
-    for (var index = 0; index < exams.length; index++) {
-      final exam = exams[index];
-      final subject = _findSubject(subjects, exam.subjectId);
-      final subjectName = subject?.name ?? 'Môn học';
-      final startTime = DateTime(now.year, now.month, now.day + index + 2, 19, 0);
-      final duration = exam.durationMinutes;
-      final endTime = startTime.add(Duration(minutes: duration));
-
-      String status;
-      if (now.isAfter(endTime)) {
-        status = 'Đã kết thúc';
-      } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
-        status = 'Đang diễn ra';
-      } else {
-        status = 'Đã giao';
-      }
-
-      schedule.add(
-        TeacherScheduleItem(
-          id: 'exam_${exam.id}',
-          title: 'Giao ${exam.title}',
-          subtitle: '$subjectName • ${exam.questionCount} câu',
-          startTime: startTime,
-          durationMinutes: duration,
-          icon: Icons.assignment_turned_in,
-          color: Colors.orange,
-          type: 'exam',
-          className: 'Đề thi thử',
-          subjectName: subjectName,
-          room: 'Online',
-          status: status,
-        ),
-      );
-    }
-
-    schedule.sort((left, right) => left.startTime.compareTo(right.startTime));
-    return schedule;
-  }
 
   Subject? _findSubject(List<Subject> subjects, String subjectId) {
     try {

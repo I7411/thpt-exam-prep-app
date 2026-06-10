@@ -32,7 +32,6 @@ class AppRoutes {
   static const String teacherClasses = '/teacher/classes';
   static const String teacherClassDetail = '/teacher/class-detail';
   static const String teacherQuestions = '/teacher/questions';
-  static const String teacherSchedule = '/teacher/schedule';
   static const String teacherProfile = '/teacher/profile';
   static const String teacherStudents = '/teacher/students';
   static const String teacherExams = '/teacher/exams';
@@ -74,7 +73,6 @@ class AppRoutes {
       teacherClasses,
       teacherClassDetail,
       teacherQuestions,
-      teacherSchedule,
       teacherProfile,
       teacherStudents,
       teacherExams,

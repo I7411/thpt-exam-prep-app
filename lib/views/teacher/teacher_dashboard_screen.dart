@@ -60,8 +60,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       _buildQuickActions(context),
                       const SizedBox(height: 16),
                       _buildClassPreview(context, teacherProvider),
-                      const SizedBox(height: 16),
-                      _buildSchedulePreview(teacherProvider),
                     ],
                   ),
           ),
@@ -202,12 +200,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         AppRoutes.teacherQuestions,
         AppColors.accent,
       ),
-      _ActionItem(
-        'Lịch giảng dạy',
-        Icons.event_note,
-        AppRoutes.teacherSchedule,
-        AppColors.success,
-      ),
+
       _ActionItem(
         'Hồ sơ',
         Icons.person,
@@ -381,77 +374,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildSchedulePreview(TeacherController teacherProvider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Lịch sắp tới',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        if (teacherProvider.schedule.isEmpty)
-          const _EmptyState(message: 'Chưa có lịch dạy hoặc lịch giao đề')
-        else
-          ...teacherProvider.schedule
-              .take(3)
-              .map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: item.color.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(item.icon, color: item.color),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.subtitle,
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${item.startTime.day.toString().padLeft(2, '0')}/${item.startTime.month.toString().padLeft(2, '0')}\n${item.startTime.hour.toString().padLeft(2, '0')}:${item.startTime.minute.toString().padLeft(2, '0')}',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-      ],
-    );
-  }
+
 }
 
 class _StatItem {

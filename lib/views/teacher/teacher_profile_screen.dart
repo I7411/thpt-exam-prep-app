@@ -95,11 +95,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                         title: 'Ngân hàng câu hỏi',
                         onTap: () => Navigator.pushNamed(context, AppRoutes.teacherQuestions),
                       ),
-                      _ActionRow(
-                        icon: Icons.event_note,
-                        title: 'Lịch giảng dạy',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.teacherSchedule),
-                      ),
+
                       _ActionRow(
                         icon: Icons.logout,
                         title: 'Đăng xuất',
