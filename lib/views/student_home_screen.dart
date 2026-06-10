@@ -8,8 +8,8 @@ import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/widgets_document_card.dart';
-import 'package:thpt_exam_prep_app/widgets_stat_card.dart';
 import 'package:thpt_exam_prep_app/widgets_subject_card.dart';
 
 class StudentHomeScreen extends StatefulWidget {
@@ -23,6 +23,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   late final RepositoryService _repositoryService;
   Future<_StudentHomeData>? _homeFuture;
   String? _loadedStudentId;
+  bool _favoritesLoaded = false;
+  final Map<String, DateTime> _favoritesMap = <String, DateTime>{};
 
   @override
   void initState() {
@@ -88,6 +90,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         .getExamsPassedByStudent(studentId)
         .timeout(const Duration(seconds: 12));
 
+    final favoritesFuture = FirebaseFirestore.instance
+        .collection('saved_materials')
+        .where('userId', isEqualTo: studentId)
+        .where('isFavorite', isEqualTo: true)
+        .get()
+        .timeout(const Duration(seconds: 10));
+
     final subjects = await subjectsFuture;
     final documents = (await documentsFuture).take(20).toList();
     final exams = (await examsFuture).take(20).toList();
@@ -95,6 +104,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final averageScore = await averageScoreFuture;
     final totalExams = await totalExamsFuture;
     final examsPassed = await examsPassedFuture;
+    final favoritesSnapshot = await favoritesFuture;
+
+    final favoritesMap = <String, DateTime>{};
+    for (final doc in favoritesSnapshot.docs) {
+      final data = doc.data();
+      final materialId = data['materialId'] as String?;
+      final favoriteAtVal = data['favoriteAt'];
+      if (materialId != null) {
+        DateTime favTime = DateTime.now();
+        if (favoriteAtVal is Timestamp) {
+          favTime = favoriteAtVal.toDate();
+        } else if (favoriteAtVal is String) {
+          favTime = DateTime.tryParse(favoriteAtVal) ?? DateTime.now();
+        }
+        favoritesMap[materialId] = favTime;
+      }
+    }
 
     return _StudentHomeData(
       subjects: subjects,
@@ -104,6 +130,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       averageScore: averageScore,
       totalExams: totalExams,
       examsPassed: examsPassed,
+      favoritesMap: favoritesMap,
     );
   }
 
@@ -113,6 +140,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       setState(() {
         _loadedStudentId = null;
         _homeFuture = null;
+        _favoritesLoaded = false;
       });
       return;
     }
@@ -120,6 +148,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     setState(() {
       _loadedStudentId = studentId;
       _homeFuture = _loadHomeData(studentId);
+      _favoritesLoaded = false;
     });
   }
 
@@ -170,8 +199,27 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             );
           }
 
+          if (!_favoritesLoaded) {
+            _favoritesMap.clear();
+            _favoritesMap.addAll(data.favoritesMap);
+            _favoritesLoaded = true;
+          }
+
           final recentDocuments = data.documents.toList()
-            ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+            ..sort((left, right) {
+              final leftFavTime = _favoritesMap[left.id];
+              final rightFavTime = _favoritesMap[right.id];
+
+              if (leftFavTime != null && rightFavTime != null) {
+                return rightFavTime.compareTo(leftFavTime);
+              } else if (leftFavTime != null) {
+                return -1;
+              } else if (rightFavTime != null) {
+                return 1;
+              } else {
+                return right.createdAt.compareTo(left.createdAt);
+              }
+            });
           final featuredSubjects = data.subjects.take(4).toList();
           final highlightedDocuments = recentDocuments.take(3).toList();
           final suggestedExams =
@@ -259,7 +307,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     title: 'Tài liệu mới',
                     actionText: 'Xem tất cả',
                     onActionTap: () {
-                      Navigator.pushNamed(context, AppRoutes.studentDocuments);
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.studentDocuments,
+                        arguments: 'new_materials',
+                      );
                     },
                   ),
                   const SizedBox(height: 12),
@@ -286,15 +338,58 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             duration:
                                 '${_estimateReadingTime(document)} phút đọc',
                             preview: _displayText(document.description),
-                            isMarked: false,
-                            onTap: () {
-                              Navigator.pushNamed(
+                            isMarked: _favoritesMap.containsKey(document.id),
+                            onTap: () async {
+                              await Navigator.pushNamed(
                                 context,
                                 AppRoutes.studentDocumentDetail,
                                 arguments: document,
                               );
+                              _retryLoad();
                             },
-                            onMarkTap: () {},
+                            onMarkTap: () async {
+                              final isMarked = _favoritesMap.containsKey(document.id);
+                              final nextIsFavorite = !isMarked;
+                              final authProvider = context.read<AuthController>();
+                              final userId = authProvider.currentUser?.id ?? 'student_001';
+
+                              final docRef = FirebaseFirestore.instance
+                                  .collection('saved_materials')
+                                  .doc('${userId}_${document.id}');
+
+                              if (nextIsFavorite) {
+                                await docRef.set({
+                                  'userId': userId,
+                                  'materialId': document.id,
+                                  'isFavorite': true,
+                                  'favoriteAt': FieldValue.serverTimestamp(),
+                                  'savedAt': FieldValue.serverTimestamp(),
+                                });
+                              } else {
+                                await docRef.delete();
+                              }
+
+                              setState(() {
+                                if (nextIsFavorite) {
+                                  _favoritesMap[document.id] = DateTime.now();
+                                } else {
+                                  _favoritesMap.remove(document.id);
+                                }
+                              });
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      nextIsFavorite
+                                          ? 'Đã đánh dấu: ${document.title}'
+                                          : 'Bỏ đánh dấu: ${document.title}',
+                                    ),
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
                       );
@@ -313,51 +408,137 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     _StudentHomeData data,
     _ProgressSummary progressSummary,
   ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 700 ? 4 : 2;
-        final aspectRatio = columns == 4 ? 1.15 : 1.0;
-        return GridView.count(
-          crossAxisCount: columns,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: aspectRatio,
-          children: [
-            StatCard(
-              title: 'Tài liệu đã đọc',
-              value: '${progressSummary.totalDocumentsRead}',
-              icon: Icons.description,
-              color: Colors.blue,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: [
+          _buildCompactStatCard(
+            context,
+            title: 'Tài liệu',
+            value: '${progressSummary.totalDocumentsRead}',
+            icon: Icons.description,
+            color: Colors.blue,
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.studentHistory,
+              arguments: 0,
             ),
-            StatCard(
-              title: 'Đề thi đã làm',
-              value: '${data.totalExams}',
-              icon: Icons.quiz,
-              color: Colors.orange,
+          ),
+          const SizedBox(width: 10),
+          _buildCompactStatCard(
+            context,
+            title: 'Đề thi',
+            value: '${data.totalExams}',
+            icon: Icons.quiz,
+            color: Colors.orange,
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.studentHistory,
+              arguments: 1,
             ),
-            StatCard(
-              title: 'Đã đạt',
-              value: '${data.examsPassed}',
-              icon: Icons.check_circle,
-              color: Colors.green,
+          ),
+          const SizedBox(width: 10),
+          _buildCompactStatCard(
+            context,
+            title: 'Đã đạt',
+            value: '${data.examsPassed}',
+            icon: Icons.check_circle,
+            color: Colors.green,
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.studentHistory,
+              arguments: 2,
             ),
-            StatCard(
-              title: 'Điểm TB',
-              value: data.averageScore.toStringAsFixed(1),
-              icon: Icons.star,
-              color: Colors.amber,
+          ),
+          const SizedBox(width: 10),
+          _buildCompactStatCard(
+            context,
+            title: 'Điểm TB',
+            value: data.averageScore.toStringAsFixed(1),
+            icon: Icons.star,
+            color: Colors.amber,
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.studentHistory,
+              arguments: 2,
             ),
-            StatCard(
-              title: 'Chuỗi ngày',
-              value: '${progressSummary.maxStreakDays}',
-              icon: Icons.local_fire_department,
-              color: Colors.red,
+          ),
+          const SizedBox(width: 10),
+          _buildCompactStatCard(
+            context,
+            title: 'Chuỗi ngày',
+            value: '${progressSummary.maxStreakDays}',
+            icon: Icons.local_fire_department,
+            color: Colors.red,
+            onTap: () => Navigator.pushNamed(
+              context,
+              AppRoutes.studentHistory,
+              arguments: 3,
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactStatCard(
+    BuildContext context, {
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      width: 104,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.15)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -926,6 +1107,7 @@ class _StudentHomeData {
   final double averageScore;
   final int totalExams;
   final int examsPassed;
+  final Map<String, DateTime> favoritesMap;
 
   const _StudentHomeData({
     required this.subjects,
@@ -935,6 +1117,7 @@ class _StudentHomeData {
     required this.averageScore,
     required this.totalExams,
     required this.examsPassed,
+    required this.favoritesMap,
   });
 }
 

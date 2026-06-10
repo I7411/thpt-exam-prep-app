@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/services/notification_service.dart';
@@ -19,6 +21,22 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   bool _initialized = false;
   String? _fcmToken;
+  int _reminderHour = 19;
+  int _reminderMinute = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReminderTime();
+  }
+
+  Future<void> _loadReminderTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _reminderHour = prefs.getInt('reminder_hour') ?? 19;
+      _reminderMinute = prefs.getInt('reminder_minute') ?? 0;
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -34,7 +52,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _fetchFcmToken() async {
-    // Poll a few times with delay to wait for FCM Token to register on startup
     for (int i = 0; i < 6; i++) {
       final token = NotificationService.instance.fcmToken;
       if (token != null) {
@@ -49,12 +66,67 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
+  Future<void> _selectReminderTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _reminderHour, minute: _reminderMinute),
+      helpText: 'CHỌN GIỜ NHẮC HỌC',
+      cancelText: 'Hủy',
+      confirmText: 'Chọn',
+    );
+
+    if (picked != null) {
+      final hour = picked.hour;
+      final minute = picked.minute;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('reminder_hour', hour);
+      await prefs.setInt('reminder_minute', minute);
+
+      // Save to Firestore users/{uid}
+      final authProvider = context.read<AuthController>();
+      final uid = authProvider.currentUser?.id;
+      if (uid != null) {
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(uid).update({
+            'reminderHour': hour,
+            'reminderMinute': minute,
+          });
+        } catch (e) {
+          debugPrint('Lỗi lưu giờ nhắc học lên Firestore: $e');
+        }
+      }
+
+      // Schedule reminder
+      await NotificationService.instance.scheduleDailyStudyReminder(
+        hour: hour,
+        minute: minute,
+        payload: AppRoutes.studentProgress,
+      );
+
+      setState(() {
+        _reminderHour = hour;
+        _reminderMinute = minute;
+      });
+
+      if (mounted) {
+        final timeStr = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã cài giờ nhắc học hằng ngày lúc $timeStr'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationController>(
       builder: (context, provider, _) {
         final authProvider = context.read<AuthController>();
         final showFcmToken = kDebugMode && authProvider.currentUser?.role == UserRole.admin;
+        final timeStr = '${_reminderHour.toString().padLeft(2, '0')}:${_reminderMinute.toString().padLeft(2, '0')}';
 
         return Scaffold(
           appBar: AppBar(
@@ -78,8 +150,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             _StudyReminderPanel(
                               fcmToken: _fcmToken,
                               showFcmToken: showFcmToken,
+                              reminderTimeLabel: timeStr,
                               onDemoReminder: () => _createReminder(context, payload: AppRoutes.studentNotifications),
-                              onDailyReminder: () => _createDailyReminder(context),
+                              onSelectTime: () => _selectReminderTime(context),
                               onCancelAll: () => _cancelAll(context),
                             ),
                             const SizedBox(height: 32),
@@ -95,8 +168,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               return _StudyReminderPanel(
                                 fcmToken: _fcmToken,
                                 showFcmToken: showFcmToken,
+                                reminderTimeLabel: timeStr,
                                 onDemoReminder: () => _createReminder(context, payload: AppRoutes.studentNotifications),
-                                onDailyReminder: () => _createDailyReminder(context),
+                                onSelectTime: () => _selectReminderTime(context),
                                 onCancelAll: () => _cancelAll(context),
                               );
                             }
@@ -126,14 +200,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Future<void> _createDailyReminder(BuildContext context) async {
-    await NotificationService.instance.scheduleDailyStudyReminder(payload: AppRoutes.studentProgress);
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã lập lịch nhắc học mỗi ngày lúc 19:00')),
-    );
-  }
-
   Future<void> _cancelAll(BuildContext context) async {
     await NotificationService.instance.cancelAllNotifications();
     if (!context.mounted) return;
@@ -146,15 +212,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
 class _StudyReminderPanel extends StatelessWidget {
   final String? fcmToken;
   final bool showFcmToken;
+  final String reminderTimeLabel;
   final VoidCallback onDemoReminder;
-  final VoidCallback onDailyReminder;
+  final VoidCallback onSelectTime;
   final VoidCallback onCancelAll;
 
   const _StudyReminderPanel({
     required this.fcmToken,
     required this.showFcmToken,
+    required this.reminderTimeLabel,
     required this.onDemoReminder,
-    required this.onDailyReminder,
+    required this.onSelectTime,
     required this.onCancelAll,
   });
 
@@ -162,43 +230,113 @@ class _StudyReminderPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final token = fcmToken;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.indigo.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.indigo.withOpacity(0.14)),
+        color: Colors.indigo.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.indigo.withOpacity(0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.indigo.withOpacity(0.02),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.indigo.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_active_rounded,
+              color: Colors.indigo,
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
-            'Cài đặt thông báo',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            'Cài đặt nhắc học',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: Colors.indigo[900],
+                ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Cấu hình nhắc học định kỳ và nhận tin nhắn ôn tập từ hệ thống.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+            'Nhận thông báo nhắc nhở ôn tập hằng ngày giúp bạn duy trì thói quen học tập tốt nhất.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[700],
+                  height: 1.4,
+                ),
           ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.indigo.withOpacity(0.12)),
+            ),
+            child: Text(
+              'Giờ nhắc hằng ngày: $reminderTimeLabel',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.indigo,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              FilledButton.icon(
-                onPressed: onDemoReminder,
-                icon: const Icon(Icons.notifications_active_outlined),
-                label: const Text('Tạo nhắc học demo'),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: onSelectTime,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.schedule_rounded),
+                  label: const Text('Cài giờ nhắc học', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
               ),
-              OutlinedButton.icon(
-                onPressed: onDailyReminder,
-                icon: const Icon(Icons.schedule_outlined),
-                label: const Text('Nhắc mỗi ngày 19:00'),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: onDemoReminder,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    side: const BorderSide(color: Colors.indigo),
+                    foregroundColor: Colors.indigo,
+                  ),
+                  icon: const Icon(Icons.notifications_active_outlined),
+                  label: const Text('Tạo nhắc học demo (10s)', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
               ),
+              const SizedBox(height: 10),
               TextButton.icon(
                 onPressed: onCancelAll,
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Hủy tất cả thông báo'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey[600],
+                ),
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text('Hủy tất cả nhắc nhở', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ],
           ),

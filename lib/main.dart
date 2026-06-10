@@ -62,6 +62,33 @@ Future<void> main() async {
           },
         )
         .timeout(const Duration(seconds: 8));
+
+    NotificationService.instance.onForegroundNotification = (id, title, body, payload) {
+      final context = appNavigatorKey.currentContext;
+      if (context != null) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) {
+            return AlertDialog(
+              title: Text(title),
+              content: Text(body),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    if (payload != null && payload.isNotEmpty) {
+                      appNavigatorKey.currentState?.pushNamed(payload);
+                    }
+                  },
+                  child: const Text('Xác nhận'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    };
   } catch (e) {
     debugPrint('Không thể khởi tạo thông báo local lúc mở app: $e');
   }

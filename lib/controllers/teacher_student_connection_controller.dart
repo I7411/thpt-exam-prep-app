@@ -172,6 +172,7 @@ class TeacherStudentConnectionController extends ChangeNotifier {
   Future<bool> sendConnectionRequest(
     String studentEmail, {
     AppUser? teacher,
+    String? classId,
   }) async {
     final currentTeacher = teacher ?? _currentTeacher;
     if (currentTeacher == null || currentTeacher.role != UserRole.teacher) {
@@ -232,6 +233,7 @@ class TeacherStudentConnectionController extends ChangeNotifier {
             'studentEmail': student.email,
             'studentName': student.fullName,
             'status': TeacherStudentRequestStatus.pending.toValue(),
+            'classId': classId,
             'createdAt': FieldValue.serverTimestamp(),
             'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true))
@@ -352,6 +354,12 @@ class TeacherStudentConnectionController extends ChangeNotifier {
     _successMessage = '';
 
     try {
+      final requestDoc = await _firestore.collection(_requestCollection).doc(requestId).get().timeout(_connectionTimeout);
+      final requestData = requestDoc.data();
+      final classId = requestData?['classId'] as String?;
+      final studentId = requestData?['studentId'] as String?;
+      final teacherId = requestData?['teacherId'] as String?;
+
       await _firestore
           .collection(_requestCollection)
           .doc(requestId)
@@ -360,6 +368,22 @@ class TeacherStudentConnectionController extends ChangeNotifier {
             'updatedAt': FieldValue.serverTimestamp(),
           })
           .timeout(_connectionTimeout);
+
+      if (status == TeacherStudentRequestStatus.accepted && classId != null && studentId != null && teacherId != null) {
+        await _firestore.collection('classes').doc(classId).update({
+          'studentIds': FieldValue.arrayUnion([studentId]),
+          'studentCount': FieldValue.increment(1),
+        });
+
+        await _firestore.collection('users').doc(studentId).update({
+          'classIds': FieldValue.arrayUnion([classId]),
+          'primaryClassId': classId,
+        });
+
+        await _firestore.collection('users').doc(teacherId).update({
+          'managedClassIds': FieldValue.arrayUnion([classId]),
+        });
+      }
 
       _successMessage = successMessage;
       if (_currentStudent != null) {

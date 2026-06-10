@@ -265,6 +265,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ? null
                                   : () => _handleRegister(context),
                             ),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  side: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                icon: Image.network(
+                                  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png',
+                                  height: 24,
+                                  width: 24,
+                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 28),
+                                ),
+                                label: const Text(
+                                  'Đăng ký với Google',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                onPressed: authProvider.isLoading
+                                    ? null
+                                    : () async {
+                                        final success = await authProvider.loginWithGoogle();
+                                        if (success && mounted) {
+                                          final user = authProvider.currentUser;
+                                          if (user != null) {
+                                            String nextRoute = AppRoutes.studentHome;
+                                            if (user.role == UserRole.teacher) {
+                                              nextRoute = AppRoutes.teacherDashboard;
+                                            } else if (user.role == UserRole.admin) {
+                                              nextRoute = AppRoutes.adminDashboard;
+                                            }
+                                            Navigator.of(context).pushReplacementNamed(nextRoute);
+                                          }
+                                        }
+                                      },
+                              ),
+                            ),
                             const SizedBox(height: AppSpacing.lg),
                             Center(
                               child: Wrap(

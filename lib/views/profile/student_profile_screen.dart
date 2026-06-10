@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
@@ -18,16 +19,108 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   bool _saveMobileData = false;
   bool _autoMarkCompleted = true;
 
+  Future<String?>? _classNameFuture;
+  String? _lastClassId;
+
+  Future<String?> _fetchClassName(String classId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .get()
+          .timeout(const Duration(seconds: 5));
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          return data['name'] as String? ?? data['className'] as String? ?? 'Lớp không tên';
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi lấy tên lớp: $e');
+    }
+    return 'Lớp không tên';
+  }
+
+  void _showEditProfileDialog(BuildContext context, AppUser? user) {
+    if (user == null) return;
+    final controller = TextEditingController(text: user.fullName);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Cập nhật họ tên'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Họ tên',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = controller.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Vui lòng nhập họ tên')),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+                
+                final authProvider = Provider.of<AuthController>(context, listen: false);
+                final success = await authProvider.updateProfile(fullName: name);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Cập nhật họ tên thành công!'
+                            : 'Cập nhật họ tên thất bại.',
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthController>();
     final user = authProvider.currentUser;
     final roleLabel = user?.role.toValue() ?? 'student';
 
+    final classId = user?.primaryClassId ?? (user?.classIds.isNotEmpty == true ? user?.classIds.first : null);
+    if (classId != _lastClassId) {
+      _lastClassId = classId;
+      if (classId != null) {
+        _classNameFuture = _fetchClassName(classId);
+      } else {
+        _classNameFuture = Future.value(user?.className);
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cá nhân'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () => _showEditProfileDialog(context, user),
+            tooltip: 'Sửa họ tên',
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -43,8 +136,15 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           const SizedBox(height: 12),
           _InfoRow(label: 'Họ tên', value: user?.fullName ?? 'Học sinh'),
           _InfoRow(label: 'Email', value: user?.email ?? 'Chưa có'),
-          _InfoRow(label: 'Lớp', value: user?.className ?? '12A1'),
-          _InfoRow(label: 'Vai trò', value: roleLabel),
+          FutureBuilder<String?>(
+            future: _classNameFuture,
+            builder: (context, snapshot) {
+              final className = snapshot.data ?? user?.className ?? 'Chưa tham gia';
+              return _InfoRow(label: 'Lớp', value: className);
+            },
+          ),
+          _InfoRow(label: 'Mã tài khoản (UID)', value: user?.id ?? ''),
+          _InfoRow(label: 'Vai trò', value: roleLabel == 'student' ? 'Học sinh' : roleLabel),
           const SizedBox(height: 20),
           Text(
             'Cài đặt demo',
@@ -205,7 +305,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Vai trò: $roleLabel',
+                  'Vai trò: ${roleLabel == 'student' ? 'Học sinh' : roleLabel}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.white.withOpacity(0.85),
                       ),

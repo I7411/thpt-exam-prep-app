@@ -27,6 +27,53 @@ class NotificationService {
 
   String? get fcmToken => _fcmToken;
 
+  void Function(int id, String title, String body, String? payload)? onForegroundNotification;
+
+  // Dialog duplicate protection cache
+  final Set<String> _shownDialogIds = {};
+  final List<MapEntry<DateTime, String>> _shownDialogLog = [];
+
+  bool _isDialogDuplicate(String? id) {
+    if (id == null || id.isEmpty) return false;
+    final now = DateTime.now();
+
+    // Clean up log entries older than 8 seconds
+    _shownDialogLog.removeWhere((entry) {
+      if (now.difference(entry.key).inSeconds > 8) {
+        _shownDialogIds.remove(entry.value);
+        return true;
+      }
+      return false;
+    });
+
+    if (_shownDialogIds.contains(id)) {
+      debugPrint('Trùng lặp hội thoại thông báo phát hiện và ngăn chặn: $id');
+      return true;
+    }
+
+    _shownDialogIds.add(id);
+    _shownDialogLog.add(MapEntry(now, id));
+    return false;
+  }
+
+  void _triggerForegroundNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+    String? deduplicationId,
+  }) {
+    final dupId = deduplicationId ?? '${id}_${title}_$body';
+    if (_isDialogDuplicate(dupId)) {
+      return;
+    }
+
+    final handler = onForegroundNotification;
+    if (handler != null) {
+      handler(id, title, body, payload);
+    }
+  }
+
   // Notification Channel Constants
   static const String _channelId = 'thpt_exam_prep_channel';
   static const String _channelName = 'THPT Exam Prep Channel';
@@ -277,8 +324,9 @@ class NotificationService {
   Future<void> showStudyReminderDemo({
     String payload = AppRoutes.studentNotifications,
   }) async {
+    final id = _randomNotificationId();
     await _plugin.zonedSchedule(
-      _randomNotificationId(),
+      id,
       'Nhắc học',
       'Đến giờ ôn tập ngắn trong ngày.',
       tz.TZDateTime.now(tz.local).add(const Duration(seconds: 10)),
@@ -288,9 +336,21 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
+
+    // Trigger in-app alert dialog after 10s if app is open
+    Timer(const Duration(seconds: 10), () {
+      _triggerForegroundNotification(
+        id: id,
+        title: 'Nhắc học',
+        body: 'Đến giờ ôn tập ngắn trong ngày.',
+        payload: payload,
+      );
+    });
   }
 
   Future<void> scheduleDailyStudyReminder({
+    int hour = 19,
+    int minute = 0,
     String payload = AppRoutes.studentProgress,
   }) async {
     final now = tz.TZDateTime.now(tz.local);
@@ -300,12 +360,16 @@ class NotificationService {
       now.year,
       now.month,
       now.day,
-      19,
+      hour,
+      minute,
     );
 
     if (scheduledTime.isBefore(now)) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
+
+    // Cancel old reminder with ID 1900 first
+    await _plugin.cancel(1900);
 
     await _plugin.zonedSchedule(
       1900,

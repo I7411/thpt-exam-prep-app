@@ -16,3 +16,6 @@ export 'models/notification_model.dart';
 export 'models/teacher_class_model.dart';
 export 'models/admin_report_stat_model.dart';
 export 'models/teacher_student_request_model.dart';
+export 'models/student_progress.dart';
+export 'models/class_leaderboard_item.dart';
+

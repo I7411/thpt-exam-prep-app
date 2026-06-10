@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
+import 'package:thpt_exam_prep_app/controllers/teacher_student_connection_controller.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 
@@ -25,7 +26,235 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
 
   Future<void> _loadData() async {
     final authProvider = context.read<AuthController>();
-    await context.read<TeacherController>().ensureLoaded(authProvider.currentUser);
+    final teacherController = context.read<TeacherController>();
+    final classId = widget.classId ?? teacherController.classes.firstOrNull?.id;
+    
+    await teacherController.ensureLoaded(authProvider.currentUser, force: true);
+    
+    if (classId != null) {
+      if (authProvider.currentUser != null) {
+        await context.read<TeacherStudentConnectionController>().loadForTeacher(
+          authProvider.currentUser!,
+          force: true,
+        );
+      }
+      await teacherController.loadClassLeaderboard(classId);
+    }
+  }
+
+  void _showAddStudentDialog(BuildContext context, TeacherClass teacherClass) {
+    final connectionController = context.read<TeacherStudentConnectionController>();
+    final teacherProvider = context.read<TeacherController>();
+    
+    final currentStudentIds = teacherClass.studentIds.toSet();
+    final addableStudents = connectionController.myStudents
+        .where((req) => !currentStudentIds.contains(req.studentId))
+        .toList();
+
+    if (addableStudents.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Thêm học sinh'),
+          content: const Text('Không có học sinh nào đã kết nối ngoài các thành viên hiện tại của lớp. Vui lòng gửi lời mời kết nối học sinh mới trước.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Đồng ý'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    String? selectedStudentId = addableStudents.first.studentId;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Thêm học sinh vào lớp'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedStudentId,
+                    decoration: const InputDecoration(labelText: 'Học sinh kết nối'),
+                    items: addableStudents.map((req) {
+                      return DropdownMenuItem<String>(
+                        value: req.studentId,
+                        child: Text('${req.studentName} (${req.studentEmail})'),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        selectedStudentId = val;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Hủy'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    if (selectedStudentId == null) return;
+                    Navigator.pop(dialogContext);
+
+                    final success = await teacherProvider.addStudentToClass(
+                      classId: teacherClass.id,
+                      studentId: selectedStudentId!,
+                    );
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success ? 'Đã thêm học sinh vào lớp.' : 'Lỗi khi thêm học sinh.',
+                          ),
+                        ),
+                      );
+                      _loadData();
+                    }
+                  },
+                  child: const Text('Thêm'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showEditClassNameDialog(BuildContext context, TeacherClass teacherClass) {
+    final controller = TextEditingController(text: teacherClass.className);
+    final teacherProvider = context.read<TeacherController>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sửa tên lớp'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Tên lớp mới'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isEmpty) return;
+              Navigator.pop(dialogContext);
+
+              final success = await teacherProvider.editClassName(
+                classId: teacherClass.id,
+                newClassName: newName,
+              );
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success ? 'Đã đổi tên lớp thành $newName.' : 'Lỗi khi sửa tên lớp.',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteClass(BuildContext context, TeacherClass teacherClass) {
+    final teacherProvider = context.read<TeacherController>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Xóa lớp học'),
+        content: Text('Bạn có chắc chắn muốn xóa lớp ${teacherClass.className} không? Học sinh sẽ không thể thấy lớp này nữa.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              final success = await teacherProvider.deleteClass(teacherClass.id);
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success ? 'Đã xóa lớp học thành công.' : 'Lỗi khi xóa lớp học.',
+                    ),
+                  ),
+                );
+                if (success) {
+                  Navigator.pop(context);
+                }
+              }
+            },
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeStudent(BuildContext context, String classId, String studentId, String studentName) async {
+    final teacherProvider = context.read<TeacherController>();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Xóa học sinh khỏi lớp'),
+        content: Text('Bạn có chắc chắn muốn xóa học sinh $studentName khỏi lớp học này không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final success = await teacherProvider.removeStudentFromClass(
+      classId: classId,
+      studentId: studentId,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Đã xóa học sinh khỏi lớp.' : 'Lỗi khi xóa học sinh.',
+          ),
+        ),
+      );
+      _loadData();
+    }
   }
 
   @override
@@ -33,41 +262,77 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
     final teacherProvider = context.watch<TeacherController>();
     final teacherClass = widget.classId == null ? teacherProvider.classes.firstOrNull : teacherProvider.classById(widget.classId!);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chi tiết lớp'),
-        actions: [
-          IconButton(
-            onPressed: _loadData,
-            icon: const Icon(Icons.refresh),
+    if (teacherClass == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Chi tiết lớp')),
+        body: const Center(child: Text('Không tìm thấy lớp học.')),
+      );
+    }
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Lớp ${teacherClass.className}'),
+          actions: [
+            IconButton(
+              onPressed: () => _showEditClassNameDialog(context, teacherClass),
+              icon: const Icon(Icons.edit),
+              tooltip: 'Sửa tên lớp',
+            ),
+            IconButton(
+              onPressed: () => _confirmDeleteClass(context, teacherClass),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Xóa lớp',
+            ),
+            IconButton(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Chi tiết & Học sinh'),
+              Tab(text: 'Bảng xếp hạng'),
+            ],
           ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: teacherProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : teacherClass == null
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    children: const [
-                      _EmptyState(message: 'Không tìm thấy lớp học phù hợp'),
-                    ],
-                  )
-                : ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
+        ),
+        body: TabBarView(
+          children: [
+            RefreshIndicator(
+              onRefresh: _loadData,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildHeader(context, teacherProvider, teacherClass),
+                  const SizedBox(height: 16),
+                  _buildStats(teacherProvider, teacherClass),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildHeader(context, teacherProvider, teacherClass),
-                      const SizedBox(height: 16),
-                      _buildStats(teacherProvider, teacherClass),
-                      const SizedBox(height: 16),
-                      _buildStudents(teacherProvider, teacherClass),
-                      const SizedBox(height: 16),
-                      _buildRelatedExams(teacherProvider, teacherClass),
+                      const Text('Danh sách học sinh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                      TextButton.icon(
+                        onPressed: () => _showAddStudentDialog(context, teacherClass),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Thêm học sinh'),
+                      ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  _buildStudents(context, teacherProvider, teacherClass),
+                  const SizedBox(height: 24),
+                  _buildRelatedExams(teacherProvider, teacherClass),
+                ],
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: _loadData,
+              child: _buildLeaderboardTab(teacherProvider),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -121,56 +386,58 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
     );
   }
 
-  Widget _buildStudents(TeacherController teacherProvider, TeacherClass teacherClass) {
+  Widget _buildStudents(BuildContext context, TeacherController teacherProvider, TeacherClass teacherClass) {
     final students = teacherProvider.studentsForClass(teacherClass.id);
+    if (students.isEmpty) {
+      return const _EmptyState(message: 'Lớp học chưa có học sinh nào. Bấm "Thêm học sinh" để thêm.');
+    }
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Học sinh tiêu biểu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        if (students.isEmpty)
-          const _EmptyState(message: 'Chưa có dữ liệu học sinh mẫu')
-        else
-          ...students.map(
-            (student) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      children: students.map(
+        (student) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(child: Text(student.name[0].toUpperCase())),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              Text(student.email, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                        Text('${student.averageScore.toStringAsFixed(1)} đ', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ],
+                    CircleAvatar(child: Text(student.name[0].toUpperCase())),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(student.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text(student.email, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    LinearProgressIndicator(value: student.completionPercentage / 100),
-                    const SizedBox(height: 8),
-                    Text('${student.completionPercentage.toStringAsFixed(0)}% hoàn thành • ${student.totalExamsTaken} bài • ${student.streakDays} ngày liên tiếp'),
+                    Text('${student.averageScore.toStringAsFixed(1)} đ', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.person_remove_outlined, color: Colors.red),
+                      onPressed: () => _removeStudent(context, teacherClass.id, student.id, student.name),
+                      tooltip: 'Xóa khỏi lớp',
+                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(value: student.completionPercentage / 100),
+                const SizedBox(height: 8),
+                Text('${student.completionPercentage.toStringAsFixed(0)}% hoàn thành • ${student.totalExamsTaken} bài • ${student.streakDays} ngày liên tiếp'),
+              ],
             ),
           ),
-      ],
+        ),
+      ).toList(),
     );
   }
 
@@ -225,6 +492,75 @@ class _TeacherClassDetailScreenState extends State<TeacherClassDetailScreen> {
           label: const Text('Mở ngân hàng câu hỏi'),
         ),
       ],
+    );
+  }
+
+  Widget _buildLeaderboardTab(TeacherController teacherProvider) {
+    if (teacherProvider.isLeaderboardLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final leaderboard = teacherProvider.classLeaderboard;
+    if (leaderboard.isEmpty) {
+      return const _EmptyState(message: 'Chưa có bảng xếp hạng cho lớp học này.');
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      itemCount: leaderboard.length,
+      itemBuilder: (context, index) {
+        final item = leaderboard[index];
+        final isTop3 = item.rank <= 3;
+        final rankColor = item.rank == 1 
+            ? Colors.amber 
+            : item.rank == 2 
+                ? Colors.grey.shade400 
+                : item.rank == 3 
+                    ? Colors.brown.shade300 
+                    : Colors.grey.shade200;
+
+        return Card(
+          elevation: isTop3 ? 2 : 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade100),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: rankColor,
+              child: Text(
+                '${item.rank}',
+                style: TextStyle(
+                  color: isTop3 ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(item.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text('Đề đã làm: ${item.totalExamsCompleted} | Tài liệu: ${item.documentsRead}'),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${item.averageScore.toStringAsFixed(1)} đ',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isTop3 ? Colors.deepOrange : Colors.black87,
+                  ),
+                ),
+                Text(
+                  '${item.overallProgressPercentage.toStringAsFixed(0)}% HT',
+                  style: const TextStyle(fontSize: 12, color: Colors.blueGrey),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 
 const Duration _authTimeout = Duration(seconds: 15);
@@ -17,6 +18,9 @@ abstract class AuthRepository {
   Future<void> logout();
   Future<bool> isLoggedIn();
   Future<bool> sendPasswordResetEmail(String email);
+  Future<AppUser?> signInWithGoogle();
+  Future<bool> verifyEmailExists(String email);
+  Future<void> confirmPasswordReset(String code, String newPassword);
 }
 
 class FirebaseAuthRepository implements AuthRepository {
@@ -213,6 +217,7 @@ class FirebaseAuthRepository implements AuthRepository {
     required String fullName,
     required UserRole role,
     required bool isCreate,
+    String? photoUrl,
   }) async {
     final data = <String, dynamic>{
       'uid': uid,
@@ -221,6 +226,8 @@ class FirebaseAuthRepository implements AuthRepository {
       'role': role.toValue(),
       'updatedAt': FieldValue.serverTimestamp(),
       'isActive': true,
+      // ignore: use_null_aware_elements
+      if (photoUrl != null) 'photoUrl': photoUrl,
     };
 
     if (isCreate) {
@@ -246,5 +253,91 @@ class FirebaseAuthRepository implements AuthRepository {
     }
 
     return fallbackEmail.trim().isEmpty ? 'Học sinh' : fallbackEmail.trim();
+  }
+
+  @override
+  Future<AppUser?> signInWithGoogle() async {
+    final googleSignIn = GoogleSignIn();
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      return null;
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final userCredential = await _firebaseAuth
+        .signInWithCredential(credential)
+        .timeout(_authTimeout);
+
+    final user = userCredential.user;
+    if (user == null) {
+      return null;
+    }
+
+    // Prepare profile image url if available from Google
+    final photoUrl = user.photoURL;
+
+    // Check if the user document exists.
+    final userDoc = _firestore.collection('users').doc(user.uid);
+    final doc = await userDoc.get().timeout(_firestoreTimeout);
+
+    if (doc.exists) {
+      // If it exists, update safely.
+      final updates = <String, dynamic>{
+        'uid': user.uid,
+        'email': user.email ?? '',
+        'fullName': doc.data()?['fullName'] ?? user.displayName ?? 'Học sinh',
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': doc.data()?['isActive'] ?? true,
+        // ignore: use_null_aware_elements
+        if (photoUrl != null) 'photoUrl': photoUrl,
+      };
+      await userDoc.set(updates, SetOptions(merge: true)).timeout(_firestoreTimeout);
+      return AppUser.fromFirestore(await userDoc.get().timeout(_firestoreTimeout));
+    }
+
+    // Otherwise, create first profile
+    final now = DateTime.now();
+    await _setUserDocument(
+      uid: user.uid,
+      email: user.email ?? '',
+      fullName: user.displayName ?? 'Học sinh',
+      role: UserRole.student,
+      isCreate: true,
+      photoUrl: photoUrl,
+    );
+
+    return AppUser(
+      id: user.uid,
+      email: user.email ?? '',
+      fullName: user.displayName ?? 'Học sinh',
+      role: UserRole.student,
+      createdAt: now,
+      updatedAt: now,
+      isActive: true,
+      profileImageUrl: photoUrl,
+    );
+  }
+
+  @override
+  Future<bool> verifyEmailExists(String email) async {
+    final query = await _firestore
+        .collection('users')
+        .where('email', isEqualTo: email.trim())
+        .limit(1)
+        .get()
+        .timeout(_firestoreTimeout);
+    return query.docs.isNotEmpty;
+  }
+
+  @override
+  Future<void> confirmPasswordReset(String code, String newPassword) async {
+    await _firebaseAuth
+        .confirmPasswordReset(code: code.trim(), newPassword: newPassword)
+        .timeout(_authTimeout);
   }
 }

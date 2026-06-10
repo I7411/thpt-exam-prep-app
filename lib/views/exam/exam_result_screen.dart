@@ -7,13 +7,14 @@ import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
 
 class ExamResultScreen extends StatelessWidget {
-  const ExamResultScreen({super.key});
+  final ExamResultData? result;
+  const ExamResultScreen({super.key, this.result});
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ExamController>(
       builder: (context, provider, _) {
-        final result = provider.currentResult;
+        final result = this.result ?? provider.currentResult;
         if (result == null) {
           return Scaffold(
             appBar: AppBar(
@@ -172,9 +173,14 @@ class ExamResultScreen extends StatelessWidget {
   }
 
   Widget _buildStatsGrid(BuildContext context, ExamResultData result) {
+    final totalQuestions = result.questions.length;
+    final answeredCount = result.selectedOptionIds.values.where((id) => id.isNotEmpty).length;
+    final unansweredCount = totalQuestions - answeredCount;
+    final wrongAnsweredCount = result.wrongCount - unansweredCount;
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 700 ? 4 : 2;
+        final columns = constraints.maxWidth >= 700 ? 6 : 2;
         return GridView.count(
           crossAxisCount: columns,
           shrinkWrap: true,
@@ -184,7 +190,9 @@ class ExamResultScreen extends StatelessWidget {
           childAspectRatio: 1.3,
           children: [
             _ResultStatCard(label: 'Đúng', value: '${result.correctCount}', color: AppColors.success),
-            _ResultStatCard(label: 'Sai', value: '${result.wrongCount}', color: AppColors.error),
+            _ResultStatCard(label: 'Sai', value: '$wrongAnsweredCount', color: AppColors.error),
+            _ResultStatCard(label: 'Chưa trả lời', value: '$unansweredCount', color: Colors.blueGrey),
+            _ResultStatCard(label: 'Tổng số câu', value: '$totalQuestions', color: Colors.indigo),
             _ResultStatCard(label: 'Hoàn thành', value: '${result.completionPercentage.toStringAsFixed(0)}%', color: AppColors.primary),
             _ResultStatCard(label: 'Thời gian', value: _formatDuration(result.timeSpent), color: AppColors.accent),
           ],
@@ -309,7 +317,7 @@ class _ReviewCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _LabelChip(
-                label: 'Đã chọn: ${selectedOption?.label ?? 'ChÆ°a chá»n'}',
+                label: 'Đã chọn: ${selectedOption?.label ?? 'Chưa chọn'}',
                 color: selectedOption == null ? Colors.grey : (isCorrect ? Colors.green : Colors.red),
               ),
               _LabelChip(

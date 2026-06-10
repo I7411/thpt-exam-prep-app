@@ -1,11 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/mock_progress.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
 
 class TeacherStudentSummary {
+  final String id; // Added to identify the student
   final String name;
   final String email;
   final double averageScore;
@@ -15,6 +16,7 @@ class TeacherStudentSummary {
   final int streakDays;
 
   const TeacherStudentSummary({
+    required this.id,
     required this.name,
     required this.email,
     required this.averageScore,
@@ -75,32 +77,31 @@ class TeacherController extends ChangeNotifier {
   Map<String, List<TeacherStudentSummary>> _studentsByClass = {};
   int _totalStudents = 0;
 
+  // Leaderboard fields
+  List<ClassLeaderboardItem> _classLeaderboard = [];
+  bool _isLeaderboardLoading = false;
+
   bool get isLoading => _isLoading;
   AppUser? get teacher => _teacher;
   List<TeacherClass> get classes => List.unmodifiable(_classes);
   List<Subject> get subjects => List.unmodifiable(_subjects);
   List<Exam> get assignedExams => List.unmodifiable(_assignedExams);
-  List<TeacherQuestionSummary> get questionBank =>
-      List.unmodifiable(_questionBank);
+  List<TeacherQuestionSummary> get questionBank => List.unmodifiable(_questionBank);
   List<TeacherScheduleItem> get schedule => List.unmodifiable(_schedule);
-  Map<String, List<TeacherStudentSummary>> get studentsByClass =>
-      _studentsByClass;
-
+  Map<String, List<TeacherStudentSummary>> get studentsByClass => _studentsByClass;
   int get totalStudents => _totalStudents;
 
+  List<ClassLeaderboardItem> get classLeaderboard => _classLeaderboard;
+  bool get isLeaderboardLoading => _isLeaderboardLoading;
+
   double get averageProgress {
-    final subjectIds = _classes
-        .map((teacherClass) => teacherClass.subjectId)
-        .toSet();
-    final progressStats = MockProgressData.progressStats
-        .where((stat) => subjectIds.contains(stat.subjectId))
-        .toList();
-    if (progressStats.isEmpty) return 0;
-    final total = progressStats.fold<double>(
-      0,
-      (sum, stat) => sum + stat.completionPercentage,
+    final allStudents = _studentsByClass.values.expand((list) => list).toList();
+    if (allStudents.isEmpty) return 0.0;
+    final total = allStudents.fold<double>(
+      0.0,
+      (acc, student) => acc + student.completionPercentage,
     );
-    return total / progressStats.length;
+    return total / allStudents.length;
   }
 
   Future<void> ensureLoaded(AppUser? teacher, {bool force = false}) async {
@@ -145,33 +146,432 @@ class TeacherController extends ChangeNotifier {
         const Duration(seconds: 12),
       )).take(20).toList();
 
-      final subjectIds = loadedClasses
-          .map((teacherClass) => teacherClass.subjectId)
-          .toSet();
-      final progressStats = MockProgressData.progressStats
-          .where((stat) => subjectIds.contains(stat.subjectId))
-          .toList();
+      final subjectIds = loadedClasses.map((c) => c.subjectId).toSet();
 
       _classes = loadedClasses;
       _subjects = loadedSubjects;
-      _assignedExams = allExams
-          .where((exam) => subjectIds.contains(exam.subjectId))
-          .toList();
+      _assignedExams = allExams.where((exam) => subjectIds.contains(exam.subjectId)).toList();
+      
       _questionBank = await _loadQuestionBank(
         service,
         _assignedExams,
         loadedSubjects,
       );
-      _studentsByClass = _buildStudentsByClass(
-        loadedClasses,
-        loadedSubjects,
-        progressStats,
-      );
+
+      // Load real students in classes
+      _studentsByClass = {};
+      for (final teacherClass in loadedClasses) {
+        if (teacherClass.studentIds.isEmpty) {
+          _studentsByClass[teacherClass.id] = [];
+          continue;
+        }
+
+        // Fetch students' AppUsers
+        final List<AppUser> students = [];
+        for (var i = 0; i < teacherClass.studentIds.length; i += 10) {
+          final batch = teacherClass.studentIds.sublist(
+            i, 
+            i + 10 > teacherClass.studentIds.length ? teacherClass.studentIds.length : i + 10
+          );
+          final snapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .where('uid', whereIn: batch)
+              .get();
+          students.addAll(snapshot.docs.map((doc) => AppUser.fromFirestore(doc)));
+        }
+
+        // Fetch students' progress stats
+        final List<StudentProgress> progressList = [];
+        for (var i = 0; i < teacherClass.studentIds.length; i += 10) {
+          final batch = teacherClass.studentIds.sublist(
+            i, 
+            i + 10 > teacherClass.studentIds.length ? teacherClass.studentIds.length : i + 10
+          );
+          final snapshot = await FirebaseFirestore.instance
+              .collection('progress_stats')
+              .where('studentId', whereIn: batch)
+              .get();
+          progressList.addAll(snapshot.docs.map((doc) => StudentProgress.fromFirestore(doc)));
+        }
+
+        // Build summaries
+        final summaries = <TeacherStudentSummary>[];
+        for (final student in students) {
+          final progress = progressList.cast<StudentProgress?>().firstWhere(
+            (p) => p?.studentId == student.id,
+            orElse: () => null,
+          );
+
+          if (progress == null) {
+            summaries.add(
+              TeacherStudentSummary(
+                id: student.id,
+                name: student.fullName,
+                email: student.email,
+                averageScore: 0.0,
+                completionPercentage: 0.0,
+                totalExamsTaken: 0,
+                examsPassed: 0,
+                streakDays: 0,
+              ),
+            );
+          } else {
+            final subjectStat = progress.subjectProgress.cast<ProgressStat?>().firstWhere(
+              (p) => p?.subjectId == teacherClass.subjectId,
+              orElse: () => null,
+            );
+
+            if (subjectStat == null) {
+              summaries.add(
+                TeacherStudentSummary(
+                  id: student.id,
+                  name: student.fullName,
+                  email: student.email,
+                  averageScore: 0.0,
+                  completionPercentage: 0.0,
+                  totalExamsTaken: 0,
+                  examsPassed: 0,
+                  streakDays: 0,
+                ),
+              );
+            } else {
+              summaries.add(
+                TeacherStudentSummary(
+                  id: student.id,
+                  name: student.fullName,
+                  email: student.email,
+                  averageScore: subjectStat.averageScore,
+                  completionPercentage: subjectStat.completionPercentage,
+                  totalExamsTaken: subjectStat.totalExamsTaken,
+                  examsPassed: subjectStat.examsPassed,
+                  streakDays: subjectStat.streakDays,
+                ),
+              );
+            }
+          }
+        }
+
+        _studentsByClass[teacherClass.id] = summaries;
+      }
+
       _schedule = _buildSchedule(loadedClasses, loadedSubjects, _assignedExams);
     } catch (e) {
       debugPrint('Không tải được dữ liệu giáo viên: $e');
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Class Management Actions
+  Future<bool> createNewClass({
+    required String className,
+    required String subjectId,
+    required String description,
+  }) async {
+    if (_teacherId == null) return false;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final classId = 'class_${DateTime.now().millisecondsSinceEpoch}';
+      final newClass = TeacherClass(
+        id: classId,
+        teacherId: _teacherId!,
+        teacherIds: [_teacherId!],
+        studentIds: [],
+        className: className,
+        subjectId: subjectId,
+        description: description,
+        studentCount: 0,
+        createdAt: DateTime.now(),
+      );
+
+      final service = RepositoryService.instance;
+      await service.teacher.createClass(newClass);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_teacherId)
+          .update({
+            'managedClassIds': FieldValue.arrayUnion([classId]),
+          });
+
+      await loadTeacher(_teacher!);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi tạo lớp học: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> editClassName({
+    required String classId,
+    required String newClassName,
+  }) async {
+    final targetClass = classById(classId);
+    if (targetClass == null) return false;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final updatedClass = targetClass.copyWith(
+        className: newClassName,
+        updatedAt: DateTime.now(),
+      );
+
+      final service = RepositoryService.instance;
+      await service.teacher.updateClass(updatedClass);
+
+      await loadTeacher(_teacher!);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi sửa tên lớp học: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteClass(String classId) async {
+    if (_teacherId == null) return false;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final service = RepositoryService.instance;
+      await service.teacher.deleteClass(classId);
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_teacherId)
+          .update({
+            'managedClassIds': FieldValue.arrayRemove([classId]),
+          });
+
+      await loadTeacher(_teacher!);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi xóa lớp học: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> addStudentToClass({
+    required String classId,
+    required String studentId,
+  }) async {
+    final targetClass = classById(classId);
+    if (targetClass == null) return false;
+
+    if (targetClass.studentIds.contains(studentId)) {
+      return true;
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .update({
+            'studentIds': FieldValue.arrayUnion([studentId]),
+            'studentCount': FieldValue.increment(1),
+          });
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(studentId)
+          .update({
+            'classIds': FieldValue.arrayUnion([classId]),
+            'primaryClassId': classId,
+          });
+
+      await loadTeacher(_teacher!);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi thêm học sinh vào lớp: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> removeStudentFromClass({
+    required String classId,
+    required String studentId,
+  }) async {
+    final targetClass = classById(classId);
+    if (targetClass == null) return false;
+
+    if (!targetClass.studentIds.contains(studentId)) {
+      return true;
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(classId)
+          .update({
+            'studentIds': FieldValue.arrayRemove([studentId]),
+            'studentCount': FieldValue.increment(-1),
+          });
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(studentId)
+          .update({
+            'classIds': FieldValue.arrayRemove([classId]),
+          });
+
+      final studentDoc = await FirebaseFirestore.instance.collection('users').doc(studentId).get();
+      if (studentDoc.exists) {
+        final data = studentDoc.data()!;
+        final currentPrimary = data['primaryClassId'] as String?;
+        if (currentPrimary == classId) {
+          final currentClassIds = (data['classIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [];
+          final newPrimary = currentClassIds.isNotEmpty ? currentClassIds.first : null;
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(studentId)
+              .update({
+                'primaryClassId': newPrimary,
+              });
+        }
+      }
+
+      await loadTeacher(_teacher!);
+      return true;
+    } catch (e) {
+      debugPrint('Lỗi xóa học sinh khỏi lớp: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Leaderboard Calculation (Phase 3)
+  Future<void> loadClassLeaderboard(String classId) async {
+    _isLeaderboardLoading = true;
+    notifyListeners();
+
+    try {
+      final targetClass = classById(classId);
+      if (targetClass == null || targetClass.studentIds.isEmpty) {
+        _classLeaderboard = [];
+        return;
+      }
+
+      // Fetch students' AppUsers
+      final List<AppUser> students = [];
+      for (var i = 0; i < targetClass.studentIds.length; i += 10) {
+        final batch = targetClass.studentIds.sublist(
+          i, 
+          i + 10 > targetClass.studentIds.length ? targetClass.studentIds.length : i + 10
+        );
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('uid', whereIn: batch)
+            .get();
+        students.addAll(snapshot.docs.map((doc) => AppUser.fromFirestore(doc)));
+      }
+
+      // Fetch students' overall progress stats
+      final List<StudentProgress> progressList = [];
+      for (var i = 0; i < targetClass.studentIds.length; i += 10) {
+        final batch = targetClass.studentIds.sublist(
+          i, 
+          i + 10 > targetClass.studentIds.length ? targetClass.studentIds.length : i + 10
+        );
+        final snapshot = await FirebaseFirestore.instance
+            .collection('progress_stats')
+            .where('studentId', whereIn: batch)
+            .get();
+        progressList.addAll(snapshot.docs.map((doc) => StudentProgress.fromFirestore(doc)));
+      }
+
+      final items = <ClassLeaderboardItem>[];
+      for (final student in students) {
+        final progress = progressList.cast<StudentProgress?>().firstWhere(
+          (p) => p?.studentId == student.id,
+          orElse: () => null,
+        );
+
+        if (progress == null) {
+          items.add(
+            ClassLeaderboardItem(
+              rank: 0,
+              studentId: student.id,
+              studentName: student.fullName,
+              studentEmail: student.email,
+              totalExamsCompleted: 0,
+              averageScore: 0.0,
+              documentsRead: 0,
+              overallProgressPercentage: 0.0,
+            ),
+          );
+        } else {
+          items.add(
+            ClassLeaderboardItem(
+              rank: 0,
+              studentId: student.id,
+              studentName: student.fullName,
+              studentEmail: student.email,
+              totalExamsCompleted: progress.totalExamsCompleted,
+              averageScore: progress.averageScore,
+              documentsRead: progress.documentsRead,
+              overallProgressPercentage: progress.overallProgressPercentage,
+            ),
+          );
+        }
+      }
+
+      // Sorting rule:
+      // 1. Higher average score ranks higher.
+      // 2. If tied, higher total exams completed.
+      // 3. If still tied, higher documents read.
+      items.sort((left, right) {
+        if (left.averageScore != right.averageScore) {
+          return right.averageScore.compareTo(left.averageScore);
+        }
+        if (left.totalExamsCompleted != right.totalExamsCompleted) {
+          return right.totalExamsCompleted.compareTo(left.totalExamsCompleted);
+        }
+        return right.documentsRead.compareTo(left.documentsRead);
+      });
+
+      _classLeaderboard = List.generate(items.length, (index) {
+        final item = items[index];
+        return ClassLeaderboardItem(
+          rank: index + 1,
+          studentId: item.studentId,
+          studentName: item.studentName,
+          studentEmail: item.studentEmail,
+          totalExamsCompleted: item.totalExamsCompleted,
+          averageScore: item.averageScore,
+          documentsRead: item.documentsRead,
+          overallProgressPercentage: item.overallProgressPercentage,
+        );
+      });
+    } catch (e) {
+      debugPrint('Lỗi tải bảng xếp hạng lớp: $e');
+      _classLeaderboard = [];
+    } finally {
+      _isLeaderboardLoading = false;
       notifyListeners();
     }
   }
@@ -212,84 +612,6 @@ class TeacherController extends ChangeNotifier {
     return entries;
   }
 
-  Map<String, List<TeacherStudentSummary>> _buildStudentsByClass(
-    List<TeacherClass> classes,
-    List<Subject> subjects,
-    List<ProgressStat> progressStats,
-  ) {
-    final map = <String, List<TeacherStudentSummary>>{};
-    for (var index = 0; index < classes.length; index++) {
-      final teacherClass = classes[index];
-      final subject = _findSubject(subjects, teacherClass.subjectId);
-      final subjectStats = progressStats
-          .where((stat) => stat.subjectId == teacherClass.subjectId)
-          .toList();
-      map[teacherClass.id] = _buildDemoStudents(
-        teacherClass: teacherClass,
-        subjectName: subject?.name ?? 'Môn học',
-        progressStats: subjectStats,
-      );
-    }
-    return map;
-  }
-
-  List<TeacherStudentSummary> _buildDemoStudents({
-    required TeacherClass teacherClass,
-    required String subjectName,
-    required List<ProgressStat> progressStats,
-  }) {
-    final primaryStat = progressStats.isNotEmpty ? progressStats.first : null;
-    final baseStudents = <TeacherStudentSummary>[
-      TeacherStudentSummary(
-        name: MockUsersData.studentUser.fullName,
-        email: MockUsersData.studentUser.email,
-        averageScore: primaryStat?.averageScore ?? 7.2,
-        completionPercentage: primaryStat?.completionPercentage ?? 65,
-        totalExamsTaken: primaryStat?.totalExamsTaken ?? 3,
-        examsPassed: primaryStat?.examsPassed ?? 2,
-        streakDays: primaryStat?.streakDays ?? 5,
-      ),
-      const TeacherStudentSummary(
-        name: 'Trần Minh Khang',
-        email: 'khang12@example.com',
-        averageScore: 8.2,
-        completionPercentage: 82,
-        totalExamsTaken: 4,
-        examsPassed: 4,
-        streakDays: 8,
-      ),
-      const TeacherStudentSummary(
-        name: 'Lê Thu Hà',
-        email: 'ha12@example.com',
-        averageScore: 7.4,
-        completionPercentage: 74,
-        totalExamsTaken: 3,
-        examsPassed: 2,
-        streakDays: 6,
-      ),
-      const TeacherStudentSummary(
-        name: 'Phạm Hoàng Nam',
-        email: 'nam12@example.com',
-        averageScore: 6.5,
-        completionPercentage: 60,
-        totalExamsTaken: 2,
-        examsPassed: 1,
-        streakDays: 3,
-      ),
-      const TeacherStudentSummary(
-        name: 'Nguyễn Khánh Vy',
-        email: 'vy12@example.com',
-        averageScore: 5.9,
-        completionPercentage: 48,
-        totalExamsTaken: 2,
-        examsPassed: 1,
-        streakDays: 2,
-      ),
-    ];
-
-    return baseStudents.take(teacherClass.studentCount > 0 ? 5 : 0).toList();
-  }
-
   List<TeacherScheduleItem> _buildSchedule(
     List<TeacherClass> classes,
     List<Subject> subjects,
@@ -306,7 +628,7 @@ class TeacherController extends ChangeNotifier {
           id: 'lesson_${teacherClass.id}',
           title: 'Dạy ${teacherClass.className}',
           subtitle:
-              '${subject?.name ?? 'MÃ´n há»c'} • ${teacherClass.studentCount} học sinh',
+              '${subject?.name ?? 'Môn học'} • ${teacherClass.studentCount} học sinh',
           startTime: DateTime(
             now.year,
             now.month,
@@ -329,7 +651,7 @@ class TeacherController extends ChangeNotifier {
           id: 'exam_${exam.id}',
           title: 'Giao ${exam.title}',
           subtitle:
-              '${subject?.name ?? 'MÃ´n há»c'} • ${exam.questionCount} câu',
+              '${subject?.name ?? 'Môn học'} • ${exam.questionCount} câu',
           startTime: DateTime(now.year, now.month, now.day + index + 2, 19, 0),
           durationMinutes: exam.durationMinutes,
           icon: Icons.assignment_turned_in,

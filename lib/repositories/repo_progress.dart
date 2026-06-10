@@ -1,5 +1,7 @@
-﻿/// Progress repository for tracking student progress
+/// Progress repository for tracking student progress
 library;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
 
@@ -87,3 +89,107 @@ class MockProgressRepository implements ProgressRepository {
   }
 }
 
+/// Real Firestore Progress Repository
+class FirestoreProgressRepository implements ProgressRepository {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<StudentProgress> _getOrCreateStudentProgress(String studentId) async {
+    try {
+      final doc = await _firestore.collection('progress_stats').doc(studentId).get();
+      if (doc.exists) {
+        return StudentProgress.fromFirestore(doc);
+      }
+    } catch (e) {
+      debugPrint('Lỗi tải tiến độ học sinh từ Firestore: $e');
+    }
+    return StudentProgress.zero(studentId);
+  }
+
+  @override
+  Future<List<ProgressStat>> getProgressByStudent(String studentId) async {
+    final progress = await _getOrCreateStudentProgress(studentId);
+    return progress.subjectProgress;
+  }
+
+  @override
+  Future<ProgressStat?> getProgressByStudentSubject(String studentId, String subjectId) async {
+    final progress = await _getOrCreateStudentProgress(studentId);
+    try {
+      return progress.subjectProgress.firstWhere((p) => p.subjectId == subjectId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> updateProgress(ProgressStat progress) async {
+    await createProgress(progress);
+  }
+
+  @override
+  Future<void> createProgress(ProgressStat progress) async {
+    try {
+      final studentProgress = await _getOrCreateStudentProgress(progress.studentId);
+      
+      final currentList = List<ProgressStat>.from(studentProgress.subjectProgress);
+      final index = currentList.indexWhere((p) => p.subjectId == progress.subjectId);
+      if (index >= 0) {
+        currentList[index] = progress;
+      } else {
+        currentList.add(progress);
+      }
+
+      // Calculate totals
+      int totalExams = 0;
+      int totalDocs = 0;
+      double totalScore = 0.0;
+      double totalCompletion = 0.0;
+
+      for (final p in currentList) {
+        totalExams += p.totalExamsTaken;
+        totalDocs += p.totalDocumentsRead;
+        totalScore += p.averageScore * p.totalExamsTaken;
+        totalCompletion += p.completionPercentage;
+      }
+
+      final avgScore = totalExams == 0 ? 0.0 : totalScore / totalExams;
+      final avgCompletion = currentList.isEmpty ? 0.0 : totalCompletion / currentList.length;
+
+      final updatedProgress = studentProgress.copyWith(
+        totalExamsCompleted: totalExams,
+        averageScore: avgScore,
+        documentsRead: totalDocs,
+        activeSubjects: currentList.length,
+        overallProgressPercentage: avgCompletion,
+        subjectProgress: currentList,
+        updatedAt: DateTime.now(),
+      );
+
+      await _firestore
+          .collection('progress_stats')
+          .doc(progress.studentId)
+          .set(updatedProgress.toFirestore(), SetOptions(merge: true))
+          .timeout(const Duration(seconds: 12));
+    } catch (e) {
+      debugPrint('Lỗi cập nhật tiến độ học sinh lên Firestore: $e');
+    }
+  }
+
+  @override
+  Future<double> getAverageScoreByStudent(String studentId) async {
+    final progress = await _getOrCreateStudentProgress(studentId);
+    return progress.averageScore;
+  }
+
+  @override
+  Future<int> getTotalExamsByStudent(String studentId) async {
+    final progress = await _getOrCreateStudentProgress(studentId);
+    return progress.totalExamsCompleted;
+  }
+
+  @override
+  Future<int> getExamsPassedByStudent(String studentId) async {
+    final progress = await _getOrCreateStudentProgress(studentId);
+    return progress.subjectProgress.fold<int>(0, (total, p) => total + p.examsPassed);
+  }
+}

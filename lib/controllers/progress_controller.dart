@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:thpt_exam_prep_app/data/local/app_database.dart';
-import 'package:thpt_exam_prep_app/mock_progress.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
@@ -56,31 +55,20 @@ class ProgressController extends ChangeNotifier {
       final subjectFuture = _repositoryService.subject.getAllSubjects().timeout(
         const Duration(seconds: 12),
       );
-      final localProgressFuture = _localRepository.getProgressStats(studentId);
-      final localHistoryFuture = _localRepository.getExamHistory(studentId);
 
       _subjects = await subjectFuture;
 
-      final localProgress = await localProgressFuture;
-      if (localProgress.isNotEmpty) {
-        _subjectProgress = localProgress;
-      } else {
-        final mockProgress = await _repositoryService.progress
-            .getProgressByStudent(studentId)
-            .timeout(const Duration(seconds: 12));
-        _subjectProgress = mockProgress.isNotEmpty
-            ? mockProgress
-            : _buildMockProgress(studentId);
-      }
+      final firestoreProgress = await _repositoryService.progress
+          .getProgressByStudent(studentId)
+          .timeout(const Duration(seconds: 12));
+      _subjectProgress = firestoreProgress;
 
-      final localHistory = await localHistoryFuture;
-      if (localHistory.isNotEmpty) {
-        _examHistory = localHistory;
-      } else {
-        _examHistory = await _buildMockHistory(studentId);
-      }
+      final localHistory = await _localRepository.getExamHistory(studentId);
+      _examHistory = localHistory;
     } catch (e) {
       debugPrint('Không tải được tiến độ học tập: $e');
+      _subjectProgress = <ProgressStat>[];
+      _examHistory = <ExamResultData>[];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -137,97 +125,5 @@ class ProgressController extends ChangeNotifier {
 
     await initialize(_studentId!, force: true);
     notifyListeners();
-  }
-
-  List<ProgressStat> _buildMockProgress(String studentId) {
-    final fallback = MockProgressData.progressStats
-        .where((progress) => progress.studentId == studentId)
-        .toList();
-    return fallback.isNotEmpty ? fallback : MockProgressData.progressStats;
-  }
-
-  Future<List<ExamResultData>> _buildMockHistory(String studentId) async {
-    final exams = await _repositoryService.exam.getAllExams();
-    final results = <ExamResultData>[];
-
-    for (final exam in exams.take(3)) {
-      final questions = await _repositoryService.exam.getQuestionsByExam(
-        exam.id,
-      );
-      if (questions.isEmpty) continue;
-
-      final answers = <ExamAnswer>[];
-      final selectedOptionIds = <String, String>{};
-      var correctCount = 0;
-
-      for (final question in questions) {
-        final correctOption = question.options.firstWhere(
-          (option) => option.isCorrect,
-        );
-        final wrongOption = question.options.firstWhere(
-          (option) => !option.isCorrect,
-        );
-        final chooseCorrect = question.orderNumber.isEven;
-        final selectedOption = chooseCorrect ? correctOption : wrongOption;
-        final isCorrect = selectedOption.isCorrect;
-        if (isCorrect) correctCount++;
-        selectedOptionIds[question.id] = selectedOption.id;
-        answers.add(
-          ExamAnswer(
-            id: 'mock_${exam.id}_${question.id}',
-            examAttemptId: 'mock_attempt_${exam.id}',
-            questionId: question.id,
-            selectedOptionId: selectedOption.id,
-            answeredAt: DateTime.now().subtract(
-              Duration(days: question.orderNumber),
-            ),
-            isCorrect: isCorrect,
-            earnedScore: isCorrect ? question.score : 0,
-          ),
-        );
-      }
-
-      final wrongCount = questions.length - correctCount;
-      final startedAt = DateTime.now().subtract(
-        const Duration(days: 2, minutes: 30),
-      );
-      final completedAt = startedAt.add(const Duration(minutes: 28));
-      final double score = questions.isEmpty
-          ? 0.0
-          : (correctCount / questions.length) * exam.totalScore;
-      final attempt = ExamAttempt(
-        id: 'mock_attempt_${exam.id}',
-        examId: exam.id,
-        studentId: studentId,
-        startedAt: startedAt,
-        completedAt: completedAt,
-        score: score.toDouble(),
-        isPassed: score >= exam.passingScore,
-        answeredQuestionCount: questions.length,
-        totalQuestionCount: questions.length,
-        isSubmitted: true,
-      );
-
-      results.add(
-        ExamResultData(
-          exam: exam,
-          questions: questions,
-          selectedOptionIds: selectedOptionIds,
-          answers: answers,
-          attempt: attempt,
-          studentId: studentId,
-          correctCount: correctCount,
-          wrongCount: wrongCount,
-          score: score.toDouble(),
-          completionPercentage: questions.isEmpty
-              ? 0
-              : (correctCount / questions.length) * 100,
-          timeSpent: completedAt.difference(startedAt),
-          autoSubmitted: false,
-        ),
-      );
-    }
-
-    return results;
   }
 }

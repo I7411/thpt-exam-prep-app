@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/controllers/teacher_student_connection_controller.dart';
+import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
 import 'package:thpt_exam_prep_app/models.dart';
+
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 class TeacherStudentsScreen extends StatefulWidget {
@@ -14,6 +16,7 @@ class TeacherStudentsScreen extends StatefulWidget {
 
 class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
   final _emailController = TextEditingController();
+  String? _selectedClassId;
 
   @override
   void initState() {
@@ -58,7 +61,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
 
     final success = await context
         .read<TeacherStudentConnectionController>()
-        .sendConnectionRequest(_emailController.text, teacher: teacher);
+        .sendConnectionRequest(_emailController.text, teacher: teacher, classId: _selectedClassId);
 
     if (!mounted || !success) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -127,6 +130,12 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                       controller.isSending ||
                       controller.isLoading,
                   searchedStudent: controller.searchedStudent,
+                  selectedClassId: _selectedClassId,
+                  onClassChanged: (val) {
+                    setState(() {
+                      _selectedClassId = val;
+                    });
+                  },
                   onSearch: _searchStudent,
                   onSend: _sendRequest,
                 ),
@@ -186,6 +195,8 @@ class _SearchPanel extends StatelessWidget {
   final AppUser? searchedStudent;
   final VoidCallback onSearch;
   final VoidCallback onSend;
+  final String? selectedClassId;
+  final ValueChanged<String?> onClassChanged;
 
   const _SearchPanel({
     required this.emailController,
@@ -193,11 +204,14 @@ class _SearchPanel extends StatelessWidget {
     required this.searchedStudent,
     required this.onSearch,
     required this.onSend,
+    required this.selectedClassId,
+    required this.onClassChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final student = searchedStudent;
+    final classes = context.watch<TeacherController>().classes;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -225,6 +239,29 @@ class _SearchPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+          if (classes.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              value: selectedClassId,
+              decoration: const InputDecoration(
+                labelText: 'Gán vào lớp (không bắt buộc)',
+                prefixIcon: Icon(Icons.class_outlined),
+              ),
+              items: [
+                const DropdownMenuItem<String>(
+                  value: null,
+                  child: Text('Không chọn lớp (Gán sau)'),
+                ),
+                ...classes.map((c) {
+                  return DropdownMenuItem<String>(
+                    value: c.id,
+                    child: Text(c.className),
+                  );
+                }),
+              ],
+              onChanged: onClassChanged,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,

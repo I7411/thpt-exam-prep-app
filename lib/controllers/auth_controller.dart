@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
 import 'package:thpt_exam_prep_app/services/notification_service.dart';
@@ -274,6 +275,94 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<bool> loginWithGoogle() async {
+    _setLoading(true);
+    _errorMessage = '';
+
+    try {
+      debugPrint('Đang đăng nhập bằng Google...');
+      final user = await _repositoryService.auth.signInWithGoogle();
+
+      if (user != null) {
+        _currentUser = user;
+        _isAuthenticated = true;
+        debugPrint('Đăng nhập Google thành công. Vai trò: ${user.role.toValue()}');
+        NotificationService.instance.saveTokenToFirestore(user.id);
+        return true;
+      }
+
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Đăng nhập bằng Google bị hủy hoặc thất bại.';
+      return false;
+    } on FirebaseAuthException catch (e, stackTrace) {
+      _errorMessage = _getLoginFirebaseAuthErrorMessage(e);
+      _logFirebaseAuthException('Lỗi khi đăng nhập bằng Google', e, stackTrace);
+      return false;
+    } on FirebaseException catch (e, stackTrace) {
+      _errorMessage = _getFirestoreErrorMessage(e);
+      _logFirebaseException('Lỗi Firestore sau khi đăng nhập Google', e, stackTrace);
+      return false;
+    } on TimeoutException {
+      _errorMessage = 'Đăng nhập Google quá lâu. Vui lòng thử lại.';
+      return false;
+    } catch (e, stackTrace) {
+      _errorMessage = 'Không thể đăng nhập bằng Google. Vui lòng thử lại.';
+      _logUnknownException('Lỗi không xác định khi đăng nhập Google', e, stackTrace);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> verifyEmailExists(String email) async {
+    _setLoading(true);
+    _errorMessage = '';
+    try {
+      final exists = await _repositoryService.auth.verifyEmailExists(email);
+      if (!exists) {
+        _errorMessage = 'Không tìm thấy tài khoản với email này.';
+      }
+      return exists;
+    } catch (e) {
+      _errorMessage = 'Lỗi xác thực email: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> confirmPasswordReset(String code, String newPassword) async {
+    _setLoading(true);
+    _errorMessage = '';
+    try {
+      if (newPassword.length < 6) {
+        _errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự.';
+        return false;
+      }
+      await _repositoryService.auth.confirmPasswordReset(code, newPassword);
+      return true;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'expired-action-code') {
+        _errorMessage = 'Mã xác thực đã hết hạn.';
+      } else if (e.code == 'invalid-action-code') {
+        _errorMessage = 'Mã xác thực không hợp lệ.';
+      } else if (e.code == 'user-not-found') {
+        _errorMessage = 'Không tìm thấy người dùng.';
+      } else if (e.code == 'weak-password') {
+        _errorMessage = 'Mật khẩu mới quá yếu.';
+      } else {
+        _errorMessage = 'Đặt lại mật khẩu thất bại: ${e.message}';
+      }
+      return false;
+    } catch (e) {
+      _errorMessage = 'Lỗi khi đặt lại mật khẩu: $e';
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> logout() async {
     _setLoading(true);
 
@@ -481,6 +570,40 @@ class AuthController extends ChangeNotifier {
         return 'Tài khoản này đã bị vô hiệu hóa.';
       default:
         return 'Không thể xử lý dữ liệu người dùng trên Firestore. Vui lòng thử lại.';
+    }
+  }
+
+  Future<bool> updateProfile({required String fullName, String? className}) async {
+    if (_currentUser == null) return false;
+    _setLoading(true);
+    _errorMessage = '';
+    try {
+      final uid = _currentUser!.id;
+      final updates = <String, dynamic>{
+        'fullName': fullName.trim(),
+        if (className != null) 'className': className.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update(updates)
+          .timeout(const Duration(seconds: 10));
+          
+      // Update local state
+      _currentUser = _currentUser!.copyWith(
+        fullName: fullName.trim(),
+        className: className?.trim(),
+      );
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Không thể cập nhật thông tin: $e';
+      debugPrint('Lỗi cập nhật thông tin cá nhân: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 

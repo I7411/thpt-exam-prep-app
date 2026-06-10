@@ -37,7 +37,7 @@ class RepositoryService {
     _subjectRepo = MockSubjectRepository();
     _documentRepo = MockDocumentRepository();
     _examRepo = MockExamRepository();
-    _progressRepo = MockProgressRepository();
+    _progressRepo = FirestoreProgressRepository();
     _notificationRepo = FirestoreNotificationRepository();
     _teacherRepo = MockTeacherRepository();
     _adminRepo = FirestoreAdminRepository();

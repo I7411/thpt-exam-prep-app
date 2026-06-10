@@ -1,4 +1,4 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'user_role.dart';
 
 /// Application user model
@@ -16,6 +16,11 @@ class AppUser {
   final DateTime? updatedAt;
   final bool isActive;
 
+  // New fields for class system
+  final List<String> classIds;
+  final String? primaryClassId;
+  final List<String> managedClassIds;
+
   const AppUser({
     required this.id,
     required this.email,
@@ -29,6 +34,9 @@ class AppUser {
     required this.createdAt,
     this.updatedAt,
     this.isActive = true,
+    this.classIds = const [],
+    this.primaryClassId,
+    this.managedClassIds = const [],
   });
 
   /// Create AppUser from JSON
@@ -46,6 +54,9 @@ class AppUser {
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
       isActive: json['isActive'] as bool? ?? true,
+      classIds: (json['classIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      primaryClassId: json['primaryClassId'] as String?,
+      managedClassIds: (json['managedClassIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
     );
   }
 
@@ -65,6 +76,9 @@ class AppUser {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       isActive: data['isActive'] as bool? ?? true,
+      classIds: (data['classIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      primaryClassId: data['primaryClassId'] as String?,
+      managedClassIds: (data['managedClassIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
     );
   }
 
@@ -83,6 +97,9 @@ class AppUser {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'isActive': isActive,
+      'classIds': classIds,
+      'primaryClassId': primaryClassId,
+      'managedClassIds': managedClassIds,
     };
   }
 
@@ -101,6 +118,9 @@ class AppUser {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
       'isActive': isActive,
+      'classIds': classIds,
+      'primaryClassId': primaryClassId,
+      'managedClassIds': managedClassIds,
     };
   }
 
@@ -118,6 +138,9 @@ class AppUser {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    List<String>? classIds,
+    String? primaryClassId,
+    List<String>? managedClassIds,
   }) {
     return AppUser(
       id: id ?? this.id,
@@ -132,6 +155,9 @@ class AppUser {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      classIds: classIds ?? this.classIds,
+      primaryClassId: primaryClassId ?? this.primaryClassId,
+      managedClassIds: managedClassIds ?? this.managedClassIds,
     );
   }
 

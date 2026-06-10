@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/mock_progress.dart';
 
 abstract class TeacherRepository {
   Future<List<TeacherClass>> getClassesByTeacher(String teacherId);
@@ -22,44 +21,86 @@ abstract class TeacherRepository {
 /// provider by RepositoryService. To avoid breaking this architecture while ensuring real data
 /// synchronization, it has been enhanced to query Cloud Firestore directly for accepted student counts.
 class MockTeacherRepository implements TeacherRepository {
-  final List<TeacherClass> _classes = List.from(MockUsersData.teacherClasses);
   final List<ExamAttempt> _attempts = [];
 
   @override
   Future<List<TeacherClass>> getClassesByTeacher(String teacherId) async {
-    await Future.delayed(Duration(milliseconds: 300));
-    return _classes.where((c) => c.teacherId == teacherId).toList();
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('classes')
+          .where('teacherIds', arrayContains: teacherId)
+          .get()
+          .timeout(const Duration(seconds: 12));
+      
+      if (snapshot.docs.isEmpty) {
+        // Fallback to teacherId query
+        final snapshot2 = await FirebaseFirestore.instance
+            .collection('classes')
+            .where('teacherId', isEqualTo: teacherId)
+            .get()
+            .timeout(const Duration(seconds: 12));
+        return snapshot2.docs.map((doc) => TeacherClass.fromFirestore(doc)).toList();
+      }
+      return snapshot.docs.map((doc) => TeacherClass.fromFirestore(doc)).toList();
+    } catch (e) {
+      debugPrint('Lỗi lấy danh sách lớp học: $e');
+      return [];
+    }
   }
 
   @override
   Future<TeacherClass?> getClassById(String id) async {
-    await Future.delayed(Duration(milliseconds: 200));
     try {
-      return _classes.firstWhere((c) => c.id == id);
+      final doc = await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(id)
+          .get()
+          .timeout(const Duration(seconds: 12));
+      if (!doc.exists) return null;
+      return TeacherClass.fromFirestore(doc);
     } catch (e) {
+      debugPrint('Lỗi lấy chi tiết lớp học: $e');
       return null;
     }
   }
 
   @override
   Future<void> createClass(TeacherClass teacherClass) async {
-    await Future.delayed(Duration(milliseconds: 300));
-    _classes.add(teacherClass);
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(teacherClass.id)
+          .set(teacherClass.toFirestore())
+          .timeout(const Duration(seconds: 12));
+    } catch (e) {
+      debugPrint('Lỗi tạo lớp học: $e');
+    }
   }
 
   @override
   Future<void> updateClass(TeacherClass teacherClass) async {
-    await Future.delayed(Duration(milliseconds: 300));
-    final index = _classes.indexWhere((c) => c.id == teacherClass.id);
-    if (index >= 0) {
-      _classes[index] = teacherClass;
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(teacherClass.id)
+          .update(teacherClass.toFirestore())
+          .timeout(const Duration(seconds: 12));
+    } catch (e) {
+      debugPrint('Lỗi cập nhật lớp học: $e');
     }
   }
 
   @override
   Future<void> deleteClass(String id) async {
-    await Future.delayed(Duration(milliseconds: 300));
-    _classes.removeWhere((c) => c.id == id);
+    try {
+      await FirebaseFirestore.instance
+          .collection('classes')
+          .doc(id)
+          .delete()
+          .timeout(const Duration(seconds: 12));
+    } catch (e) {
+      debugPrint('Lỗi xóa lớp học: $e');
+    }
   }
 
   @override
@@ -107,4 +148,3 @@ class MockTeacherRepository implements TeacherRepository {
     }
   }
 }
-

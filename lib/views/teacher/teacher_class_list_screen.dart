@@ -23,7 +23,103 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
 
   Future<void> _loadData() async {
     final authProvider = context.read<AuthController>();
-    await context.read<TeacherController>().ensureLoaded(authProvider.currentUser);
+    await context.read<TeacherController>().ensureLoaded(authProvider.currentUser, force: true);
+  }
+
+  void _showCreateClassDialog(BuildContext context) {
+    final classNameController = TextEditingController();
+    final descriptionController = TextEditingController();
+    final teacherProvider = context.read<TeacherController>();
+    String? selectedSubjectId = teacherProvider.subjects.isNotEmpty ? teacherProvider.subjects.first.id : null;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Tạo lớp mới'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: classNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tên lớp',
+                        hintText: 'VD: 12A1',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: selectedSubjectId,
+                      decoration: const InputDecoration(labelText: 'Môn học'),
+                      items: teacherProvider.subjects.map((subject) {
+                        return DropdownMenuItem<String>(
+                          value: subject.id,
+                          child: Text(subject.name),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          selectedSubjectId = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mô tả lớp',
+                        hintText: 'VD: Lớp ôn thi THPT Quốc gia',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Hủy'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final className = classNameController.text.trim();
+                    final desc = descriptionController.text.trim();
+                    final subjectId = selectedSubjectId;
+
+                    if (className.isEmpty || subjectId == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Vui lòng điền đầy đủ tên lớp và môn học.')),
+                      );
+                      return;
+                    }
+
+                    Navigator.pop(dialogContext);
+                    final success = await teacherProvider.createNewClass(
+                      className: className,
+                      subjectId: subjectId,
+                      description: desc,
+                    );
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success ? 'Đã tạo lớp $className thành công.' : 'Lỗi khi tạo lớp học.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Tạo'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -39,6 +135,11 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
             icon: const Icon(Icons.refresh),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateClassDialog(context),
+        label: const Text('Tạo lớp mới'),
+        icon: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,

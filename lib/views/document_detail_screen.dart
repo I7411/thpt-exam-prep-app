@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 import '../app_theme.dart';
 import '../models.dart';
@@ -21,6 +24,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   late final Future<Subject?> _subjectFuture;
   bool _isMarked = false;
   bool _isLearned = false;
+  bool _checkingFavorite = true;
 
   @override
   void initState() {
@@ -32,6 +36,39 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkIsMarked();
+  }
+
+  Future<void> _checkIsMarked() async {
+    final authProvider = context.read<AuthController>();
+    final userId = authProvider.currentUser?.id ?? 'student_001';
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('saved_materials')
+          .doc('${userId}_${widget.document.id}')
+          .get();
+      
+      final learnedDoc = await FirebaseFirestore.instance
+          .collection('learned_materials')
+          .doc('${userId}_${widget.document.id}')
+          .get();
+
+      setState(() {
+        _isMarked = doc.exists && doc.data()?['isFavorite'] == true;
+        _isLearned = learnedDoc.exists;
+        _checkingFavorite = false;
+      });
+    } catch (e) {
+      debugPrint('Lỗi kiểm tra trạng thái đánh dấu: $e');
+      setState(() {
+        _checkingFavorite = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -40,19 +77,42 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () {
+            onPressed: _checkingFavorite ? null : () async {
+              final nextIsFavorite = !_isMarked;
+              final authProvider = context.read<AuthController>();
+              final userId = authProvider.currentUser?.id ?? 'student_001';
+
+              final docRef = FirebaseFirestore.instance
+                  .collection('saved_materials')
+                  .doc('${userId}_${widget.document.id}');
+
+              if (nextIsFavorite) {
+                await docRef.set({
+                  'userId': userId,
+                  'materialId': widget.document.id,
+                  'isFavorite': true,
+                  'favoriteAt': FieldValue.serverTimestamp(),
+                  'savedAt': FieldValue.serverTimestamp(),
+                });
+              } else {
+                await docRef.delete();
+              }
+
               setState(() {
-                _isMarked = !_isMarked;
+                _isMarked = nextIsFavorite;
               });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    _isMarked
-                        ? 'Đã thêm vào bộ sưu tập'
-                        : 'Đã bỏ khỏi bộ sưu tập',
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      nextIsFavorite
+                          ? 'Đã thêm vào bộ sưu tập'
+                          : 'Đã bỏ khỏi bộ sưu tập',
+                    ),
                   ),
-                ),
-              );
+                );
+              }
             },
             icon: Icon(
               _isMarked ? Icons.bookmark_rounded : Icons.bookmark_outline,
@@ -180,16 +240,34 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         child: SizedBox(
           height: 54,
           child: ElevatedButton.icon(
-            onPressed: () {
-              setState(() {
-                _isLearned = true;
-                _isMarked = true;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã đánh dấu tài liệu là đã học'),
-                ),
-              );
+            onPressed: () async {
+              final authProvider = context.read<AuthController>();
+              final userId = authProvider.currentUser?.id ?? 'student_001';
+              
+              try {
+                await FirebaseFirestore.instance
+                    .collection('learned_materials')
+                    .doc('${userId}_${widget.document.id}')
+                    .set({
+                      'userId': userId,
+                      'materialId': widget.document.id,
+                      'learnedAt': FieldValue.serverTimestamp(),
+                    });
+                
+                setState(() {
+                  _isLearned = true;
+                });
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Đã đánh dấu tài liệu là đã học'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Lỗi khi đánh dấu tài liệu đã học: $e');
+              }
             },
             icon: Icon(_isLearned ? Icons.check_circle : Icons.done_rounded),
             label: Text(_isLearned ? 'Đã học' : 'Đánh dấu đã học'),

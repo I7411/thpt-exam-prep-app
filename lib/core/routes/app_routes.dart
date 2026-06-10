@@ -17,6 +17,7 @@ class AppRoutes {
   static const String studentExamTaking = '/student/exam-taking';
   static const String studentExamResult = '/student/exam-result';
   static const String studentProgress = '/student/progress';
+  static const String studentHistory = '/student/history';
   static const String studentNotifications = '/student/notifications';
   static const String studentProfile = '/student/profile';
   static const String studentTeacherRequests = '/student/teacher-requests';
@@ -62,6 +63,7 @@ class AppRoutes {
       studentExamTaking,
       studentExamResult,
       studentProgress,
+      studentHistory,
       studentNotifications,
       studentProfile,
       studentTeacherRequests,

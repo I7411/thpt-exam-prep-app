@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 import '../app_theme.dart';
 import '../core/routes/app_routes.dart';
@@ -19,7 +22,8 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   late final RepositoryService _repositoryService;
   late Future<_DocumentListData> _dataFuture;
   String? _selectedSubjectId;
-  final Set<String> _markedDocumentIds = <String>{};
+  bool _favoritesLoaded = false;
+  final Map<String, DateTime> _favoritesMap = <String, DateTime>{};
 
   @override
   void initState() {
@@ -30,19 +34,52 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   }
 
   Future<_DocumentListData> _loadData() async {
+    final authProvider = context.read<AuthController>();
+    final userId = authProvider.currentUser?.id ?? 'student_001';
+
     final documentsFuture = _repositoryService.document
         .getAllDocuments()
         .timeout(const Duration(seconds: 12));
     final subjectsFuture = _repositoryService.subject.getAllSubjects().timeout(
       const Duration(seconds: 12),
     );
+    final favoritesFuture = FirebaseFirestore.instance
+        .collection('saved_materials')
+        .where('userId', isEqualTo: userId)
+        .where('isFavorite', isEqualTo: true)
+        .get()
+        .timeout(const Duration(seconds: 10));
+
     final documents = (await documentsFuture).take(20).toList();
     final subjects = await subjectsFuture;
-    return _DocumentListData(documents: documents, subjects: subjects);
+    final favoritesSnapshot = await favoritesFuture;
+
+    final favoritesMap = <String, DateTime>{};
+    for (final doc in favoritesSnapshot.docs) {
+      final data = doc.data();
+      final materialId = data['materialId'] as String?;
+      final favoriteAtVal = data['favoriteAt'];
+      if (materialId != null) {
+        DateTime favTime = DateTime.now();
+        if (favoriteAtVal is Timestamp) {
+          favTime = favoriteAtVal.toDate();
+        } else if (favoriteAtVal is String) {
+          favTime = DateTime.tryParse(favoriteAtVal) ?? DateTime.now();
+        }
+        favoritesMap[materialId] = favTime;
+      }
+    }
+
+    return _DocumentListData(
+      documents: documents,
+      subjects: subjects,
+      favoritesMap: favoritesMap,
+    );
   }
 
   void _retryLoad() {
     setState(() {
+      _favoritesLoaded = false;
       _dataFuture = _loadData();
     });
   }
@@ -72,19 +109,57 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (!_favoritesLoaded) {
+            _favoritesMap.clear();
+            _favoritesMap.addAll(data.favoritesMap);
+            _favoritesLoaded = true;
+          }
+
           final subjectsById = <String, Subject>{
             for (final subject in data.subjects) subject.id: subject,
           };
 
-          final documents = data.documents.toList()
-            ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
-          final filteredDocuments = _selectedSubjectId == null
-              ? documents
-              : documents
-                    .where(
-                      (document) => document.subjectId == _selectedSubjectId,
-                    )
-                    .toList();
+          final documents = data.documents.toList();
+          
+          List<StudyDocument> filteredDocuments;
+          if (_selectedSubjectId == 'new_materials') {
+            filteredDocuments = documents.toList()
+              ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+          } else if (_selectedSubjectId == null) {
+            filteredDocuments = documents.toList();
+            filteredDocuments.sort((left, right) {
+              final leftFavTime = _favoritesMap[left.id];
+              final rightFavTime = _favoritesMap[right.id];
+
+              if (leftFavTime != null && rightFavTime != null) {
+                return rightFavTime.compareTo(leftFavTime);
+              } else if (leftFavTime != null) {
+                return -1;
+              } else if (rightFavTime != null) {
+                return 1;
+              } else {
+                return right.createdAt.compareTo(left.createdAt);
+              }
+            });
+          } else {
+            filteredDocuments = documents
+                .where((document) => document.subjectId == _selectedSubjectId)
+                .toList();
+            filteredDocuments.sort((left, right) {
+              final leftFavTime = _favoritesMap[left.id];
+              final rightFavTime = _favoritesMap[right.id];
+
+              if (leftFavTime != null && rightFavTime != null) {
+                return rightFavTime.compareTo(leftFavTime);
+              } else if (leftFavTime != null) {
+                return -1;
+              } else if (rightFavTime != null) {
+                return 1;
+              } else {
+                return right.createdAt.compareTo(left.createdAt);
+              }
+            });
+          }
 
           return Column(
             children: [
@@ -126,7 +201,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                     horizontal: 16,
                     vertical: 10,
                   ),
-                  itemCount: data.subjects.length + 1,
+                  itemCount: data.subjects.length + 2,
                   separatorBuilder: (context, index) =>
                       const SizedBox(width: 8),
                   itemBuilder: (context, index) {
@@ -142,8 +217,20 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                         },
                       );
                     }
+                    if (index == 1) {
+                      final isSelected = _selectedSubjectId == 'new_materials';
+                      return FilterChip(
+                        label: const Text('Mới nhất'),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setState(() {
+                            _selectedSubjectId = 'new_materials';
+                          });
+                        },
+                      );
+                    }
 
-                    final subject = data.subjects[index - 1];
+                    final subject = data.subjects[index - 2];
                     final isSelected = _selectedSubjectId == subject.id;
                     return FilterChip(
                       label: Text(subject.name),
@@ -186,9 +273,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                           final subjectName =
                               subjectsById[document.subjectId]?.name ??
                               'Môn học';
-                          final isMarked = _markedDocumentIds.contains(
-                            document.id,
-                          );
+                          final isMarked = _favoritesMap.containsKey(document.id);
 
                           return SizedBox(
                             height: 176,
@@ -199,32 +284,55 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                                   '${_estimateReadingTime(document)} phút đọc',
                               preview: document.description,
                               isMarked: isMarked,
-                              onTap: () {
-                                Navigator.pushNamed(
+                              onTap: () async {
+                                await Navigator.pushNamed(
                                   context,
                                   AppRoutes.studentDocumentDetail,
                                   arguments: document,
                                 );
+                                _retryLoad();
                               },
-                              onMarkTap: () {
+                              onMarkTap: () async {
+                                final nextIsFavorite = !isMarked;
+                                final authProvider = context.read<AuthController>();
+                                final userId = authProvider.currentUser?.id ?? 'student_001';
+
+                                final docRef = FirebaseFirestore.instance
+                                    .collection('saved_materials')
+                                    .doc('${userId}_${document.id}');
+
+                                if (nextIsFavorite) {
+                                  await docRef.set({
+                                    'userId': userId,
+                                    'materialId': document.id,
+                                    'isFavorite': true,
+                                    'favoriteAt': FieldValue.serverTimestamp(),
+                                    'savedAt': FieldValue.serverTimestamp(),
+                                  });
+                                } else {
+                                  await docRef.delete();
+                                }
+
                                 setState(() {
-                                  if (isMarked) {
-                                    _markedDocumentIds.remove(document.id);
+                                  if (nextIsFavorite) {
+                                    _favoritesMap[document.id] = DateTime.now();
                                   } else {
-                                    _markedDocumentIds.add(document.id);
+                                    _favoritesMap.remove(document.id);
                                   }
                                 });
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      isMarked
-                                          ? 'Bỏ đánh dấu: ${document.title}'
-                                          : 'Đã đánh dấu: ${document.title}',
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        nextIsFavorite
+                                            ? 'Đã đánh dấu: ${document.title}'
+                                            : 'Bỏ đánh dấu: ${document.title}',
+                                      ),
+                                      duration: const Duration(seconds: 1),
                                     ),
-                                    duration: const Duration(seconds: 1),
-                                  ),
-                                );
+                                  );
+                                }
                               },
                             ),
                           );
@@ -290,6 +398,11 @@ class _ErrorState extends StatelessWidget {
 class _DocumentListData {
   final List<StudyDocument> documents;
   final List<Subject> subjects;
+  final Map<String, DateTime> favoritesMap;
 
-  const _DocumentListData({required this.documents, required this.subjects});
+  const _DocumentListData({
+    required this.documents,
+    required this.subjects,
+    required this.favoritesMap,
+  });
 }

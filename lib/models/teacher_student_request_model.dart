@@ -24,6 +24,7 @@ class TeacherStudentRequest {
   final String studentEmail;
   final String studentName;
   final TeacherStudentRequestStatus status;
+  final String? classId; // Optional classId
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -36,6 +37,7 @@ class TeacherStudentRequest {
     required this.studentEmail,
     required this.studentName,
     required this.status,
+    this.classId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -55,6 +57,7 @@ class TeacherStudentRequest {
       status: TeacherStudentRequestStatus.fromValue(
         data['status'] as String? ?? 'pending',
       ),
+      classId: data['classId'] as String?,
       createdAt: _dateFromFirestore(data['createdAt']),
       updatedAt: _dateFromFirestore(data['updatedAt']),
     );
@@ -70,6 +73,7 @@ class TeacherStudentRequest {
       'studentEmail': studentEmail,
       'studentName': studentName,
       'status': status.toValue(),
+      'classId': classId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };

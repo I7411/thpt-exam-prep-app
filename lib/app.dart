@@ -6,6 +6,7 @@ import 'core/routes/app_routes.dart';
 import 'app_theme.dart';
 
 import 'models.dart';
+import 'controllers/exam_controller.dart';
 import 'views/placeholder_screen.dart';
 
 // ================= ADMIN =================
@@ -25,6 +26,7 @@ import 'views/notification/notification_screen.dart';
 
 // ================= PROGRESS =================
 import 'views/progress/progress_screen.dart';
+import 'views/student/student_history_screen.dart';
 
 // ================= PROFILE =================
 import 'views/profile/student_profile_screen.dart';
@@ -194,8 +196,9 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
         );
 
       case AppRoutes.studentExamResult:
+        final resultArg = args is ExamResultData ? args : null;
         return MaterialPageRoute(
-          builder: (_) => const ExamResultScreen(),
+          builder: (_) => ExamResultScreen(result: resultArg),
           settings: settings,
         );
 
@@ -205,6 +208,13 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
       case AppRoutes.studentProgress:
         return MaterialPageRoute(
           builder: (_) => const ProgressScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.studentHistory:
+        final initialTab = args is int ? args : 0;
+        return MaterialPageRoute(
+          builder: (_) => StudentHistoryScreen(initialTab: initialTab),
           settings: settings,
         );
 
