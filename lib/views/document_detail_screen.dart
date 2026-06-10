@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
-import 'package:thpt_exam_prep_app/providers/progress_provider.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/progress_controller.dart';
 
 import '../app_theme.dart';
 import '../models.dart';
-import '../repository_service.dart';
+import '../repositories/repository_service.dart';
 
 class DocumentDetailScreen extends StatefulWidget {
   final StudyDocument document;

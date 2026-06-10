@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'app_config.dart';
-import 'app_navigation.dart';
+import 'core/config/app_config.dart';
+import 'core/utils/app_navigation.dart';
 import 'core/routes/app_routes.dart';
 import 'app_theme.dart';
 
@@ -20,6 +20,10 @@ import 'views/admin/admin_user_management_screen.dart';
 import 'views/exam/exam_list_screen.dart';
 import 'views/exam/exam_result_screen.dart';
 import 'views/exam/exam_taking_screen.dart';
+import 'views/exam/exam_review_mode_screen.dart';
+import 'views/exam/exam_quiz_review_screen.dart';
+import 'views/exam/exam_blast_game_screen.dart';
+import 'views/exam/exam_block_puzzle_game_screen.dart';
 
 // ================= NOTIFICATION =================
 import 'views/notification/notification_screen.dart';
@@ -201,6 +205,70 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
         final resultArg = args is ExamResultData ? args : null;
         return MaterialPageRoute(
           builder: (_) => ExamResultScreen(result: resultArg),
+          settings: settings,
+        );
+
+      case AppRoutes.studentExamReviewMode:
+        final examId = args is String ? args : null;
+        if (examId == null) {
+          return MaterialPageRoute(
+            builder: (_) => const PlaceholderScreen(
+              routeName: 'Review Exam',
+              description: 'Thiếu dữ liệu đề thi.',
+            ),
+            settings: settings,
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => ExamReviewModeScreen(examId: examId),
+          settings: settings,
+        );
+
+      case AppRoutes.studentExamQuizReview:
+        final examId = args is String ? args : null;
+        if (examId == null) {
+          return MaterialPageRoute(
+            builder: (_) => const PlaceholderScreen(
+              routeName: 'Quiz Review',
+              description: 'Thiếu dữ liệu đề thi.',
+            ),
+            settings: settings,
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => ExamQuizReviewScreen(examId: examId),
+          settings: settings,
+        );
+
+      case AppRoutes.studentExamBlastGame:
+        final examId = args is String ? args : null;
+        if (examId == null) {
+          return MaterialPageRoute(
+            builder: (_) => const PlaceholderScreen(
+              routeName: 'Blast Game',
+              description: 'Thiếu dữ liệu đề thi.',
+            ),
+            settings: settings,
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => ExamBlastGameScreen(examId: examId),
+          settings: settings,
+        );
+
+      case AppRoutes.studentExamBlockPuzzleGame:
+        final examId = args is String ? args : null;
+        if (examId == null) {
+          return MaterialPageRoute(
+            builder: (_) => const PlaceholderScreen(
+              routeName: 'Block Puzzle',
+              description: 'Thiếu dữ liệu đề thi.',
+            ),
+            settings: settings,
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => ExamBlockPuzzleGameScreen(examId: examId),
           settings: settings,
         );
 

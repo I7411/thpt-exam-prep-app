@@ -1,9 +1,9 @@
 ﻿import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
+import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 
 class AppDatabase {
   AppDatabase._internal();

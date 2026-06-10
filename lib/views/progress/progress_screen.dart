@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
-import 'package:thpt_exam_prep_app/providers/progress_provider.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/progress_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});

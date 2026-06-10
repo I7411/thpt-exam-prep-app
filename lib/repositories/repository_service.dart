@@ -5,9 +5,10 @@ import 'package:thpt_exam_prep_app/repositories/repo_subject.dart';
 import 'package:thpt_exam_prep_app/repositories/repo_document.dart';
 import 'package:thpt_exam_prep_app/repositories/repo_exam.dart';
 import 'package:thpt_exam_prep_app/repositories/repo_progress.dart';
-import 'package:thpt_exam_prep_app/repositories/repo_notification.dart';
-import 'package:thpt_exam_prep_app/repositories/repo_teacher.dart';
-import 'package:thpt_exam_prep_app/repositories/repo_admin.dart';
+import '../core/config/app_config.dart';
+import 'repo_admin.dart';
+import 'repo_notification.dart';
+import 'repo_teacher.dart';
 
 /// Service Locator class - singleton for accessing all repositories
 class RepositoryService {
@@ -33,14 +34,25 @@ class RepositoryService {
   }
 
   void _initializeRepositories() {
-    _authRepo = FirebaseAuthRepository();
-    _subjectRepo = MockSubjectRepository();
-    _documentRepo = MockDocumentRepository();
-    _examRepo = MockExamRepository();
-    _progressRepo = FirestoreProgressRepository();
-    _notificationRepo = FirestoreNotificationRepository();
-    _teacherRepo = MockTeacherRepository();
-    _adminRepo = FirestoreAdminRepository();
+    if (AppConfig.enableMockData) {
+      _authRepo = FirebaseAuthRepository();
+      _subjectRepo = MockSubjectRepository();
+      _documentRepo = MockDocumentRepository();
+      _examRepo = MockExamRepository();
+      _progressRepo = MockProgressRepository();
+      _notificationRepo = MockNotificationRepository();
+      _teacherRepo = MockTeacherRepository();
+      _adminRepo = MockAdminRepository();
+    } else {
+      _authRepo = FirebaseAuthRepository();
+      _subjectRepo = MockSubjectRepository(); // Currently always mock
+      _documentRepo = MockDocumentRepository(); // Currently always mock
+      _examRepo = MockExamRepository(); // Currently always mock
+      _progressRepo = FirestoreProgressRepository();
+      _notificationRepo = FirestoreNotificationRepository();
+      _teacherRepo = MockTeacherRepository(); // Currently always mock
+      _adminRepo = FirestoreAdminRepository();
+    }
   }
 
   // Getters for all repositories

@@ -3,10 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});

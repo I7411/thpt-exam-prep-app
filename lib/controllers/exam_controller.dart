@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:thpt_exam_prep_app/data/local/app_database.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 
 class ExamController extends ChangeNotifier {
   final RepositoryService _repositoryService = RepositoryService.getInstance();
@@ -28,6 +28,12 @@ class ExamController extends ChangeNotifier {
   ExamAttempt? _currentAttempt;
   ExamResultData? _currentResult;
   List<ExamResultData> _history = <ExamResultData>[];
+  List<Exam> _availableExams = <Exam>[];
+
+  Exam? _reviewExam;
+  List<Question> _reviewQuestions = <Question>[];
+  bool _isReviewLoading = false;
+  String? _reviewErrorMessage;
 
   String? get studentId => _studentId;
   Exam? get currentExam => _currentExam;
@@ -43,6 +49,12 @@ class ExamController extends ChangeNotifier {
   ExamAttempt? get currentAttempt => _currentAttempt;
   ExamResultData? get currentResult => _currentResult;
   List<ExamResultData> get history => List.unmodifiable(_history);
+  List<Exam> get availableExams => List.unmodifiable(_availableExams);
+
+  Exam? get reviewExam => _reviewExam;
+  List<Question> get reviewQuestions => List.unmodifiable(_reviewQuestions);
+  bool get isReviewLoading => _isReviewLoading;
+  String? get reviewErrorMessage => _reviewErrorMessage;
 
   List<ExamResultData> get passedExams {
     return _history.where((result) {
@@ -73,6 +85,42 @@ class ExamController extends ChangeNotifier {
     return '$minutes:$seconds';
   }
 
+  
+  Future<void> loadAvailableExams() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final exams = await _repositoryService.exam.getAllExams();
+      _availableExams = exams.where((e) => e.status == 'published').toList();
+    } catch (e) {
+      debugPrint('Error loading exams: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadExamReview(String examId) async {
+    _isReviewLoading = true;
+    _reviewErrorMessage = null;
+    notifyListeners();
+
+    try {
+      final exam = await _repositoryService.exam.getExamById(examId);
+      if (exam != null) {
+        _reviewExam = exam;
+        _reviewQuestions = await _repositoryService.exam.getQuestionsByExam(examId);
+      } else {
+        _reviewErrorMessage = 'Không tìm thấy đề thi';
+      }
+    } catch (e) {
+      _reviewErrorMessage = 'Lỗi tải đề thi: $e';
+    } finally {
+      _isReviewLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> initialize(String studentId) async {
     if (_studentId == studentId && _history.isNotEmpty) {
       return;
@@ -96,7 +144,6 @@ class ExamController extends ChangeNotifier {
 
   Future<void> startExam({
     required Exam exam,
-    required List<Question> questions,
     required String studentId,
   }) async {
     await initialize(studentId);

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 
 import '../app_theme.dart';
 import '../core/routes/app_routes.dart';
 import '../models.dart';
-import '../repository_service.dart';
-import '../widgets_document_card.dart';
+import '../repositories/repository_service.dart';
+import 'package:thpt_exam_prep_app/widgets/document_card.dart';
 
 class DocumentListScreen extends StatefulWidget {
   final String? initialSubjectId;

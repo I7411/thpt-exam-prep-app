@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 
 class ExamListScreen extends StatefulWidget {
   final String? initialSubjectId;
@@ -191,6 +191,13 @@ class _ExamListScreenState extends State<ExamListScreen> {
                                 arguments: exam,
                               );
                             },
+                            onReview: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.studentExamReviewMode,
+                                arguments: exam.id,
+                              );
+                            },
                           );
                         },
                       ),
@@ -265,12 +272,14 @@ class _ExamCard extends StatelessWidget {
   final String subjectName;
   final String difficulty;
   final VoidCallback onStart;
+  final VoidCallback onReview;
 
   const _ExamCard({
     required this.exam,
     required this.subjectName,
     required this.difficulty,
     required this.onStart,
+    required this.onReview,
   });
 
   @override
@@ -355,13 +364,24 @@ class _ExamCard extends StatelessWidget {
             ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onStart,
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Làm bài'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onReview,
+                  icon: const Icon(Icons.psychology_rounded),
+                  label: const Text('Ôn tập'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: onStart,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Làm bài'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

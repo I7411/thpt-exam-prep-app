@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:thpt_exam_prep_app/app_config.dart';
+import 'package:thpt_exam_prep_app/core/config/app_config.dart';
 
 class ApiException implements Exception {
   final String message;

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/learning_controller.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 
 import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
@@ -70,36 +71,12 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       final authProvider = context.read<AuthController>();
       final userId = authProvider.currentUser?.id ?? 'student_001';
 
-      // 1. Fetch all documents from repository
-      final docs = await _repositoryService.document.getAllDocuments();
+      // 1. Fetch all documents from LearningController
+      final docs = await context.read<LearningController>().getAllDocuments();
       _allDocuments = docs;
 
-      // 2. Fetch learned documents from Firestore
-      final learnedSnapshot = await FirebaseFirestore.instance
-          .collection('learned_materials')
-          .where('userId', isEqualTo: userId)
-          .get()
-          .timeout(const Duration(seconds: 10));
-
-      final learnedList = <Map<String, dynamic>>[];
-      for (final doc in learnedSnapshot.docs) {
-        final data = doc.data();
-        DateTime learnedAt = DateTime.now();
-        final learnedAtVal = data['learnedAt'];
-        if (learnedAtVal is Timestamp) {
-          learnedAt = learnedAtVal.toDate();
-        } else if (learnedAtVal is String) {
-          learnedAt = DateTime.tryParse(learnedAtVal) ?? DateTime.now();
-        }
-        
-        learnedList.add({
-          'materialId': data['materialId'] as String? ?? '',
-          'learnedAt': learnedAt,
-        });
-      }
-      // Sort learned list by date descending
-      learnedList.sort((a, b) => (b['learnedAt'] as DateTime).compareTo(a['learnedAt'] as DateTime));
-      _learnedHistory = learnedList;
+      // 2. Fetch learned documents from LearningController
+      _learnedHistory = await context.read<LearningController>().getLearnedHistory(userId);
 
       // 3. Fetch exam history from SQLite via ExamController
       await context.read<ExamController>().loadStudentExamHistory(userId);

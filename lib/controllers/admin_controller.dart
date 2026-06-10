@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:thpt_exam_prep_app/mock_documents.dart';
-import 'package:thpt_exam_prep_app/mock_exams.dart';
+import 'package:thpt_exam_prep_app/data/mock/mock_documents.dart';
+import 'package:thpt_exam_prep_app/data/mock/mock_exams.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 import 'package:thpt_exam_prep_app/repositories/repo_notification.dart';
 
 class AdminDocumentSummary {

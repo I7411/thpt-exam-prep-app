@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/teacher_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 
 class TeacherQuestionBankScreen extends StatefulWidget {
   const TeacherQuestionBankScreen({super.key});

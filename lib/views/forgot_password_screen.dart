@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 import 'package:thpt_exam_prep_app/widgets/app_text_field.dart';
 import 'package:thpt_exam_prep_app/widgets/gradient_header.dart';
 import 'package:thpt_exam_prep_app/widgets/primary_gradient_button.dart';

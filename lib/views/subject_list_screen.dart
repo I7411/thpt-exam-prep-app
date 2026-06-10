@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../app_theme.dart';
 import '../core/routes/app_routes.dart';
-import '../models.dart';
-import '../repository_service.dart';
-import '../widgets_subject_card.dart';
+
+import 'package:provider/provider.dart';
+import '../controllers/learning_controller.dart';
+import 'package:thpt_exam_prep_app/widgets/subject_card.dart';
 
 class SubjectListScreen extends StatefulWidget {
   const SubjectListScreen({super.key});
@@ -14,14 +15,14 @@ class SubjectListScreen extends StatefulWidget {
 }
 
 class _SubjectListScreenState extends State<SubjectListScreen> {
-  late final RepositoryService _repositoryService;
-  late Future<List<Subject>> _subjectsFuture;
+  
 
   @override
   void initState() {
     super.initState();
-    _repositoryService = RepositoryService.instance;
-    _subjectsFuture = _repositoryService.subject.getAllSubjects();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LearningController>().loadSubjects();
+    });
   }
 
   @override
@@ -32,18 +33,17 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
         centerTitle: true,
         elevation: 0,
       ),
-      body: FutureBuilder<List<Subject>>(
-        future: _subjectsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: Consumer<LearningController>(
+        builder: (context, controller, child) {
+          if (controller.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Lỗi tải môn học: ${snapshot.error}'));
+          if (controller.errorMessage != null) {
+            return Center(child: Text(controller.errorMessage!));
           }
 
-          final subjects = snapshot.data ?? const <Subject>[];
+          final subjects = controller.subjects;
           if (subjects.isEmpty) {
             return Center(
               child: Column(

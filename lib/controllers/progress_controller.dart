@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:thpt_exam_prep_app/data/local/app_database.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 
 class ProgressController extends ChangeNotifier {
   final RepositoryService _repositoryService = RepositoryService.getInstance();

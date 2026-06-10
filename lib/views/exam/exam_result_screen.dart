@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
+import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
 
 class ExamResultScreen extends StatelessWidget {
   final ExamResultData? result;

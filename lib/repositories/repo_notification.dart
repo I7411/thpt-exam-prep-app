@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/mock_progress.dart';
+import 'package:thpt_exam_prep_app/data/mock/mock_progress.dart';
 
 abstract class NotificationRepository {
   Stream<List<NotificationItem>> streamNotificationsByUser(String userId);

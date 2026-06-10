@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:thpt_exam_prep_app/app_routes.dart';
-import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
+import 'package:thpt_exam_prep_app/controllers/teacher_controller.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 
 class TeacherClassListScreen extends StatefulWidget {
   const TeacherClassListScreen({super.key});

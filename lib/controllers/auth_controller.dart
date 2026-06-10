@@ -5,7 +5,7 @@ import 'package:flutter/services.dart' show PlatformException;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 import 'package:thpt_exam_prep_app/services/notification_service.dart';
 
 class AuthController extends ChangeNotifier {

@@ -2,15 +2,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:thpt_exam_prep_app/app_config.dart';
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/core/config/app_config.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:thpt_exam_prep_app/widgets_document_card.dart';
-import 'package:thpt_exam_prep_app/widgets_subject_card.dart';
+import 'package:thpt_exam_prep_app/widgets/document_card.dart';
+import 'package:thpt_exam_prep_app/widgets/subject_card.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});

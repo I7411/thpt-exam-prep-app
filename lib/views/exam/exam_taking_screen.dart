@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
-import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
-import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+
 
 class ExamTakingScreen extends StatefulWidget {
   final Exam exam;
@@ -21,7 +21,6 @@ class ExamTakingScreen extends StatefulWidget {
 }
 
 class _ExamTakingScreenState extends State<ExamTakingScreen> {
-  late final RepositoryService _repositoryService;
   late ExamController _examProvider;
   bool _isLoadingExam = true;
   bool _providerAttached = false;
@@ -33,8 +32,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   @override
   void initState() {
     super.initState();
-    _repositoryService = RepositoryService.instance;
-  }
+    }
 
   @override
   void didChangeDependencies() {
@@ -51,9 +49,14 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   Future<void> _loadExam() async {
     final authProvider = context.read<AuthController>();
     final studentId = authProvider.currentUser?.id ?? 'student_001';
-    final questions = await _repositoryService.exam.getQuestionsByExam(widget.exam.id);
     
-    if (questions.isEmpty) {
+    await _examProvider.startExam(
+      exam: widget.exam,
+      studentId: studentId,
+    );
+    if (!mounted) return;
+    
+    if (_examProvider.questions.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -66,12 +69,6 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       return;
     }
 
-    await _examProvider.startExam(
-      exam: widget.exam,
-      questions: questions,
-      studentId: studentId,
-    );
-    if (!mounted) return;
     setState(() {
       _isLoadingExam = false;
     });

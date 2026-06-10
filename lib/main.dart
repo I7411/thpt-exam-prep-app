@@ -6,7 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
 import 'app.dart';
-import 'app_navigation.dart';
+import 'core/utils/app_navigation.dart';
 
 import 'services/notification_service.dart';
 
@@ -17,6 +17,7 @@ import 'controllers/progress_controller.dart';
 import 'controllers/teacher_controller.dart';
 import 'controllers/teacher_student_connection_controller.dart';
 import 'controllers/auth_controller.dart';
+import 'controllers/learning_controller.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -103,6 +104,8 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => AdminController()),
 
         ChangeNotifierProvider(create: (_) => ProgressController()),
+
+        ChangeNotifierProvider(create: (_) => LearningController()),
 
         ChangeNotifierProvider(create: (_) => NotificationController()),
 

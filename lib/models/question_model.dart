@@ -1,4 +1,4 @@
-﻿import 'answer_model.dart';
+import 'answer_model.dart';
 
 /// Question model (CÃ¢u há»i)
 class Question {
@@ -24,9 +24,24 @@ class Question {
 
   /// Create Question from JSON
   factory Question.fromJson(Map<String, dynamic> json) {
-    final optionsList = (json['options'] as List<dynamic>? ?? [])
-        .map((option) => AnswerOption.fromJson(option as Map<String, dynamic>))
-        .toList();
+    final rawOptions = json['options'] as List<dynamic>? ?? [];
+    List<AnswerOption> optionsList = [];
+
+    if (rawOptions.isNotEmpty && rawOptions.first is String) {
+      final int correctIdx = json['correctAnswerIndex'] as int? ?? 0;
+      for (int i = 0; i < rawOptions.length; i++) {
+        optionsList.add(AnswerOption(
+          id: 'opt_${json['id']}_$i',
+          label: i == 0 ? 'A' : i == 1 ? 'B' : i == 2 ? 'C' : 'D',
+          content: rawOptions[i] as String,
+          isCorrect: i == correctIdx,
+        ));
+      }
+    } else {
+      optionsList = rawOptions
+          .map((option) => AnswerOption.fromJson(option as Map<String, dynamic>))
+          .toList();
+    }
 
     return Question(
       id: json['id'] as String? ?? '',
@@ -42,6 +57,9 @@ class Question {
 
   /// Convert Question to JSON
   Map<String, dynamic> toJson() {
+    int correctIdx = options.indexWhere((o) => o.isCorrect);
+    if (correctIdx == -1) correctIdx = 0;
+
     return {
       'id': id,
       'examId': examId,
@@ -49,7 +67,8 @@ class Question {
       'explanation': explanation,
       'orderNumber': orderNumber,
       'score': score,
-      'options': options.map((o) => o.toJson()).toList(),
+      'options': options.map((o) => o.content).toList(),
+      'correctAnswerIndex': correctIdx,
       'createdAt': createdAt.toIso8601String(),
     };
   }

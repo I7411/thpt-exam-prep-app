@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:thpt_exam_prep_app/providers/admin_provider.dart';
+import 'package:thpt_exam_prep_app/controllers/admin_controller.dart';
 
 class AdminDocumentManagementScreen extends StatefulWidget {
   const AdminDocumentManagementScreen({super.key});

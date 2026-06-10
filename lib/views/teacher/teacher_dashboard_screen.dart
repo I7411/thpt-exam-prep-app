@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
-import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
-import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/controllers/teacher_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/widgets/stat_card.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -169,7 +170,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       ),
       itemBuilder: (context, index) {
         final item = items[index];
-        return _StatCard(item: item);
+        return StatCard(
+          title: item.label,
+          value: item.value,
+          icon: item.icon,
+          color: item.color,
+        );
       },
     );
   }
@@ -316,11 +322,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.grey.shade200),
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    border: Border.all(color: AppColors.line),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: AppColors.shadow,
                         blurRadius: 10,
                         offset: const Offset(0, 6),
                       ),
@@ -395,65 +401,7 @@ class _ActionItem {
   const _ActionItem(this.title, this.icon, this.route, this.color);
 }
 
-class _StatCard extends StatelessWidget {
-  final _StatItem item;
-
-  const _StatCard({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: item.color.withOpacity(0.16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: item.color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(item.icon, color: item.color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  item.value,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.label,
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+// removed _StatCard
 class _Chip extends StatelessWidget {
   final String label;
   final Color color;

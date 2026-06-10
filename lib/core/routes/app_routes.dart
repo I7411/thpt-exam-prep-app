@@ -22,6 +22,11 @@ class AppRoutes {
   static const String studentProfile = '/student/profile';
   static const String studentTeacherRequests = '/student/teacher-requests';
 
+  static const String studentExamReviewMode = '/student/exam-review-mode';
+  static const String studentExamQuizReview = '/student/exam-quiz-review';
+  static const String studentExamBlastGame = '/student/exam-blast-game';
+  static const String studentExamBlockPuzzleGame = '/student/exam-block-puzzle-game';
+
   // Exam flow aliases
   static const String examList = studentExams;
   static const String examTaking = studentExamTaking;
@@ -69,6 +74,10 @@ class AppRoutes {
       studentNotifications,
       studentProfile,
       studentTeacherRequests,
+      studentExamReviewMode,
+      studentExamQuizReview,
+      studentExamBlastGame,
+      studentExamBlockPuzzleGame,
       teacherDashboard,
       teacherClasses,
       teacherClassDetail,
