@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_theme.dart';
 import '../models.dart';
 import '../repository_service.dart';
 
@@ -25,7 +26,9 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   void initState() {
     super.initState();
     _repositoryService = RepositoryService.instance;
-    _subjectFuture = _repositoryService.subject.getSubjectById(widget.document.subjectId);
+    _subjectFuture = _repositoryService.subject.getSubjectById(
+      widget.document.subjectId,
+    );
   }
 
   @override
@@ -44,14 +47,16 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isMarked ? 'Đã thêm vào bộ sưu tập' : 'Đã bỏ khỏi bộ sưu tập',
+                    _isMarked
+                        ? 'Đã thêm vào bộ sưu tập'
+                        : 'Đã bỏ khỏi bộ sưu tập',
                   ),
                 ),
               );
             },
             icon: Icon(
-              _isMarked ? Icons.bookmark : Icons.bookmark_outline,
-              color: _isMarked ? Colors.orange : null,
+              _isMarked ? Icons.bookmark_rounded : Icons.bookmark_outline,
+              color: _isMarked ? AppColors.accent : null,
             ),
           ),
         ],
@@ -62,139 +67,110 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           final subjectName = snapshot.data?.name ?? 'Môn học';
 
           return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.indigo.withOpacity(0.12),
-                          Colors.blue.withOpacity(0.08),
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.indigo.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            subjectName,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.indigo,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.document.title,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Icon(Icons.schedule, size: 16, color: Colors.grey[700]),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${_estimateReadingTime(widget.document)} phút đọc',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.grey[700],
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildInfoCard(
-                          context,
-                          label: 'Tác giả',
-                          value: widget.document.author,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildInfoCard(
-                          context,
-                          label: 'Lượt xem',
-                          value: '${widget.document.views}',
-                          color: Colors.orange,
-                        ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.panel),
+                    gradient: AppGradients.primary,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.18),
+                        blurRadius: 22,
+                        offset: const Offset(0, 12),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Tóm tắt nội dung',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
                         ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Text(
-                      widget.document.description.isNotEmpty
-                          ? widget.document.description
-                          : _extractSummary(widget.document.content),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            height: 1.6,
-                            color: Colors.grey[800],
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Nội dung xem nhanh',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.indigo.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      _extractSummary(widget.document.content),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            height: 1.6,
-                            color: Colors.grey[700],
+                        child: Text(
+                          subjectName,
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        widget.document.title,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [
+                          _HeaderPill(
+                            icon: Icons.schedule_rounded,
+                            label:
+                                '${_estimateReadingTime(widget.document)} phút đọc',
                           ),
-                    ),
+                          _HeaderPill(
+                            icon: Icons.visibility_outlined,
+                            label: '${widget.document.views} lượt xem',
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInfoCard(
+                        context,
+                        label: 'Tác giả',
+                        value: widget.document.author,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInfoCard(
+                        context,
+                        label: 'Trạng thái',
+                        value: _isLearned ? 'Đã học' : 'Đang học',
+                        color: _isLearned ? AppColors.success : AppColors.accent,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _SectionTitle(title: 'Tóm tắt nội dung'),
+                const SizedBox(height: 12),
+                _ReadingPanel(
+                  text: widget.document.description.isNotEmpty
+                      ? widget.document.description
+                      : _extractSummary(widget.document.content),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                _SectionTitle(title: 'Nội dung xem nhanh'),
+                const SizedBox(height: 12),
+                _ReadingPanel(
+                  text: _extractSummary(widget.document.content),
+                  softColor: AppColors.cyanSoft,
+                ),
+                const SizedBox(height: 88),
+              ],
             ),
           );
         },
@@ -202,8 +178,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.all(16),
         child: SizedBox(
-          height: 52,
-          child: ElevatedButton(
+          height: 54,
+          child: ElevatedButton.icon(
             onPressed: () {
               setState(() {
                 _isLearned = true;
@@ -215,19 +191,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: Text(
-              _isLearned ? 'Đã học' : 'Đánh dấu đã học',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            icon: Icon(_isLearned ? Icons.check_circle : Icons.done_rounded),
+            label: Text(_isLearned ? 'Đã học' : 'Đánh dấu đã học'),
           ),
         ),
       ),
@@ -241,10 +206,10 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        color: color.withOpacity(0.08),
         border: Border.all(color: color.withOpacity(0.18)),
       ),
       child: Column(
@@ -253,8 +218,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w800,
                 ),
           ),
           const SizedBox(height: 6),
@@ -263,7 +228,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w900,
                 ),
           ),
         ],
@@ -291,9 +256,90 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   }
 
   int _estimateReadingTime(StudyDocument document) {
-    final sourceText = document.content.isNotEmpty ? document.content : document.description;
+    final sourceText =
+        document.content.isNotEmpty ? document.content : document.description;
     final estimatedMinutes = (sourceText.length / 500).ceil();
     return estimatedMinutes.clamp(5, 30);
   }
 }
 
+class _HeaderPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _HeaderPill({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+          ),
+    );
+  }
+}
+
+class _ReadingPanel extends StatelessWidget {
+  final String text;
+  final Color softColor;
+
+  const _ReadingPanel({
+    required this.text,
+    this.softColor = AppColors.surface,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: softColor,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              height: 1.65,
+              color: AppColors.ink,
+            ),
+      ),
+    );
+  }
+}

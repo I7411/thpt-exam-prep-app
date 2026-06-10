@@ -1,5 +1,7 @@
-﻿/// Admin repository for admin-specific operations
+/// Admin repository for admin-specific operations
 library;
+import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
 
@@ -107,6 +109,149 @@ class MockAdminRepository implements AdminRepository {
   Future<List<StudyDocument>> getAllDocuments() async {
     await Future.delayed(Duration(milliseconds: 300));
     return _documents;
+  }
+}
+
+/// Real Firestore Admin Repository
+class FirestoreAdminRepository implements AdminRepository {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  @override
+  Future<AdminReportStat> getSystemReport() async {
+    try {
+      final usersSnapshot = await _firestore.collection('users').get();
+      final totalUsers = usersSnapshot.size;
+
+      final studentsSnapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'student')
+          .get();
+      final totalStudents = studentsSnapshot.size;
+
+      final teachersSnapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'teacher')
+          .get();
+      final totalTeachers = teachersSnapshot.size;
+
+      int totalDocs = 0;
+      try {
+        final docsSnap = await _firestore.collection('documents').get();
+        totalDocs = docsSnap.size;
+      } catch (_) {}
+
+      int totalExams = 0;
+      try {
+        final examsSnap = await _firestore.collection('exams').get();
+        totalExams = examsSnap.size;
+      } catch (_) {}
+
+      int totalAttempts = 0;
+      try {
+        final attemptsSnap = await _firestore.collection('exam_attempts').get();
+        totalAttempts = attemptsSnap.size;
+      } catch (_) {
+        try {
+          final attemptsSnap2 = await _firestore.collection('results').get();
+          totalAttempts = attemptsSnap2.size;
+        } catch (_) {}
+      }
+
+      return AdminReportStat(
+        id: 'realtime_report',
+        totalUsers: totalUsers,
+        totalStudents: totalStudents,
+        totalTeachers: totalTeachers,
+        totalDocuments: totalDocs,
+        totalExams: totalExams,
+        totalExamAttempts: totalAttempts,
+        averageExamScore: 0.0,
+        examPassRate: 0,
+        activeUsersThisWeek: 0,
+        generatedAt: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('Lỗi lấy thống kê admin: $e');
+      return AdminReportStat(
+        id: 'fallback_report',
+        totalUsers: 0,
+        totalStudents: 0,
+        totalTeachers: 0,
+        totalDocuments: 0,
+        totalExams: 0,
+        totalExamAttempts: 0,
+        averageExamScore: 0.0,
+        examPassRate: 0,
+        activeUsersThisWeek: 0,
+        generatedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<void> updateSystemReport(AdminReportStat report) async {
+    // Calculated dynamically
+  }
+
+  @override
+  Future<List<AppUser>> getAllUsers() async {
+    final snapshot = await _firestore.collection('users').get();
+    return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
+  }
+
+  @override
+  Future<List<AppUser>> getUsersByRole(UserRole role) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .where('role', isEqualTo: role.toValue())
+        .get();
+    return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
+  }
+
+  @override
+  Future<AppUser?> getUserById(String id) async {
+    final doc = await _firestore.collection('users').doc(id).get();
+    if (!doc.exists) return null;
+    return AppUser.fromFirestore(doc);
+  }
+
+  @override
+  Future<void> createUser(AppUser user) async {
+    await _firestore.collection('users').doc(user.id).set(user.toFirestore());
+  }
+
+  @override
+  Future<void> updateUser(AppUser user) async {
+    await _firestore.collection('users').doc(user.id).update(user.toFirestore());
+  }
+
+  @override
+  Future<void> deleteUser(String id) async {
+    await _firestore.collection('users').doc(id).delete();
+  }
+
+  @override
+  Future<List<Exam>> getAllExams() async {
+    try {
+      final snapshot = await _firestore.collection('exams').get();
+      return snapshot.docs
+          .map((doc) => Exam.fromJson({...doc.data(), 'id': doc.id}))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<StudyDocument>> getAllDocuments() async {
+    try {
+      final snapshot = await _firestore.collection('documents').get();
+      return snapshot.docs
+          .map((doc) => StudyDocument.fromJson({...doc.data(), 'id': doc.id}))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 }
 

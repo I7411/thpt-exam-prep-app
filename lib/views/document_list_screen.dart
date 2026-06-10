@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_theme.dart';
 import '../core/routes/app_routes.dart';
 import '../models.dart';
 import '../repository_service.dart';
@@ -8,10 +9,7 @@ import '../widgets_document_card.dart';
 class DocumentListScreen extends StatefulWidget {
   final String? initialSubjectId;
 
-  const DocumentListScreen({
-    super.key,
-    this.initialSubjectId,
-  });
+  const DocumentListScreen({super.key, this.initialSubjectId});
 
   @override
   State<DocumentListScreen> createState() => _DocumentListScreenState();
@@ -32,9 +30,21 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   }
 
   Future<_DocumentListData> _loadData() async {
-    final documents = await _repositoryService.document.getAllDocuments();
-    final subjects = await _repositoryService.subject.getAllSubjects();
+    final documentsFuture = _repositoryService.document
+        .getAllDocuments()
+        .timeout(const Duration(seconds: 12));
+    final subjectsFuture = _repositoryService.subject.getAllSubjects().timeout(
+      const Duration(seconds: 12),
+    );
+    final documents = (await documentsFuture).take(20).toList();
+    final subjects = await subjectsFuture;
     return _DocumentListData(documents: documents, subjects: subjects);
+  }
+
+  void _retryLoad() {
+    setState(() {
+      _dataFuture = _loadData();
+    });
   }
 
   @override
@@ -53,7 +63,8 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Lỗi tải tài liệu: ${snapshot.error}'));
+            debugPrint('Lỗi tải tài liệu: ${snapshot.error}');
+            return _ErrorState(onRetry: _retryLoad);
           }
 
           final data = snapshot.data;
@@ -69,17 +80,55 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
             ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
           final filteredDocuments = _selectedSubjectId == null
               ? documents
-              : documents.where((document) => document.subjectId == _selectedSubjectId).toList();
+              : documents
+                    .where(
+                      (document) => document.subjectId == _selectedSubjectId,
+                    )
+                    .toList();
 
           return Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyanSoft,
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    border: Border.all(
+                      color: AppColors.secondary.withOpacity(0.18),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.auto_stories_rounded,
+                        color: AppColors.secondary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          '${filteredDocuments.length} tài liệu sẵn sàng cho buổi ôn tập hôm nay',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(
-                height: 56,
+                height: 58,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   itemCount: data.subjects.length + 1,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       final isSelected = _selectedSubjectId == null;
@@ -130,18 +179,24 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                     : ListView.separated(
                         padding: const EdgeInsets.all(16),
                         itemCount: filteredDocuments.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final document = filteredDocuments[index];
-                          final subjectName = subjectsById[document.subjectId]?.name ?? 'Môn học';
-                          final isMarked = _markedDocumentIds.contains(document.id);
+                          final subjectName =
+                              subjectsById[document.subjectId]?.name ??
+                              'Môn học';
+                          final isMarked = _markedDocumentIds.contains(
+                            document.id,
+                          );
 
                           return SizedBox(
-                            height: 170,
+                            height: 176,
                             child: DocumentCard(
                               title: document.title,
                               subject: subjectName,
-                              duration: '${_estimateReadingTime(document)} phút đọc',
+                              duration:
+                                  '${_estimateReadingTime(document)} phút đọc',
                               preview: document.description,
                               isMarked: isMarked,
                               onTap: () {
@@ -184,9 +239,51 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
   }
 
   int _estimateReadingTime(StudyDocument document) {
-    final sourceText = document.content.isNotEmpty ? document.content : document.description;
+    final sourceText = document.content.isNotEmpty
+        ? document.content
+        : document.description;
     final estimatedMinutes = (sourceText.length / 500).ceil();
     return estimatedMinutes.clamp(5, 30);
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 56, color: Colors.grey[400]),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Lỗi tải tài liệu',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Không thể tải danh sách tài liệu. Vui lòng kiểm tra mạng và thử lại.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -194,9 +291,5 @@ class _DocumentListData {
   final List<StudyDocument> documents;
   final List<Subject> subjects;
 
-  const _DocumentListData({
-    required this.documents,
-    required this.subjects,
-  });
+  const _DocumentListData({required this.documents, required this.subjects});
 }
-

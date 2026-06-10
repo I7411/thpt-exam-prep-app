@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
 
 class ExamListScreen extends StatefulWidget {
   final String? initialSubjectId;
 
-  const ExamListScreen({
-    super.key,
-    this.initialSubjectId,
-  });
+  const ExamListScreen({super.key, this.initialSubjectId});
 
   @override
   State<ExamListScreen> createState() => _ExamListScreenState();
@@ -30,9 +28,21 @@ class _ExamListScreenState extends State<ExamListScreen> {
   }
 
   Future<_ExamListData> _loadData() async {
-    final exams = await _repositoryService.exam.getAllExams();
-    final subjects = await _repositoryService.subject.getAllSubjects();
+    final examsFuture = _repositoryService.exam.getAllExams().timeout(
+      const Duration(seconds: 12),
+    );
+    final subjectsFuture = _repositoryService.subject.getAllSubjects().timeout(
+      const Duration(seconds: 12),
+    );
+    final exams = (await examsFuture).take(20).toList();
+    final subjects = await subjectsFuture;
     return _ExamListData(exams: exams, subjects: subjects);
+  }
+
+  void _retryLoad() {
+    setState(() {
+      _dataFuture = _loadData();
+    });
   }
 
   @override
@@ -51,7 +61,8 @@ class _ExamListScreenState extends State<ExamListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Lỗi tải đề thi: ${snapshot.error}'));
+            debugPrint('Lỗi tải đề thi: ${snapshot.error}');
+            return _ErrorState(onRetry: _retryLoad);
           }
 
           final data = snapshot.data;
@@ -63,21 +74,58 @@ class _ExamListScreenState extends State<ExamListScreen> {
             for (final subject in data.subjects) subject.id: subject,
           };
 
-          final publishedExams = data.exams.where((exam) => exam.isPublished).toList()
-            ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+          final publishedExams =
+              data.exams.where((exam) => exam.isPublished).toList()..sort(
+                (left, right) => right.createdAt.compareTo(left.createdAt),
+              );
           final filteredExams = _selectedSubjectId == null
               ? publishedExams
-              : publishedExams.where((exam) => exam.subjectId == _selectedSubjectId).toList();
+              : publishedExams
+                    .where((exam) => exam.subjectId == _selectedSubjectId)
+                    .toList();
 
           return Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.warm,
+                    borderRadius: BorderRadius.circular(AppRadius.panel),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Luyện đề theo thời gian thật để quen nhịp thi.',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               SizedBox(
-                height: 56,
+                height: 58,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   itemCount: data.subjects.length + 1,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 8),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return FilterChip(
@@ -126,10 +174,12 @@ class _ExamListScreenState extends State<ExamListScreen> {
                     : ListView.separated(
                         padding: const EdgeInsets.all(16),
                         itemCount: filteredExams.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final exam = filteredExams[index];
-                          final subjectName = subjectById[exam.subjectId]?.name ?? 'Môn học';
+                          final subjectName =
+                              subjectById[exam.subjectId]?.name ?? 'Môn học';
                           return _ExamCard(
                             exam: exam,
                             subjectName: subjectName,
@@ -163,14 +213,51 @@ class _ExamListScreenState extends State<ExamListScreen> {
   }
 }
 
+class _ErrorState extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, size: 56, color: Colors.grey[400]),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Lỗi tải đề thi',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Không thể tải danh sách đề thi. Vui lòng kiểm tra mạng và thử lại.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ExamListData {
   final List<Exam> exams;
   final List<Subject> subjects;
 
-  const _ExamListData({
-    required this.exams,
-    required this.subjects,
-  });
+  const _ExamListData({required this.exams, required this.subjects});
 }
 
 class _ExamCard extends StatelessWidget {
@@ -188,103 +275,124 @@ class _ExamCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+    final difficultyColor = _difficultyColor(difficulty);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.panel),
+        border: Border.all(color: difficultyColor.withOpacity(0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.indigo.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.quiz, color: Colors.indigo),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.primary,
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        exam.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                child: const Icon(Icons.quiz_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      exam.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subjectName,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[700],
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InfoChip(label: '${exam.questionCount} câu'),
-                _InfoChip(label: '${exam.durationMinutes} phút'),
-                _InfoChip(label: difficulty),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              exam.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[700],
-                  ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onStart,
-                icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Bắt đầu làm bài'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subjectName,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                    ),
+                  ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _InfoChip(
+                label: '${exam.questionCount} câu',
+                color: AppColors.primary,
+              ),
+              _InfoChip(
+                label: '${exam.durationMinutes} phút',
+                color: AppColors.secondary,
+              ),
+              _InfoChip(label: difficulty, color: difficultyColor),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            exam.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onStart,
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Làm bài'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  Color _difficultyColor(String difficulty) {
+    switch (difficulty) {
+      case 'Dễ':
+        return AppColors.success;
+      case 'Trung bình':
+        return AppColors.accent;
+      default:
+        return AppColors.error;
+    }
   }
 }
 
 class _InfoChip extends StatelessWidget {
   final String label;
+  final Color color;
 
-  const _InfoChip({required this.label});
+  const _InfoChip({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Chip(
       label: Text(label),
       visualDensity: VisualDensity.compact,
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: color.withOpacity(0.1),
+      labelStyle: TextStyle(color: color, fontWeight: FontWeight.w800),
       side: BorderSide.none,
     );
   }

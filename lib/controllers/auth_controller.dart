@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
+import 'package:thpt_exam_prep_app/services/notification_service.dart';
 
 class AuthController extends ChangeNotifier {
   final RepositoryService _repositoryService = RepositoryService.getInstance();
@@ -16,85 +19,123 @@ class AuthController extends ChangeNotifier {
   String get errorMessage => _errorMessage;
   bool get isAuthenticated => _isAuthenticated;
 
-  Future<void> restoreSession() async {
-    _isLoading = true;
+  Future<bool> restoreSession() async {
+    debugPrint('Đang kiểm tra phiên đăng nhập hiện tại...');
+    _setLoading(true);
     _errorMessage = '';
-    notifyListeners();
 
     try {
-      final user = await _repositoryService.auth.getCurrentUser();
+      final user = await _repositoryService.auth.getCurrentUser().timeout(
+        const Duration(seconds: 8),
+      );
       if (user != null) {
         _currentUser = user;
         _isAuthenticated = true;
+        debugPrint('Đã xác định vai trò người dùng: ${user.role.toValue()}');
+        NotificationService.instance.saveTokenToFirestore(user.id);
       } else {
-        // Fallback or clear local session if Firebase session is invalid
+        _currentUser = null;
         _isAuthenticated = false;
+        debugPrint('Không có phiên đăng nhập. Chuyển về màn hình đăng nhập.');
       }
-    } catch (e) {
-      _errorMessage = 'Lỗi khôi phục phiên bản: $e';
+      return true;
+    } on TimeoutException {
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Kiểm tra phiên đăng nhập quá lâu. Vui lòng thử lại.';
+      debugPrint('Kiểm tra phiên đăng nhập bị quá thời gian.');
+      return false;
+    } on FirebaseException catch (e, stackTrace) {
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = _getFirestoreErrorMessage(e);
+      _logFirebaseException(
+        'Lỗi khi đọc hồ sơ người dùng từ Firestore',
+        e,
+        stackTrace,
+      );
+      return false;
+    } catch (e, stackTrace) {
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Không thể khôi phục phiên đăng nhập. Vui lòng thử lại.';
+      _logUnknownException(
+        'Lỗi không xác định khi khôi phục phiên đăng nhập',
+        e,
+        stackTrace,
+      );
+      return false;
+    } finally {
+      _setLoading(false);
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   Future<bool> login(String email, String password) async {
-    _isLoading = true;
+    _setLoading(true);
     _errorMessage = '';
-    notifyListeners();
 
     try {
-      if (!_isValidEmail(email)) {
-        _errorMessage = 'Email không hợp lệ';
-        _isLoading = false;
-        notifyListeners();
+      final normalizedEmail = email.trim();
+      if (!_isValidEmail(normalizedEmail)) {
+        _errorMessage = 'Email không hợp lệ.';
         return false;
       }
 
       if (password.isEmpty) {
-        _errorMessage = 'Vui lòng nhập mật khẩu';
-        _isLoading = false;
-        notifyListeners();
+        _errorMessage = 'Vui lòng nhập mật khẩu.';
         return false;
       }
 
-      final user = await _repositoryService.auth.login(email, password);
-      
+      debugPrint('Đang đăng nhập bằng Firebase Auth...');
+      final user = await _repositoryService.auth.login(
+        normalizedEmail,
+        password,
+      );
+
       if (user != null) {
         _currentUser = user;
         _isAuthenticated = true;
-        _isLoading = false;
-        notifyListeners();
+        debugPrint('Đăng nhập thành công. Vai trò: ${user.role.toValue()}');
+        NotificationService.instance.saveTokenToFirestore(user.id);
         return true;
-      } else {
-        _errorMessage = 'Email hoặc mật khẩu không đúng';
-        _isLoading = false;
-        notifyListeners();
-        return false;
       }
-    } on FirebaseAuthException catch (e) {
-      if ((e.code == 'user-not-found' || e.code == 'invalid-credential') && email.contains('.demo@thptsmartlearn.vn')) {
-        _errorMessage = 'Tài khoản demo chưa tồn tại trên Firebase Auth. Hãy tạo tài khoản demo trong Firebase Console hoặc chạy chức năng seed demo account.';
-      } else {
-        _errorMessage = _getFirebaseErrorMessage(e);
+
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Email hoặc mật khẩu không đúng.';
+      return false;
+    } on FirebaseAuthException catch (e, stackTrace) {
+      _logFirebaseAuthException(
+        'Lỗi khi đăng nhập bằng Firebase Auth',
+        e,
+        stackTrace,
+      );
+
+      final normalizedEmail = email.trim();
+      if (_shouldAutoRegisterDemoAccount(normalizedEmail, e)) {
+        return _tryAutoRegisterDemoAccount(normalizedEmail, password);
       }
-      _isLoading = false;
-      notifyListeners();
+
+      _errorMessage = _getLoginFirebaseAuthErrorMessage(e);
       return false;
-    } on FirebaseException catch (e) {
-      if (e.code == 'permission-denied') {
-        _errorMessage = 'Ứng dụng chưa có quyền ghi dữ liệu Firestore. Hãy kiểm tra Firestore Rules.';
-      } else {
-        _errorMessage = 'Lỗi Firebase: ${e.message}';
-      }
-      _isLoading = false;
-      notifyListeners();
+    } on FirebaseException catch (e, stackTrace) {
+      _errorMessage = _getFirestoreErrorMessage(e);
+      _logFirebaseException(
+        'Lỗi Firestore sau khi đăng nhập Firebase Auth thành công',
+        e,
+        stackTrace,
+      );
       return false;
-    } catch (e) {
-      _errorMessage = 'Lỗi đăng nhập: $e';
-      _isLoading = false;
-      notifyListeners();
+    } on TimeoutException {
+      _errorMessage = 'Đăng nhập quá lâu. Vui lòng kiểm tra mạng và thử lại.';
+      debugPrint('Đăng nhập bị quá thời gian.');
       return false;
+    } catch (e, stackTrace) {
+      _errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại.';
+      _logUnknownException('Lỗi không xác định khi đăng nhập', e, stackTrace);
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
@@ -105,134 +146,149 @@ class AuthController extends ChangeNotifier {
     String fullName,
     UserRole role,
   ) async {
-    _isLoading = true;
+    _setLoading(true);
     _errorMessage = '';
-    notifyListeners();
 
     try {
-      if (!_isValidEmail(email)) {
-        _errorMessage = 'Email không hợp lệ';
-        _isLoading = false;
-        notifyListeners();
+      final normalizedEmail = email.trim();
+      final normalizedName = fullName.trim();
+      if (normalizedName.isEmpty) {
+        _errorMessage = 'Vui lòng nhập họ tên.';
         return false;
       }
 
-      if (password.isEmpty || password.length < 6) {
-        _errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự';
-        _isLoading = false;
-        notifyListeners();
+      if (!_isValidEmail(normalizedEmail)) {
+        _errorMessage = 'Email không hợp lệ.';
+        return false;
+      }
+
+      if (password.length < 6) {
+        _errorMessage = 'Mật khẩu phải có ít nhất 6 ký tự.';
         return false;
       }
 
       if (password != confirmPassword) {
-        _errorMessage = 'Mật khẩu xác nhận không khớp';
-        _isLoading = false;
-        notifyListeners();
+        _errorMessage = 'Mật khẩu xác nhận không khớp.';
         return false;
       }
 
-      if (fullName.isEmpty) {
-        _errorMessage = 'Vui lòng nhập họ tên';
-        _isLoading = false;
-        notifyListeners();
+      if (!UserRole.values.contains(role)) {
+        _errorMessage = 'Vai trò không hợp lệ.';
         return false;
       }
 
+      debugPrint('Đang tạo tài khoản bằng Firebase Auth...');
       final user = await _repositoryService.auth.register(
-        email,
+        normalizedEmail,
         password,
-        fullName,
+        normalizedName,
         role,
       );
 
       if (user != null) {
         _currentUser = user;
         _isAuthenticated = true;
-        _isLoading = false;
-        notifyListeners();
+        debugPrint(
+          'Tạo hồ sơ người dùng thành công. Vai trò: ${user.role.toValue()}',
+        );
+        NotificationService.instance.saveTokenToFirestore(user.id);
         return true;
-      } else {
-        _errorMessage = 'Đăng ký thất bại';
-        _isLoading = false;
-        notifyListeners();
-        return false;
       }
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _getFirebaseErrorMessage(e);
-      _isLoading = false;
-      notifyListeners();
+
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
       return false;
-    } on FirebaseException catch (e) {
-      if (e.code == 'permission-denied') {
-        _errorMessage = 'Ứng dụng chưa có quyền ghi dữ liệu Firestore. Hãy kiểm tra Firestore Rules.';
-      } else {
-        _errorMessage = 'Lỗi Firebase: ${e.message}';
-      }
-      _isLoading = false;
-      notifyListeners();
+    } on FirebaseAuthException catch (e, stackTrace) {
+      _errorMessage = _getRegisterFirebaseAuthErrorMessage(e);
+      _logFirebaseAuthException(
+        'Lỗi khi đăng ký bằng Firebase Auth',
+        e,
+        stackTrace,
+      );
       return false;
-    } catch (e) {
-      _errorMessage = 'Lỗi đăng ký: $e';
-      _isLoading = false;
-      notifyListeners();
+    } on FirebaseException catch (e, stackTrace) {
+      _errorMessage = _getFirestoreErrorMessage(e);
+      _logFirebaseException(
+        'Lỗi khi tạo hồ sơ người dùng trên Firestore',
+        e,
+        stackTrace,
+      );
       return false;
+    } on TimeoutException {
+      _errorMessage = 'Đăng ký quá lâu. Vui lòng kiểm tra mạng và thử lại.';
+      debugPrint('Đăng ký bị quá thời gian.');
+      return false;
+    } catch (e, stackTrace) {
+      _errorMessage = 'Đăng ký thất bại. Vui lòng thử lại.';
+      _logUnknownException('Lỗi không xác định khi đăng ký', e, stackTrace);
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
   Future<bool> sendPasswordReset(String email) async {
-    _isLoading = true;
+    _setLoading(true);
     _errorMessage = '';
-    notifyListeners();
 
     try {
-      if (!_isValidEmail(email)) {
-        _errorMessage = 'Email không hợp lệ';
-        _isLoading = false;
-        notifyListeners();
+      final normalizedEmail = email.trim();
+      if (!_isValidEmail(normalizedEmail)) {
+        _errorMessage = 'Email không hợp lệ.';
         return false;
       }
 
-      await _repositoryService.auth.sendPasswordResetEmail(email);
-      _isLoading = false;
-      notifyListeners();
+      await _repositoryService.auth.sendPasswordResetEmail(normalizedEmail);
       return true;
-    } on FirebaseAuthException catch (e) {
-      _errorMessage = _getFirebaseErrorMessage(e);
-      _isLoading = false;
-      notifyListeners();
+    } on FirebaseAuthException catch (e, stackTrace) {
+      _errorMessage = _getLoginFirebaseAuthErrorMessage(e);
+      _logFirebaseAuthException(
+        'Lỗi khi gửi email đặt lại mật khẩu',
+        e,
+        stackTrace,
+      );
       return false;
-    } on FirebaseException catch (e) {
-      if (e.code == 'permission-denied') {
-        _errorMessage = 'Ứng dụng chưa có quyền ghi dữ liệu Firestore. Hãy kiểm tra Firestore Rules.';
-      } else {
-        _errorMessage = 'Lỗi Firebase: ${e.message}';
-      }
-      _isLoading = false;
-      notifyListeners();
+    } on FirebaseException catch (e, stackTrace) {
+      _errorMessage = _getFirestoreErrorMessage(e);
+      _logFirebaseException(
+        'Lỗi Firebase khi gửi email đặt lại mật khẩu',
+        e,
+        stackTrace,
+      );
       return false;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = 'Lỗi đặt lại mật khẩu: $e';
-      notifyListeners();
+    } on TimeoutException {
+      _errorMessage = 'Gửi email đặt lại mật khẩu quá lâu. Vui lòng thử lại.';
+      debugPrint('Gửi email đặt lại mật khẩu bị quá thời gian.');
       return false;
+    } catch (e, stackTrace) {
+      _errorMessage = 'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại.';
+      _logUnknownException(
+        'Lỗi không xác định khi đặt lại mật khẩu',
+        e,
+        stackTrace,
+      );
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
   Future<void> logout() async {
-    _isLoading = true;
-    notifyListeners();
+    _setLoading(true);
 
     try {
       await _repositoryService.auth.logout();
       _currentUser = null;
       _isAuthenticated = false;
       _errorMessage = '';
+      debugPrint('Đã đăng xuất.');
     } catch (e) {
-      _errorMessage = 'Lỗi đăng xuất: $e';
+      _errorMessage = 'Không thể đăng xuất. Vui lòng thử lại.';
+      debugPrint('Lỗi khi đăng xuất: $e');
+    } finally {
+      _setLoading(false);
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   void clearError() {
@@ -245,7 +301,121 @@ class AuthController extends ChangeNotifier {
     return emailRegex.hasMatch(email);
   }
 
-  String _getFirebaseErrorMessage(FirebaseAuthException e) {
+  bool _shouldAutoRegisterDemoAccount(
+    String email,
+    FirebaseAuthException exception,
+  ) {
+    // Only auto-register on clear user-not-found, not on invalid-credential or wrong-password
+    return exception.code == 'user-not-found' && _demoRoleForEmail(email) != null;
+  }
+
+  Future<bool> _tryAutoRegisterDemoAccount(
+    String email,
+    String password,
+  ) async {
+    final role = _demoRoleForEmail(email);
+    if (role == null) {
+      return false;
+    }
+
+    try {
+      debugPrint(
+        'Tài khoản demo chưa có trên Firebase Auth. Đang tự tạo tài khoản demo với vai trò: ${role.toValue()}',
+      );
+      final user = await _repositoryService.auth.register(
+        email,
+        password,
+        _demoDisplayNameForRole(role),
+        role,
+      );
+
+      if (user == null) {
+        _currentUser = null;
+        _isAuthenticated = false;
+        _errorMessage = 'Không thể tự động đăng ký tài khoản demo.';
+        return false;
+      }
+
+      _currentUser = user;
+      _isAuthenticated = true;
+      _errorMessage = '';
+      debugPrint(
+        'Tạo và đăng nhập tài khoản demo thành công. Vai trò: ${user.role.toValue()}',
+      );
+      NotificationService.instance.saveTokenToFirestore(user.id);
+      return true;
+    } on FirebaseAuthException catch (e, stackTrace) {
+      _logFirebaseAuthException(
+        'Lỗi khi tự tạo tài khoản demo bằng Firebase Auth',
+        e,
+        stackTrace,
+      );
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = e.code == 'email-already-in-use'
+          ? 'Email hoặc mật khẩu không chính xác.'
+          : _getRegisterFirebaseAuthErrorMessage(e);
+      return false;
+    } on FirebaseException catch (e, stackTrace) {
+      _logFirebaseException(
+        'Lỗi Firestore khi tự tạo hồ sơ demo',
+        e,
+        stackTrace,
+      );
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = _getFirestoreErrorMessage(e);
+      return false;
+    } on TimeoutException {
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Không thể kết nối với Firestore. Vui lòng kiểm tra kết nối mạng của bạn.';
+      debugPrint('Tự tạo tài khoản demo bị quá thời gian.');
+      return false;
+    } catch (e, stackTrace) {
+      _logUnknownException(
+        'Lỗi không xác định khi tự tạo tài khoản demo',
+        e,
+        stackTrace,
+      );
+      _currentUser = null;
+      _isAuthenticated = false;
+      _errorMessage = 'Không thể tự động đăng ký tài khoản demo.';
+      return false;
+    }
+  }
+
+  UserRole? _demoRoleForEmail(String email) {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail == 'student.demo@thptsmartlearn.vn') {
+      return UserRole.student;
+    }
+    if (normalizedEmail == 'teacher.demo@thptsmartlearn.vn') {
+      return UserRole.teacher;
+    }
+    if (normalizedEmail == 'admin.demo@thptsmartlearn.vn') {
+      return UserRole.admin;
+    }
+    return null;
+  }
+
+  String _demoDisplayNameForRole(UserRole role) {
+    return switch (role) {
+      UserRole.student => 'Học sinh Demo',
+      UserRole.teacher => 'Giáo viên Demo',
+      UserRole.admin => 'Admin Demo',
+    };
+  }
+
+  void _setLoading(bool value) {
+    if (_isLoading == value) {
+      return;
+    }
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  String _getLoginFirebaseAuthErrorMessage(FirebaseAuthException e) {
     if (e.message != null && e.message!.contains('CONFIGURATION_NOT_FOUND')) {
       return 'Firebase Authentication chưa được cấu hình đúng. Hãy kiểm tra google-services.json, firebase_options.dart và bật Email/Password trong Firebase Console.';
     }
@@ -255,24 +425,93 @@ class AuthController extends ChangeNotifier {
       case 'internal-error':
         return 'Firebase Authentication chưa được cấu hình đúng. Hãy kiểm tra google-services.json, firebase_options.dart và bật Email/Password trong Firebase Console.';
       case 'user-not-found':
-        return 'Không tìm thấy tài khoản.';
+        return 'Tài khoản này không tồn tại.';
       case 'wrong-password':
-        return 'Mật khẩu không đúng.';
       case 'invalid-credential':
-        return 'Email hoặc mật khẩu không đúng.';
+        return 'Email hoặc mật khẩu không chính xác.';
       case 'invalid-email':
         return 'Email không hợp lệ.';
       case 'user-disabled':
-        return 'Tài khoản đã bị vô hiệu hóa.';
+        return 'Tài khoản này đã bị vô hiệu hóa.';
       case 'email-already-in-use':
-        return 'Email đã được sử dụng.';
+        return 'Email này đã được sử dụng.';
       case 'weak-password':
         return 'Mật khẩu quá yếu.';
       case 'network-request-failed':
-        return 'Không có kết nối mạng.';
+        return 'Không thể kết nối với Firestore. Vui lòng kiểm tra kết nối mạng của bạn.';
+      case 'too-many-requests':
+        return 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.';
       default:
-        return 'Lỗi: ${e.message}';
+        return 'Đăng nhập thất bại. Vui lòng thử lại.';
     }
   }
-}
 
+  String _getRegisterFirebaseAuthErrorMessage(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return 'Email này đã được sử dụng.';
+      case 'invalid-email':
+        return 'Email không hợp lệ.';
+      case 'weak-password':
+        return 'Mật khẩu quá yếu.';
+      case 'network-request-failed':
+        return 'Không thể kết nối với Firestore. Vui lòng kiểm tra kết nối mạng của bạn.';
+      case 'too-many-requests':
+        return 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.';
+      case 'operation-not-allowed':
+      case 'CONFIGURATION_NOT_FOUND':
+      case 'internal-error':
+        return 'Firebase Authentication chưa được cấu hình đúng. Hãy bật Email/Password trong Firebase Console.';
+      default:
+        return 'Đăng ký thất bại. Vui lòng thử lại.';
+    }
+  }
+
+  String _getFirestoreErrorMessage(FirebaseException e) {
+    switch (e.code) {
+      case 'permission-denied':
+        return 'Ứng dụng không có quyền đọc dữ liệu từ Firestore. Vui lòng kiểm tra Firestore Rules.';
+      case 'unavailable':
+      case 'deadline-exceeded':
+      case 'network-request-failed':
+        return 'Không thể kết nối với Firestore. Vui lòng kiểm tra kết nối mạng của bạn.';
+      case 'missing-role':
+        return 'Tài khoản này chưa được gán vai trò hợp lệ.';
+      case 'user-disabled':
+        return 'Tài khoản này đã bị vô hiệu hóa.';
+      default:
+        return 'Không thể xử lý dữ liệu người dùng trên Firestore. Vui lòng thử lại.';
+    }
+  }
+
+  void _logFirebaseAuthException(
+    String context,
+    FirebaseAuthException exception,
+    StackTrace stackTrace,
+  ) {
+    debugPrint('$context.');
+    debugPrint('FirebaseAuthException.code: ${exception.code}');
+    debugPrint('FirebaseAuthException.message: ${exception.message}');
+    debugPrint('stackTrace: $stackTrace');
+  }
+
+  void _logFirebaseException(
+    String context,
+    FirebaseException exception,
+    StackTrace stackTrace,
+  ) {
+    debugPrint('$context.');
+    debugPrint('FirebaseException.code: ${exception.code}');
+    debugPrint('FirebaseException.message: ${exception.message}');
+    debugPrint('stackTrace: $stackTrace');
+  }
+
+  void _logUnknownException(
+    String context,
+    Object exception,
+    StackTrace stackTrace,
+  ) {
+    debugPrint('$context: $exception');
+    debugPrint('stackTrace: $stackTrace');
+  }
+}

@@ -33,15 +33,14 @@ class RepositoryService {
   }
 
   void _initializeRepositories() {
-    // Initialize repositories
     _authRepo = FirebaseAuthRepository();
     _subjectRepo = MockSubjectRepository();
     _documentRepo = MockDocumentRepository();
     _examRepo = MockExamRepository();
     _progressRepo = MockProgressRepository();
-    _notificationRepo = MockNotificationRepository();
+    _notificationRepo = FirestoreNotificationRepository();
     _teacherRepo = MockTeacherRepository();
-    _adminRepo = MockAdminRepository();
+    _adminRepo = FirestoreAdminRepository();
   }
 
   // Getters for all repositories

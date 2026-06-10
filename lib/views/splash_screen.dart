@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -11,6 +12,9 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  bool _isCheckingSession = true;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -18,48 +22,60 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // Splash screen duration
-    await Future.delayed(const Duration(seconds: 3));
-
-    if (!mounted) return;
-
-    // Try to restore session
-    final authProvider = context.read<AuthController>();
-    await authProvider.restoreSession();
-
-    if (!mounted) return;
-
-    // Navigate based on auth state
-    if (authProvider.isAuthenticated && authProvider.currentUser != null) {
-      // User is logged in, navigate to appropriate dashboard
-      final role = authProvider.currentUser!.role.toString();
-      String route;
-      
-      if (role.contains('student')) {
-        route = AppRoutes.studentHome;
-      } else if (role.contains('teacher')) {
-        route = AppRoutes.teacherDashboard;
-      } else if (role.contains('admin')) {
-        route = AppRoutes.adminDashboard;
-      } else {
-        route = AppRoutes.login;
-      }
-      
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(route);
-      }
-    } else {
-      // No session, go to login
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-      }
+    if (mounted) {
+      setState(() {
+        _isCheckingSession = true;
+        _errorMessage = null;
+      });
     }
+
+    try {
+      final authProvider = context.read<AuthController>();
+      final restored = await authProvider.restoreSession();
+
+      if (!mounted) return;
+
+      if (!restored) {
+        setState(() {
+          _isCheckingSession = false;
+          _errorMessage = authProvider.errorMessage.isNotEmpty
+              ? authProvider.errorMessage
+              : 'Không thể kiểm tra phiên đăng nhập. Vui lòng thử lại.';
+        });
+        return;
+      }
+
+      if (!authProvider.isAuthenticated || authProvider.currentUser == null) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        return;
+      }
+
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(_routeForRole(authProvider.currentUser!.role));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isCheckingSession = false;
+        _errorMessage = 'Khởi động ứng dụng thất bại. Vui lòng thử lại.';
+      });
+      debugPrint('Lỗi khởi động splash: $e');
+    }
+  }
+
+  String _routeForRole(UserRole role) {
+    return switch (role) {
+      UserRole.student => AppRoutes.studentHome,
+      UserRole.teacher => AppRoutes.teacherDashboard,
+      UserRole.admin => AppRoutes.adminDashboard,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+    final errorMessage = _errorMessage;
+
     return Scaffold(
       backgroundColor: theme.primaryColor,
       body: Center(
@@ -74,11 +90,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.school,
-                size: 60,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.school, size: 60, color: Colors.white),
             ),
             const SizedBox(height: 32),
 
@@ -95,34 +107,57 @@ class _SplashScreenState extends State<SplashScreen> {
             // Tagline
             Text(
               'Ứng dụng ôn thi THPT',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: Colors.white70,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white70),
             ),
             const SizedBox(height: 60),
 
-            // Loading indicator
-            const SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 3,
+            if (_isCheckingSession) ...[
+              const SizedBox(
+                width: 40,
+                height: 40,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 3,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Loading text
-            Text(
-              'Đang khởi động...',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white70,
+              Text(
+                'Đang khởi động...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white70,
+                ),
               ),
-            ),
+            ] else ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  errorMessage ?? 'Không thể khởi động ứng dụng.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _initializeApp,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Thử lại'),
+              ),
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pushReplacementNamed(AppRoutes.login),
+                child: const Text(
+                  'Về màn hình đăng nhập',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 }
-

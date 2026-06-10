@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 
 class DocumentCard extends StatelessWidget {
   final String title;
@@ -22,145 +23,87 @@ class DocumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Ink(
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.grey.withOpacity(0.2),
-              width: 1,
-            ),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.line),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with subject badge
               Container(
-                padding: const EdgeInsets.all(12),
+                width: 54,
+                height: 54,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                  color: Colors.purple.withOpacity(0.1),
+                  gradient: AppGradients.warm,
+                  borderRadius: BorderRadius.circular(18),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              subject,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.purple,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            duration,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: onMarkTap,
-                      child: Icon(
-                        isMarked ? Icons.bookmark : Icons.bookmark_outline,
-                        color: isMarked ? Colors.orange : Colors.grey,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
+                child: const Icon(Icons.menu_book_rounded, color: Colors.white),
               ),
-              // Title and preview
+              const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _Chip(label: subject, color: AppColors.primary),
+                        _Chip(label: duration, color: AppColors.secondary),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                    if (preview != null && preview!.trim().isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        preview!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.muted,
+                            ),
                       ),
-                      if (preview != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          preview!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
                     ],
-                  ),
-                ),
-              ),
-              // Footer with read more
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.grey.withOpacity(0.1),
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
+                    const Spacer(),
                     Text(
                       'Đọc thêm',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.purple,
-                            fontWeight: FontWeight.w600,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w900,
                           ),
                     ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward,
-                      size: 14,
-                      color: Colors.purple,
-                    ),
                   ],
+                ),
+              ),
+              IconButton(
+                onPressed: onMarkTap,
+                tooltip: isMarked ? 'Bỏ đánh dấu' : 'Đánh dấu',
+                icon: Icon(
+                  isMarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                  color: isMarked ? AppColors.accent : AppColors.muted,
                 ),
               ),
             ],
@@ -171,3 +114,32 @@ class DocumentCard extends StatelessWidget {
   }
 }
 
+class _Chip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _Chip({
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w900,
+            ),
+      ),
+    );
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/providers/teacher_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
@@ -20,10 +21,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     });
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool force = false}) async {
     final authProvider = context.read<AuthController>();
     final teacherProvider = context.read<TeacherController>();
-    await teacherProvider.ensureLoaded(authProvider.currentUser);
+    await teacherProvider.ensureLoaded(authProvider.currentUser, force: force);
   }
 
   @override
@@ -36,16 +37,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text('Xin chào, ${teacher?.fullName ?? 'GiÃ¡o viÃªn'}'),
+            title: Text('Xin chào, ${teacher?.fullName ?? 'Giáo viên'}'),
             actions: [
               IconButton(
-                onPressed: _loadData,
+                onPressed: () => _loadData(force: true),
                 icon: const Icon(Icons.refresh),
               ),
             ],
           ),
           body: RefreshIndicator(
-            onRefresh: _loadData,
+            onRefresh: () => _loadData(force: true),
             child: teacherProvider.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
@@ -69,16 +70,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, dynamic teacher, TeacherController teacherProvider) {
+  Widget _buildHeader(
+    BuildContext context,
+    dynamic teacher,
+    TeacherController teacherProvider,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        gradient: AppGradients.teacher,
+        borderRadius: BorderRadius.circular(AppRadius.panel),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,7 +91,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 backgroundColor: Colors.white.withOpacity(0.18),
                 child: Text(
                   (teacher?.fullName ?? 'G')[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -100,7 +105,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   children: [
                     Text(
                       teacher?.fullName ?? 'Giáo viên',
-                      style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -124,10 +133,30 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildStatsGrid(TeacherController teacherProvider) {
     final items = [
-      _StatItem('Lớp phụ trách', teacherProvider.classes.length.toString(), Icons.class_, Colors.blue),
-      _StatItem('Học sinh', teacherProvider.totalStudents.toString(), Icons.groups, Colors.green),
-      _StatItem('Đề đã giao', teacherProvider.assignedExams.length.toString(), Icons.assignment, Colors.orange),
-      _StatItem('Tiến độ TB', '${teacherProvider.averageProgress.toStringAsFixed(0)}%', Icons.insights, Colors.purple),
+      _StatItem(
+        'Lớp phụ trách',
+        teacherProvider.classes.length.toString(),
+        Icons.class_,
+        AppColors.secondary,
+      ),
+      _StatItem(
+        'Học sinh',
+        teacherProvider.totalStudents.toString(),
+        Icons.groups,
+        AppColors.success,
+      ),
+      _StatItem(
+        'Đề đã giao',
+        teacherProvider.assignedExams.length.toString(),
+        Icons.assignment,
+        AppColors.accent,
+      ),
+      _StatItem(
+        'Tiến độ TB',
+        '${teacherProvider.averageProgress.toStringAsFixed(0)}%',
+        Icons.insights,
+        AppColors.primary,
+      ),
     ];
 
     return GridView.builder(
@@ -149,16 +178,45 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildQuickActions(BuildContext context) {
     final actions = [
-      _ActionItem('Danh sách lớp', Icons.class_, AppRoutes.teacherClasses, Colors.blue),
-      _ActionItem('Ngân hàng câu hỏi', Icons.quiz, AppRoutes.teacherQuestions, Colors.orange),
-      _ActionItem('Lịch giảng dạy', Icons.event_note, AppRoutes.teacherSchedule, Colors.green),
-      _ActionItem('Hồ sơ', Icons.person, AppRoutes.teacherProfile, Colors.purple),
+      _ActionItem(
+        'Danh sách lớp',
+        Icons.class_,
+        AppRoutes.teacherClasses,
+        AppColors.secondary,
+      ),
+      _ActionItem(
+        'Quản lý học sinh',
+        Icons.group_add,
+        AppRoutes.teacherStudents,
+        AppColors.success,
+      ),
+      _ActionItem(
+        'Ngân hàng câu hỏi',
+        Icons.quiz,
+        AppRoutes.teacherQuestions,
+        AppColors.accent,
+      ),
+      _ActionItem(
+        'Lịch giảng dạy',
+        Icons.event_note,
+        AppRoutes.teacherSchedule,
+        AppColors.success,
+      ),
+      _ActionItem(
+        'Hồ sơ',
+        Icons.person,
+        AppRoutes.teacherProfile,
+        AppColors.primary,
+      ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Thao tác nhanh', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text(
+          'Thao tác nhanh',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         GridView.builder(
           shrinkWrap: true,
@@ -174,7 +232,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             final action = actions[index];
             return InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: () => Navigator.pushNamed(context, action.route),
+              onTap: () async {
+                await Navigator.pushNamed(context, action.route);
+                if (action.route == AppRoutes.teacherStudents && mounted) {
+                  await _loadData(force: true);
+                }
+              },
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -210,26 +273,37 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildClassPreview(BuildContext context, TeacherController teacherProvider) {
+  Widget _buildClassPreview(
+    BuildContext context,
+    TeacherController teacherProvider,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Lớp đang phụ trách', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const Text(
+              'Lớp đang phụ trách',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
             TextButton(
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.teacherClasses),
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRoutes.teacherClasses),
               child: const Text('Xem tất cả'),
             ),
           ],
         ),
         const SizedBox(height: 8),
         if (teacherProvider.classes.isEmpty)
-          const _EmptyState(message: 'Chưa có lớp nào được gán cho giáo viên này')
+          const _EmptyState(
+            message: 'Chưa có lớp nào được gán cho giáo viên này',
+          )
         else
           ...teacherProvider.classes.take(2).map((teacherClass) {
-            final subjectName = teacherProvider.getSubjectName(teacherClass.subjectId);
+            final subjectName = teacherProvider.getSubjectName(
+              teacherClass.subjectId,
+            );
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: InkWell(
@@ -259,20 +333,36 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(teacherClass.className, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                          Text(
+                            teacherClass.className,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const Icon(Icons.chevron_right),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(subjectName, style: TextStyle(color: Colors.blueGrey.shade700)),
+                      Text(
+                        subjectName,
+                        style: TextStyle(color: Colors.blueGrey.shade700),
+                      ),
                       const SizedBox(height: 8),
                       Text(teacherClass.description),
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          _Chip(label: '${teacherClass.studentCount} học sinh', color: Colors.blue),
+                          _Chip(
+                            label: '${teacherClass.studentCount} học sinh',
+                            color: Colors.blue,
+                          ),
                           const SizedBox(width: 8),
-                          _Chip(label: '${teacherProvider.studentsForClass(teacherClass.id).length} mẫu hiển thị', color: Colors.green),
+                          _Chip(
+                            label:
+                                '${teacherProvider.studentsForClass(teacherClass.id).length} mẫu hiển thị',
+                            color: Colors.green,
+                          ),
                         ],
                       ),
                     ],
@@ -289,12 +379,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Lịch sắp tới', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text(
+          'Lịch sắp tới',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         if (teacherProvider.schedule.isEmpty)
           const _EmptyState(message: 'Chưa có lịch dạy hoặc lịch giao đề')
         else
-          ...teacherProvider.schedule.take(3).map(
+          ...teacherProvider.schedule
+              .take(3)
+              .map(
                 (item) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Container(
@@ -320,9 +415,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+                                item.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text(item.subtitle, style: TextStyle(color: Colors.grey.shade700)),
+                              Text(
+                                item.subtitle,
+                                style: TextStyle(color: Colors.grey.shade700),
+                              ),
                             ],
                           ),
                         ),
@@ -330,7 +433,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                         Text(
                           '${item.startTime.day.toString().padLeft(2, '0')}/${item.startTime.month.toString().padLeft(2, '0')}\n${item.startTime.hour.toString().padLeft(2, '0')}:${item.startTime.minute.toString().padLeft(2, '0')}',
                           textAlign: TextAlign.right,
-                          style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -398,9 +504,18 @@ class _StatCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(item.value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  item.value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(item.label, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                Text(
+                  item.label,
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -424,7 +539,14 @@ class _Chip extends StatelessWidget {
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

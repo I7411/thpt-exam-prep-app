@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
 
@@ -114,18 +115,24 @@ class ExamResultScreen extends StatelessWidget {
 
   Widget _buildSummaryCard(BuildContext context, ExamResultData result) {
     final passed = result.score >= result.exam.passingScore;
+    final scoreColor = _scoreColor(result.score);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: passed
-              ? [Colors.green.shade500, Colors.green.shade300]
-              : [Colors.orange.shade500, Colors.deepOrange.shade300],
+          colors: [scoreColor, scoreColor.withOpacity(0.68)],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: scoreColor.withOpacity(0.24),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +146,7 @@ class ExamResultScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            passed ? 'Đạt yêu cầu' : 'Chưa đạt yêu cầu',
+            passed ? 'Đạt yêu cầu' : 'Cần ôn thêm',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withOpacity(0.9),
                 ),
@@ -176,10 +183,10 @@ class ExamResultScreen extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: 1.3,
           children: [
-            _ResultStatCard(label: 'Đúng', value: '${result.correctCount}', color: Colors.green),
-            _ResultStatCard(label: 'Sai', value: '${result.wrongCount}', color: Colors.red),
-            _ResultStatCard(label: 'Hoàn thành', value: '${result.completionPercentage.toStringAsFixed(0)}%', color: Colors.indigo),
-            _ResultStatCard(label: 'Thời gian', value: _formatDuration(result.timeSpent), color: Colors.orange),
+            _ResultStatCard(label: 'Đúng', value: '${result.correctCount}', color: AppColors.success),
+            _ResultStatCard(label: 'Sai', value: '${result.wrongCount}', color: AppColors.error),
+            _ResultStatCard(label: 'Hoàn thành', value: '${result.completionPercentage.toStringAsFixed(0)}%', color: AppColors.primary),
+            _ResultStatCard(label: 'Thời gian', value: _formatDuration(result.timeSpent), color: AppColors.accent),
           ],
         );
       },
@@ -202,6 +209,19 @@ class ExamResultScreen extends StatelessWidget {
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  Color _scoreColor(double score) {
+    if (score >= 8) {
+      return AppColors.success;
+    }
+    if (score >= 6.5) {
+      return AppColors.primary;
+    }
+    if (score >= 5) {
+      return AppColors.accent;
+    }
+    return AppColors.error;
   }
 }
 

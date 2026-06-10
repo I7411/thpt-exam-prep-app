@@ -1,0 +1,104 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function role(uid) {
+      return userDoc(uid).data.role;
+    }
+
+    function isStudent() {
+      return signedIn() && role(request.auth.uid) == 'student';
+    }
+
+    function isTeacher() {
+      return signedIn() && role(request.auth.uid) == 'teacher';
+    }
+
+    function isAdmin() {
+      return signedIn() && role(request.auth.uid) == 'admin';
+    }
+
+    function isAcceptedTeacherForStudent(studentId) {
+      return exists(
+        /databases/$(database)/documents/teacher_student_requests/$(request.auth.uid + '_' + studentId)
+      ) &&
+      get(
+        /databases/$(database)/documents/teacher_student_requests/$(request.auth.uid + '_' + studentId)
+      ).data.status == 'accepted';
+    }
+
+    match /users/{userId} {
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow read: if signedIn() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        (isTeacher() && resource.data.role == 'student')
+      );
+      allow update: if signedIn() && (
+        request.auth.uid == userId ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /teacher_student_requests/{requestId} {
+      allow read: if signedIn() && (
+        resource.data.teacherId == request.auth.uid ||
+        resource.data.studentId == request.auth.uid ||
+        isAdmin()
+      );
+
+      allow create: if isTeacher() &&
+        request.resource.data.teacherId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        userDoc(request.resource.data.studentId).data.role == 'student';
+
+      allow update: if signedIn() && (
+        (
+          isStudent() &&
+          resource.data.studentId == request.auth.uid &&
+          resource.data.status == 'pending' &&
+          request.resource.data.status in ['accepted', 'rejected'] &&
+          request.resource.data.teacherId == resource.data.teacherId &&
+          request.resource.data.studentId == resource.data.studentId
+        ) ||
+        (
+          isTeacher() &&
+          resource.data.teacherId == request.auth.uid &&
+          resource.data.status == 'rejected' &&
+          request.resource.data.status == 'pending' &&
+          request.resource.data.teacherId == resource.data.teacherId &&
+          request.resource.data.studentId == resource.data.studentId
+        ) ||
+        isAdmin()
+      );
+
+      allow delete: if isTeacher() &&
+        resource.data.teacherId == request.auth.uid;
+    }
+
+    match /progress_stats/{progressId} {
+      allow read: if signedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        isAcceptedTeacherForStudent(resource.data.studentId) ||
+        isAdmin()
+      );
+      allow create: if signedIn() && (
+        request.resource.data.studentId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update, delete: if signedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+  }
+}

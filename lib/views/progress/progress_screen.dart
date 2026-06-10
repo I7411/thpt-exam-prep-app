@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
 import 'package:thpt_exam_prep_app/providers/progress_provider.dart';
@@ -118,25 +119,25 @@ class _ProgressScreenState extends State<ProgressScreen> {
               label: 'Tổng đề đã làm',
               value: '${provider.totalExamsTaken}',
               icon: Icons.quiz,
-              color: Colors.indigo,
+              color: AppColors.primary,
             ),
             _SummaryCard(
               label: 'Điểm trung bình',
               value: provider.averageScore.toStringAsFixed(1),
               icon: Icons.star,
-              color: Colors.orange,
+              color: AppColors.accent,
             ),
             _SummaryCard(
               label: 'Tài liệu đã đọc',
               value: '${_estimateDocumentsFromProgress(provider)}',
               icon: Icons.description,
-              color: Colors.blue,
+              color: AppColors.secondary,
             ),
             _SummaryCard(
               label: 'Môn đang có',
               value: '${provider.subjectProgress.length}',
               icon: Icons.menu_book,
-              color: Colors.green,
+              color: AppColors.success,
             ),
           ],
         );
@@ -149,11 +150,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
         gradient: LinearGradient(
-          colors: [Colors.indigo.withOpacity(0.1), Colors.green.withOpacity(0.08)],
+          colors: [AppColors.primary.withOpacity(0.1), AppColors.success.withOpacity(0.08)],
         ),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +204,7 @@ class _SummaryCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: color.withOpacity(0.15)),
       ),
       child: Column(
@@ -255,8 +256,8 @@ class _SubjectProgressCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,7 +276,7 @@ class _SubjectProgressCard extends StatelessWidget {
               Text(
                 '${progress.completionPercentage.toStringAsFixed(0)}%',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.indigo,
+                      color: AppColors.primary,
                       fontWeight: FontWeight.w700,
                     ),
               ),
@@ -333,7 +334,7 @@ class _HistoryCard extends StatelessWidget {
               ),
               _StatusPill(
                 label: passed ? 'Đạt' : 'Chưa đạt',
-                color: passed ? Colors.green : Colors.orange,
+                color: passed ? AppColors.success : AppColors.accent,
               ),
             ],
           ),

@@ -60,17 +60,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  String _getRoleLabel(UserRole role) {
-    switch (role) {
-      case UserRole.student:
-        return 'Học sinh';
-      case UserRole.teacher:
-        return 'Giáo viên';
-      case UserRole.admin:
-        return 'Quản trị viên';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,7 +84,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -107,9 +98,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'Tạo tài khoản mới',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -132,7 +122,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Expanded(
                             child: Text(
                               authProvider.errorMessage,
-                              style: const TextStyle(color: Colors.red, fontSize: 12),
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -161,10 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 20),
 
                   // Email field
-                  Text(
-                    'Email',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Email', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _emailController,
@@ -187,36 +177,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<UserRole>(
-              initialValue: _selectedRole,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.security),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: UserRole.student,
-                  child: Text('Học sinh'),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.teacher,
-                  child: Text('Giáo viên'),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.admin,
-                  child: Text('Quản trị viên'),
-                ),
-              ],
-              onChanged: authProvider.isLoading
-                  ? null
-                  : (role) {
-                      if (role != null) {
-                        setState(() {
-                          _selectedRole = role;
-                        });
-                      }
-                    },
+                    initialValue: _selectedRole,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.security),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: UserRole.student,
+                        child: Text('Học sinh'),
+                      ),
+                      DropdownMenuItem(
+                        value: UserRole.teacher,
+                        child: Text('Giáo viên'),
+                      ),
+                      DropdownMenuItem(
+                        value: UserRole.admin,
+                        child: Text('Quản trị viên'),
+                      ),
+                    ],
+                    onChanged: authProvider.isLoading
+                        ? null
+                        : (role) {
+                            if (role != null) {
+                              setState(() {
+                                _selectedRole = role;
+                              });
+                            }
+                          },
                   ),
                   const SizedBox(height: 20),
 
@@ -235,7 +225,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
@@ -265,7 +257,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: const Icon(Icons.lock),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
@@ -285,7 +279,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: authProvider.isLoading ? null : () => _handleRegister(context),
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _handleRegister(context),
                       child: authProvider.isLoading
                           ? const SizedBox(
                               width: 24,
@@ -306,7 +302,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         TextButton(
                           onPressed: authProvider.isLoading
                               ? null
-                              : () => Navigator.of(context).pushReplacementNamed(AppRoutes.login),
+                              : () => Navigator.of(
+                                  context,
+                                ).pushReplacementNamed(AppRoutes.login),
                           child: const Text('Đăng nhập'),
                         ),
                       ],

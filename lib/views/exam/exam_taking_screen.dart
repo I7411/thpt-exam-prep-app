@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers/exam_provider.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
@@ -66,16 +67,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           context: context,
           builder: (dialogContext) {
             return AlertDialog(
-              title: const Text('Nộp bài'),
-              content: const Text('Bạn có chắc muốn nộp bài ngay bây giờ? Sau khi nộp sẽ không thể sửa đáp án.'),
+              title: const Text('Ná»™p bÃ i'),
+              content: const Text('Báº¡n cÃ³ cháº¯c muá»‘n ná»™p bÃ i ngay bÃ¢y giá»? Sau khi ná»™p sáº½ khÃ´ng thá»ƒ sá»­a Ä‘Ã¡p Ã¡n.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Hủy'),
+                  child: const Text('Há»§y'),
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Nộp bài'),
+                  child: const Text('Ná»™p bÃ i'),
                 ),
               ],
             );
@@ -116,7 +117,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         final currentQuestion = provider.currentQuestion;
         if (currentQuestion == null) {
           return const Scaffold(
-            body: Center(child: Text('Không có câu hỏi nào')),
+            body: Center(child: Text('KhÃ´ng cÃ³ cÃ¢u há»i nÃ o')),
           );
         }
 
@@ -132,15 +133,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: provider.remainingTime.inSeconds <= 60
-                          ? Colors.red.withOpacity(0.1)
-                          : Colors.indigo.withOpacity(0.1),
+                          ? AppColors.error.withOpacity(0.1)
+                          : AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       provider.remainingTimeLabel,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: provider.remainingTime.inSeconds <= 60 ? Colors.red : Colors.indigo,
+                            color: provider.remainingTime.inSeconds <= 60 ? AppColors.error : AppColors.primary,
                           ),
                     ),
                   ),
@@ -211,7 +212,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.indigo
+                                          ? AppColors.primary
                                           : Colors.grey.shade200,
                                       shape: BoxShape.circle,
                                     ),
@@ -233,9 +234,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                                     ),
                                   ),
                                   if (isLocked && isCorrect)
-                                    const Icon(Icons.check_circle, color: Colors.green),
+                                    const Icon(Icons.check_circle, color: AppColors.success),
                                   if (isLocked && isSelected && !isCorrect)
-                                    const Icon(Icons.cancel, color: Colors.red),
+                                    const Icon(Icons.cancel, color: AppColors.error),
                                 ],
                               ),
                             ),
@@ -252,12 +253,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.08),
+                            color: AppColors.success.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.green.withOpacity(0.2)),
+                            border: Border.all(color: AppColors.success.withOpacity(0.2)),
                           ),
                           child: const Text(
-                            'Bài đã được nộp, không thể sửa đáp án nữa.',
+                            'BÃ i Ä‘Ã£ Ä‘Æ°á»£c ná»™p, khÃ´ng thá»ƒ sá»­a Ä‘Ã¡p Ã¡n ná»¯a.',
                           ),
                         ),
                     ],
@@ -274,9 +275,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               child: ElevatedButton.icon(
                 onPressed: provider.isSubmitted ? null : () => _handleSubmit(provider),
                 icon: const Icon(Icons.send_rounded),
-                label: Text(provider.isSubmitted ? 'Đã nộp bài' : 'Nộp bài'),
+                label: Text(provider.isSubmitted ? 'ÄÃ£ ná»™p bÃ i' : 'Ná»™p bÃ i'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
+                  backgroundColor: AppColors.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -299,8 +300,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.indigo.withOpacity(0.12),
-            Colors.blue.withOpacity(0.08),
+            AppColors.primary.withOpacity(0.12),
+            AppColors.secondary.withOpacity(0.08),
           ],
         ),
       ),
@@ -309,11 +310,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         spacing: 12,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          _InfoPill(label: '${provider.currentQuestionIndex + 1}/${provider.questions.length} câu'),
-          _InfoPill(label: '${provider.answeredCount} đã trả lời'),
+          _InfoPill(label: '${provider.currentQuestionIndex + 1}/${provider.questions.length} cÃ¢u'),
+          _InfoPill(label: '${provider.answeredCount} Ä‘Ã£ tráº£ lá»i'),
           _InfoPill(label: provider.remainingTimeLabel),
           if (provider.isSubmitted)
-            const _InfoPill(label: 'Đã nộp bài'),
+            const _InfoPill(label: 'ÄÃ£ ná»™p bÃ i'),
         ],
       ),
     );
@@ -327,7 +328,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: Colors.indigo.withOpacity(0.1),
+            color: AppColors.primary.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Text(
@@ -338,7 +339,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'Câu ${question.orderNumber}',
+            'CÃ¢u ${question.orderNumber}',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -361,7 +362,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Bảng số câu',
+            'Báº£ng sá»‘ cÃ¢u',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -384,15 +385,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isCurrent
-                        ? Colors.indigo
+                        ? AppColors.primary
                         : isAnswered
-                            ? Colors.green.withOpacity(0.15)
+                            ? AppColors.success.withOpacity(0.15)
                             : Colors.white,
                     border: Border.all(
                       color: isCurrent
-                          ? Colors.indigo
+                          ? AppColors.primary
                           : isAnswered
-                              ? Colors.green
+                              ? AppColors.success
                               : Colors.grey.shade300,
                     ),
                   ),
@@ -403,7 +404,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                       color: isCurrent
                           ? Colors.white
                           : isAnswered
-                              ? Colors.green
+                              ? AppColors.success
                               : Colors.black87,
                     ),
                   ),
@@ -425,7 +426,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 ? null
                 : provider.previousQuestion,
             icon: const Icon(Icons.chevron_left),
-            label: const Text('Câu trước'),
+            label: const Text('CÃ¢u trÆ°á»›c'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -441,7 +442,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 ? null
                 : provider.nextQuestion,
             icon: const Icon(Icons.chevron_right),
-            label: const Text('Câu sau'),
+            label: const Text('CÃ¢u sau'),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -460,13 +461,13 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     required bool isLocked,
   }) {
     if (!isLocked) {
-      return isSelected ? Colors.indigo : Colors.grey.shade300;
+      return isSelected ? AppColors.primary : Colors.grey.shade300;
     }
     if (isCorrect) {
-      return Colors.green;
+      return AppColors.success;
     }
     if (isSelected) {
-      return Colors.red;
+      return AppColors.error;
     }
     return Colors.grey.shade300;
   }
@@ -477,13 +478,13 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     required bool isLocked,
   }) {
     if (!isLocked) {
-      return isSelected ? Colors.indigo.withOpacity(0.08) : Colors.white;
+      return isSelected ? AppColors.primary.withOpacity(0.08) : Colors.white;
     }
     if (isCorrect) {
-      return Colors.green.withOpacity(0.08);
+      return AppColors.success.withOpacity(0.08);
     }
     if (isSelected) {
-      return Colors.red.withOpacity(0.08);
+      return AppColors.error.withOpacity(0.08);
     }
     return Colors.white;
   }

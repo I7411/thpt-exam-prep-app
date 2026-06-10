@@ -1,4 +1,4 @@
-﻿/// Notification type enumeration
+/// Notification type enumeration
 enum NotificationType {
   info,
   warning,
@@ -29,6 +29,8 @@ class NotificationItem {
   final bool isRead;
   final DateTime createdAt;
   final DateTime? readAt;
+  final String? senderId;
+  final String? senderRole;
 
   const NotificationItem({
     required this.id,
@@ -40,6 +42,8 @@ class NotificationItem {
     required this.isRead,
     required this.createdAt,
     this.readAt,
+    this.senderId,
+    this.senderRole,
   });
 
   /// Create NotificationItem from JSON
@@ -54,6 +58,8 @@ class NotificationItem {
       isRead: json['isRead'] as bool? ?? false,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
       readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt'] as String) : null,
+      senderId: json['senderId'] as String?,
+      senderRole: json['senderRole'] as String?,
     );
   }
 
@@ -69,6 +75,8 @@ class NotificationItem {
       'isRead': isRead,
       'createdAt': createdAt.toIso8601String(),
       'readAt': readAt?.toIso8601String(),
+      'senderId': senderId,
+      'senderRole': senderRole,
     };
   }
 
@@ -83,6 +91,8 @@ class NotificationItem {
     bool? isRead,
     DateTime? createdAt,
     DateTime? readAt,
+    String? senderId,
+    String? senderRole,
   }) {
     return NotificationItem(
       id: id ?? this.id,
@@ -94,6 +104,8 @@ class NotificationItem {
       isRead: isRead ?? this.isRead,
       createdAt: createdAt ?? this.createdAt,
       readAt: readAt ?? this.readAt,
+      senderId: senderId ?? this.senderId,
+      senderRole: senderRole ?? this.senderRole,
     );
   }
 

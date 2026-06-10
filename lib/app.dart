@@ -28,6 +28,7 @@ import 'views/progress/progress_screen.dart';
 
 // ================= PROFILE =================
 import 'views/profile/student_profile_screen.dart';
+import 'views/student/student_teacher_requests_screen.dart';
 
 // ================= TEACHER =================
 import 'views/teacher/teacher_class_detail_screen.dart';
@@ -36,6 +37,7 @@ import 'views/teacher/teacher_dashboard_screen.dart';
 import 'views/teacher/teacher_profile_screen.dart';
 import 'views/teacher/teacher_question_bank_screen.dart';
 import 'views/teacher/teacher_schedule_screen.dart';
+import 'views/teacher/teacher_students_screen.dart';
 
 // ================= NEW SCREENS =================
 import 'views/document_detail_screen.dart';
@@ -87,8 +89,6 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
 
   Route<dynamic>? _generateRoute(RouteSettings settings) {
     final args = settings.arguments;
-
-    final uri = Uri.parse(settings.name ?? '');
 
     switch (settings.name) {
       // ===================================================
@@ -226,6 +226,12 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           settings: settings,
         );
 
+      case AppRoutes.studentTeacherRequests:
+        return MaterialPageRoute(
+          builder: (_) => const StudentTeacherRequestsScreen(),
+          settings: settings,
+        );
+
       // ===================================================
       // TEACHER
       // ===================================================
@@ -263,6 +269,12 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
       case AppRoutes.teacherProfile:
         return MaterialPageRoute(
           builder: (_) => const TeacherProfileScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.teacherStudents:
+        return MaterialPageRoute(
+          builder: (_) => const TeacherStudentsScreen(),
           settings: settings,
         );
 
@@ -312,4 +324,3 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
     }
   }
 }
-

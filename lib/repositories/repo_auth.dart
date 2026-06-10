@@ -2,9 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 
+const Duration _authTimeout = Duration(seconds: 15);
+const Duration _firestoreTimeout = Duration(seconds: 15);
+
 abstract class AuthRepository {
   Future<AppUser?> login(String email, String password);
-  Future<AppUser?> register(String email, String password, String fullName, UserRole role);
+  Future<AppUser?> register(
+    String email,
+    String password,
+    String fullName,
+    UserRole role,
+  );
   Future<AppUser?> getCurrentUser();
   Future<void> logout();
   Future<bool> isLoggedIn();
@@ -17,88 +25,80 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser?> login(String email, String password) async {
-    try {
-      final userCredential = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    final normalizedEmail = email.trim();
+    final userCredential = await _firebaseAuth
+        .signInWithEmailAndPassword(email: normalizedEmail, password: password)
+        .timeout(_authTimeout);
 
-      final user = userCredential.user;
-      if (user != null) {
-        // Fetch user details from Firestore
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          return AppUser.fromFirestore(doc);
-        } else {
-          // Document does not exist. Create a fallback user.
-          final fallbackUser = AppUser(
-            id: user.uid,
-            email: email,
-            fullName: 'Người dùng chưa cấu hình',
-            role: UserRole.student,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            isActive: true,
-          );
-          // Auto create in Firestore to avoid errors
-          await _firestore.collection('users').doc(user.uid).set(fallbackUser.toFirestore());
-          return fallbackUser;
-        }
-      }
+    final user = userCredential.user;
+    if (user == null) {
       return null;
-    } on FirebaseAuthException {
-      rethrow; // Let Provider handle specific Firebase exceptions
-    } catch (e) {
-      throw Exception('Lỗi đăng nhập: $e');
     }
+
+    return _readOrCreateUserProfile(
+      user,
+      fallbackEmail: normalizedEmail,
+      fallbackFullName: _displayNameOrEmail(user, normalizedEmail),
+    );
   }
 
   @override
-  Future<AppUser?> register(String email, String password, String fullName, UserRole role) async {
-    try {
-      final userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+  Future<AppUser?> register(
+    String email,
+    String password,
+    String fullName,
+    UserRole role,
+  ) async {
+    final normalizedEmail = email.trim();
+    final normalizedName = fullName.trim();
+    final userCredential = await _firebaseAuth
+        .createUserWithEmailAndPassword(
+          email: normalizedEmail,
+          password: password,
+        )
+        .timeout(_authTimeout);
 
-      final user = userCredential.user;
-      if (user != null) {
-        final newAppUser = AppUser(
-          id: user.uid,
-          email: email,
-          fullName: fullName,
-          role: role,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          isActive: true,
-        );
-
-        // Save to Firestore
-        await _firestore.collection('users').doc(user.uid).set(newAppUser.toFirestore());
-        return newAppUser;
-      }
+    final user = userCredential.user;
+    if (user == null) {
       return null;
-    } on FirebaseAuthException {
-      rethrow; 
-    } catch (e) {
-      throw Exception('Lỗi đăng ký: $e');
     }
+
+    await user.updateDisplayName(normalizedName).timeout(_authTimeout);
+
+    final now = DateTime.now();
+    final newAppUser = AppUser(
+      id: user.uid,
+      email: normalizedEmail,
+      fullName: normalizedName,
+      role: role,
+      createdAt: now,
+      updatedAt: now,
+      isActive: true,
+    );
+
+    await _setUserDocument(
+      uid: user.uid,
+      email: normalizedEmail,
+      fullName: normalizedName,
+      role: role,
+      isCreate: true,
+    );
+
+    return newAppUser;
   }
 
   @override
   Future<AppUser?> getCurrentUser() async {
-    try {
-      final user = _firebaseAuth.currentUser;
-      if (user != null) {
-        final doc = await _firestore.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          return AppUser.fromFirestore(doc);
-        }
-      }
-      return null;
-    } catch (e) {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
       return null;
     }
+
+    return _readOrCreateUserProfile(
+      user,
+      fallbackEmail: user.email ?? '',
+      fallbackFullName: _displayNameOrEmail(user, user.email ?? 'Học sinh'),
+    ).timeout(_firestoreTimeout);
   }
 
   @override
@@ -113,13 +113,138 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<bool> sendPasswordResetEmail(String email) async {
-    try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email);
-      return true;
-    } on FirebaseAuthException {
-      rethrow;
-    } catch (e) {
-      throw Exception('Lỗi đặt lại mật khẩu: $e');
+    await _firebaseAuth
+        .sendPasswordResetEmail(email: email.trim())
+        .timeout(_authTimeout);
+    return true;
+  }
+
+  static const Map<String, Map<String, dynamic>> _demoAccounts = {
+    'student.demo@thptsmartlearn.vn': {
+      'role': UserRole.student,
+      'fullName': 'Học sinh Demo',
+    },
+    'teacher.demo@thptsmartlearn.vn': {
+      'role': UserRole.teacher,
+      'fullName': 'Giáo viên Demo',
+    },
+    'admin.demo@thptsmartlearn.vn': {
+      'role': UserRole.admin,
+      'fullName': 'Admin Demo',
+    },
+  };
+
+  Future<AppUser> _readOrCreateUserProfile(
+    User firebaseUser, {
+    required String fallbackEmail,
+    required String fallbackFullName,
+  }) async {
+    final normalizedEmail = (firebaseUser.email ?? fallbackEmail).trim().toLowerCase();
+    final userDoc = _firestore.collection('users').doc(firebaseUser.uid);
+    final doc = await userDoc.get().timeout(_firestoreTimeout);
+
+    if (doc.exists) {
+      final data = doc.data();
+      if (data == null) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'missing-role',
+          message: 'This account has not been assigned a valid role.',
+        );
+      }
+
+      final roleValue = data['role'] as String?;
+      if (roleValue == null ||
+          (roleValue != 'student' &&
+           roleValue != 'teacher' &&
+           roleValue != 'admin')) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'missing-role',
+          message: 'This account has not been assigned a valid role.',
+        );
+      }
+
+      final isActive = data['isActive'] as bool? ?? true;
+      if (!isActive) {
+        throw FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'user-disabled',
+          message: 'This account has been disabled.',
+        );
+      }
+
+      return AppUser.fromFirestore(doc);
     }
+
+    // If Firestore document does not exist, automatically create it
+    UserRole assignedRole = UserRole.student;
+    String assignedFullName = 'Student';
+
+    if (_demoAccounts.containsKey(normalizedEmail)) {
+      final demoInfo = _demoAccounts[normalizedEmail]!;
+      assignedRole = demoInfo['role'] as UserRole;
+      assignedFullName = demoInfo['fullName'] as String;
+    }
+
+    await _setUserDocument(
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? fallbackEmail,
+      fullName: assignedFullName,
+      role: assignedRole,
+      isCreate: true,
+    );
+
+    final now = DateTime.now();
+    return AppUser(
+      id: firebaseUser.uid,
+      email: firebaseUser.email ?? fallbackEmail,
+      fullName: assignedFullName,
+      role: assignedRole,
+      createdAt: now,
+      updatedAt: now,
+      isActive: true,
+    );
+  }
+
+  Future<void> _setUserDocument({
+    required String uid,
+    required String email,
+    required String fullName,
+    required UserRole role,
+    required bool isCreate,
+  }) async {
+    final data = <String, dynamic>{
+      'uid': uid,
+      'email': email.trim(),
+      'fullName': fullName.trim().isEmpty ? email.trim() : fullName.trim(),
+      'role': role.toValue(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'isActive': true,
+    };
+
+    if (isCreate) {
+      data['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .set(data, SetOptions(merge: true))
+        .timeout(_firestoreTimeout);
+  }
+
+  String _displayNameOrEmail(User user, String fallbackEmail) {
+    final displayName = user.displayName?.trim();
+    if (displayName != null && displayName.isNotEmpty) {
+      return displayName;
+    }
+
+    final email = user.email?.trim();
+    if (email != null && email.isNotEmpty) {
+      return email;
+    }
+
+    return fallbackEmail.trim().isEmpty ? 'Học sinh' : fallbackEmail.trim();
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
@@ -16,6 +18,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   bool _initialized = false;
+  String? _fcmToken;
 
   @override
   void didChangeDependencies() {
@@ -25,13 +28,34 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final authProvider = context.read<AuthController>();
     final userId = authProvider.currentUser?.id ?? 'student_001';
     context.read<NotificationController>().initialize(userId);
+
+    _fetchFcmToken();
     _initialized = true;
+  }
+
+  Future<void> _fetchFcmToken() async {
+    // Poll a few times with delay to wait for FCM Token to register on startup
+    for (int i = 0; i < 6; i++) {
+      final token = NotificationService.instance.fcmToken;
+      if (token != null) {
+        if (mounted) {
+          setState(() {
+            _fcmToken = token;
+          });
+        }
+        break;
+      }
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<NotificationController>(
       builder: (context, provider, _) {
+        final authProvider = context.read<AuthController>();
+        final showFcmToken = kDebugMode && authProvider.currentUser?.role == UserRole.admin;
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Thông báo'),
@@ -52,12 +76,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           padding: const EdgeInsets.all(16),
                           children: [
                             _StudyReminderPanel(
+                              fcmToken: _fcmToken,
+                              showFcmToken: showFcmToken,
                               onDemoReminder: () => _createReminder(context, payload: AppRoutes.studentNotifications),
                               onDailyReminder: () => _createDailyReminder(context),
                               onCancelAll: () => _cancelAll(context),
                             ),
                             const SizedBox(height: 32),
-                             _EmptyNotificationState(),
+                            const _EmptyNotificationState(),
                           ],
                         )
                       : ListView.separated(
@@ -67,6 +93,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           itemBuilder: (context, index) {
                             if (index == 0) {
                               return _StudyReminderPanel(
+                                fcmToken: _fcmToken,
+                                showFcmToken: showFcmToken,
                                 onDemoReminder: () => _createReminder(context, payload: AppRoutes.studentNotifications),
                                 onDailyReminder: () => _createDailyReminder(context),
                                 onCancelAll: () => _cancelAll(context),
@@ -116,11 +144,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
 }
 
 class _StudyReminderPanel extends StatelessWidget {
+  final String? fcmToken;
+  final bool showFcmToken;
   final VoidCallback onDemoReminder;
   final VoidCallback onDailyReminder;
   final VoidCallback onCancelAll;
 
   const _StudyReminderPanel({
+    required this.fcmToken,
+    required this.showFcmToken,
     required this.onDemoReminder,
     required this.onDailyReminder,
     required this.onCancelAll,
@@ -128,6 +160,7 @@ class _StudyReminderPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final token = fcmToken;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -139,12 +172,12 @@ class _StudyReminderPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Nhắc học local',
+            'Cài đặt thông báo',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
-            'Thông báo chạy trên thiết bị, không dùng FCM.',
+            'Cấu hình nhắc học định kỳ và nhận tin nhắn ôn tập từ hệ thống.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
           ),
           const SizedBox(height: 14),
@@ -169,6 +202,64 @@ class _StudyReminderPanel extends StatelessWidget {
               ),
             ],
           ),
+          if (showFcmToken && token != null && token.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            Text(
+              'Thiết bị kiểm thử (FCM Token):',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.indigo,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.indigo.withOpacity(0.12)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      token,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: token));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Đã sao chép FCM Token vào bộ nhớ tạm'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      child: const Icon(
+                        Icons.copy,
+                        size: 16,
+                        color: Colors.indigo,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -246,6 +337,16 @@ class _NotificationTile extends StatelessWidget {
                           height: 1.4,
                         ),
                   ),
+                  if (notification.senderRole != null || notification.senderId != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Người gửi: ${notification.senderRole == 'admin' ? 'Quản trị viên' : (notification.senderRole == 'teacher' ? 'Giáo viên' : 'Hệ thống')}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -265,6 +366,22 @@ class _NotificationTile extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (!notification.isRead) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          foregroundColor: Colors.indigo,
+                        ),
+                        onPressed: onTap,
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Đánh dấu đã đọc', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

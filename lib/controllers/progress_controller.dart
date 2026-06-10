@@ -22,9 +22,13 @@ class ProgressController extends ChangeNotifier {
   List<ExamResultData> get examHistory => List.unmodifiable(_examHistory);
   List<Subject> get subjects => List.unmodifiable(_subjects);
 
-  int get totalExamsTaken => _subjectProgress.fold(0, (total, item) => total + item.totalExamsTaken);
+  int get totalExamsTaken =>
+      _subjectProgress.fold(0, (total, item) => total + item.totalExamsTaken);
 
-  int get totalDocumentsRead => _subjectProgress.fold(0, (total, item) => total + item.totalDocumentsRead);
+  int get totalDocumentsRead => _subjectProgress.fold(
+    0,
+    (total, item) => total + item.totalDocumentsRead,
+  );
 
   double get averageScore {
     var weightedScore = 0.0;
@@ -48,29 +52,39 @@ class ProgressController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final subjectFuture = _repositoryService.subject.getAllSubjects();
-    final localProgressFuture = _localRepository.getProgressStats(studentId);
-    final localHistoryFuture = _localRepository.getExamHistory(studentId);
+    try {
+      final subjectFuture = _repositoryService.subject.getAllSubjects().timeout(
+        const Duration(seconds: 12),
+      );
+      final localProgressFuture = _localRepository.getProgressStats(studentId);
+      final localHistoryFuture = _localRepository.getExamHistory(studentId);
 
-    _subjects = await subjectFuture;
+      _subjects = await subjectFuture;
 
-    final localProgress = await localProgressFuture;
-    if (localProgress.isNotEmpty) {
-      _subjectProgress = localProgress;
-    } else {
-      final mockProgress = await _repositoryService.progress.getProgressByStudent(studentId);
-      _subjectProgress = mockProgress.isNotEmpty ? mockProgress : _buildMockProgress(studentId);
+      final localProgress = await localProgressFuture;
+      if (localProgress.isNotEmpty) {
+        _subjectProgress = localProgress;
+      } else {
+        final mockProgress = await _repositoryService.progress
+            .getProgressByStudent(studentId)
+            .timeout(const Duration(seconds: 12));
+        _subjectProgress = mockProgress.isNotEmpty
+            ? mockProgress
+            : _buildMockProgress(studentId);
+      }
+
+      final localHistory = await localHistoryFuture;
+      if (localHistory.isNotEmpty) {
+        _examHistory = localHistory;
+      } else {
+        _examHistory = await _buildMockHistory(studentId);
+      }
+    } catch (e) {
+      debugPrint('Không tải được tiến độ học tập: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    final localHistory = await localHistoryFuture;
-    if (localHistory.isNotEmpty) {
-      _examHistory = localHistory;
-    } else {
-      _examHistory = await _buildMockHistory(studentId);
-    }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   ProgressStat? progressForSubject(String subjectId) {
@@ -111,7 +125,10 @@ class ProgressController extends ChangeNotifier {
 
   List<ExamResultData> recentHistory({int limit = 20}) {
     final history = List<ExamResultData>.from(_examHistory)
-      ..sort((left, right) => right.attempt.startedAt.compareTo(left.attempt.startedAt));
+      ..sort(
+        (left, right) =>
+            right.attempt.startedAt.compareTo(left.attempt.startedAt),
+      );
     return history.take(limit).toList();
   }
 
@@ -123,7 +140,9 @@ class ProgressController extends ChangeNotifier {
   }
 
   List<ProgressStat> _buildMockProgress(String studentId) {
-    final fallback = MockProgressData.progressStats.where((progress) => progress.studentId == studentId).toList();
+    final fallback = MockProgressData.progressStats
+        .where((progress) => progress.studentId == studentId)
+        .toList();
     return fallback.isNotEmpty ? fallback : MockProgressData.progressStats;
   }
 
@@ -132,7 +151,9 @@ class ProgressController extends ChangeNotifier {
     final results = <ExamResultData>[];
 
     for (final exam in exams.take(3)) {
-      final questions = await _repositoryService.exam.getQuestionsByExam(exam.id);
+      final questions = await _repositoryService.exam.getQuestionsByExam(
+        exam.id,
+      );
       if (questions.isEmpty) continue;
 
       final answers = <ExamAnswer>[];
@@ -140,8 +161,12 @@ class ProgressController extends ChangeNotifier {
       var correctCount = 0;
 
       for (final question in questions) {
-        final correctOption = question.options.firstWhere((option) => option.isCorrect);
-        final wrongOption = question.options.firstWhere((option) => !option.isCorrect);
+        final correctOption = question.options.firstWhere(
+          (option) => option.isCorrect,
+        );
+        final wrongOption = question.options.firstWhere(
+          (option) => !option.isCorrect,
+        );
         final chooseCorrect = question.orderNumber.isEven;
         final selectedOption = chooseCorrect ? correctOption : wrongOption;
         final isCorrect = selectedOption.isCorrect;
@@ -153,7 +178,9 @@ class ProgressController extends ChangeNotifier {
             examAttemptId: 'mock_attempt_${exam.id}',
             questionId: question.id,
             selectedOptionId: selectedOption.id,
-            answeredAt: DateTime.now().subtract(Duration(days: question.orderNumber)),
+            answeredAt: DateTime.now().subtract(
+              Duration(days: question.orderNumber),
+            ),
             isCorrect: isCorrect,
             earnedScore: isCorrect ? question.score : 0,
           ),
@@ -161,9 +188,13 @@ class ProgressController extends ChangeNotifier {
       }
 
       final wrongCount = questions.length - correctCount;
-      final startedAt = DateTime.now().subtract(const Duration(days: 2, minutes: 30));
+      final startedAt = DateTime.now().subtract(
+        const Duration(days: 2, minutes: 30),
+      );
       final completedAt = startedAt.add(const Duration(minutes: 28));
-      final double score = questions.isEmpty ? 0.0 : (correctCount / questions.length) * exam.totalScore;
+      final double score = questions.isEmpty
+          ? 0.0
+          : (correctCount / questions.length) * exam.totalScore;
       final attempt = ExamAttempt(
         id: 'mock_attempt_${exam.id}',
         examId: exam.id,
@@ -188,7 +219,9 @@ class ProgressController extends ChangeNotifier {
           correctCount: correctCount,
           wrongCount: wrongCount,
           score: score.toDouble(),
-          completionPercentage: questions.isEmpty ? 0 : (correctCount / questions.length) * 100,
+          completionPercentage: questions.isEmpty
+              ? 0
+              : (correctCount / questions.length) * 100,
           timeSpent: completedAt.difference(startedAt),
           autoSubmitted: false,
         ),
@@ -198,4 +231,3 @@ class ProgressController extends ChangeNotifier {
     return results;
   }
 }
-

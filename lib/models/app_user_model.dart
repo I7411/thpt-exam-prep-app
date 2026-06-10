@@ -138,4 +138,3 @@ class AppUser {
   @override
   String toString() => 'AppUser(id: $id, email: $email, fullName: $fullName, role: ${role.toValue()})';
 }
-

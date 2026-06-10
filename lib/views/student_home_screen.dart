@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:thpt_exam_prep_app/app_config.dart';
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
@@ -65,17 +66,35 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Future<_StudentHomeData> _loadHomeData(String studentId) async {
-    final subjects = await _repositoryService.subject.getAllSubjects();
-    final documents = await _repositoryService.document.getAllDocuments();
-    final exams = await _repositoryService.exam.getAllExams();
-    final progressStats =
-        await _repositoryService.progress.getProgressByStudent(studentId);
-    final averageScore =
-        await _repositoryService.progress.getAverageScoreByStudent(studentId);
-    final totalExams =
-        await _repositoryService.progress.getTotalExamsByStudent(studentId);
-    final examsPassed =
-        await _repositoryService.progress.getExamsPassedByStudent(studentId);
+    final subjectsFuture = _repositoryService.subject.getAllSubjects().timeout(
+      const Duration(seconds: 12),
+    );
+    final documentsFuture = _repositoryService.document
+        .getAllDocuments()
+        .timeout(const Duration(seconds: 12));
+    final examsFuture = _repositoryService.exam.getAllExams().timeout(
+      const Duration(seconds: 12),
+    );
+    final progressStatsFuture = _repositoryService.progress
+        .getProgressByStudent(studentId)
+        .timeout(const Duration(seconds: 12));
+    final averageScoreFuture = _repositoryService.progress
+        .getAverageScoreByStudent(studentId)
+        .timeout(const Duration(seconds: 12));
+    final totalExamsFuture = _repositoryService.progress
+        .getTotalExamsByStudent(studentId)
+        .timeout(const Duration(seconds: 12));
+    final examsPassedFuture = _repositoryService.progress
+        .getExamsPassedByStudent(studentId)
+        .timeout(const Duration(seconds: 12));
+
+    final subjects = await subjectsFuture;
+    final documents = (await documentsFuture).take(20).toList();
+    final exams = (await examsFuture).take(20).toList();
+    final progressStats = await progressStatsFuture;
+    final averageScore = await averageScoreFuture;
+    final totalExams = await totalExamsFuture;
+    final examsPassed = await examsPassedFuture;
 
     return _StudentHomeData(
       subjects: subjects,
@@ -109,9 +128,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final authProvider = Provider.of<AuthController>(context);
 
     if (authProvider.isLoading && authProvider.currentUser == null) {
-      return const SafeArea(
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const SafeArea(child: Center(child: CircularProgressIndicator()));
     }
 
     final studentId = _resolveStudentId(authProvider);
@@ -157,10 +174,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
           final featuredSubjects = data.subjects.take(4).toList();
           final highlightedDocuments = recentDocuments.take(3).toList();
-          final suggestedExams = data.exams
-              .where((exam) => exam.isPublished)
-              .toList()
-            ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+          final suggestedExams =
+              data.exams.where((exam) => exam.isPublished).toList()..sort(
+                (left, right) => right.createdAt.compareTo(left.createdAt),
+              );
           final progressSummary = _ProgressSummary.from(data.progressStats);
 
           return RefreshIndicator(
@@ -170,7 +187,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -216,7 +233,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   const SizedBox(height: 24),
                   _buildSectionHeader(
                     context,
-                    title: 'Đề thi gợi ý',
+                    title: 'Đề thi thử nổi bật',
                     actionText: 'Xem tất cả',
                     onActionTap: () {
                       Navigator.pushNamed(context, AppRoutes.studentExams);
@@ -255,12 +272,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     )
                   else
                     ...highlightedDocuments.map((document) {
-                      final subjectName =
-                          _findSubjectName(data.subjects, document.subjectId);
+                      final subjectName = _findSubjectName(
+                        data.subjects,
+                        document.subjectId,
+                      );
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: SizedBox(
-                          height: 168,
+                          height: 176,
                           child: DocumentCard(
                             title: _displayText(document.title),
                             subject: subjectName,
@@ -388,11 +407,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         itemBuilder: (context, index) {
           final exam = exams[index];
           final subjectName = _findSubjectName(subjects, exam.subjectId);
-          return _buildExamCard(
-            context,
-            exam: exam,
-            subject: subjectName,
-          );
+          return _buildExamCard(context, exam: exam, subject: subjectName);
         },
       ),
     );
@@ -403,15 +418,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.indigo.shade600,
-            Colors.blue.shade500,
-          ],
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
+        gradient: AppGradients.primary,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,31 +436,68 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             children: [
               Expanded(
                 child: Text(
-                  'Xin chào, $userName!',
+                  'Chào $userName, hôm nay bạn muốn ôn môn gì?',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.studentNotifications);
-                },
-                icon: const Icon(Icons.notifications_none, color: Colors.white),
-                tooltip: 'Thông báo',
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.studentTeacherRequests,
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.assignment_ind_outlined,
+                      color: Colors.white,
+                    ),
+                    tooltip: 'Lời mời giáo viên',
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        AppRoutes.studentNotifications,
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Colors.white,
+                    ),
+                    tooltip: 'Thông báo',
+                  ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Hôm nay là ngày tốt để học thêm một chút và giữ nhịp tiến độ.',
+            'Chọn nhanh tài liệu, đề thi thử hoặc theo dõi tiến độ để giữ nhịp ôn thi mỗi ngày.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
-                  height: 1.4,
-                ),
+              color: Colors.white.withOpacity(0.9),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: const [
+              _GreetingPill(
+                icon: Icons.menu_book_rounded,
+                label: 'Ôn tập hôm nay',
+              ),
+              _GreetingPill(icon: Icons.quiz_rounded, label: 'Thi thử'),
+              _GreetingPill(icon: Icons.trending_up_rounded, label: 'Tiến độ'),
+            ],
           ),
         ],
       ),
@@ -464,16 +516,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         if (actionText != null)
-          TextButton(
-            onPressed: onActionTap,
-            child: Text(actionText),
-          ),
+          TextButton(onPressed: onActionTap, child: Text(actionText)),
       ],
     );
   }
@@ -495,9 +544,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Colors.blue.withOpacity(0.12),
           ],
         ),
-        border: Border.all(
-          color: Colors.deepPurple.withOpacity(0.22),
-        ),
+        border: Border.all(color: Colors.deepPurple.withOpacity(0.22)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -525,8 +572,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -570,11 +617,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   Widget _buildErrorState(BuildContext context, Object? error) {
+    debugPrint('Lỗi tải trang chủ: $error');
     return _buildEmptyState(
       context,
       icon: Icons.error_outline,
       title: 'Lỗi tải trang chủ',
-      message: '$error',
+      message:
+          'Không thể tải dữ liệu trang chủ. Vui lòng kiểm tra mạng và thử lại.',
       actionText: 'Thử lại',
       onActionTap: _retryLoad,
     );
@@ -618,18 +667,18 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[700],
-                    height: 1.4,
-                  ),
+                color: Colors.grey[700],
+                height: 1.4,
+              ),
             ),
             if (actionText != null && onActionTap != null) ...[
               const SizedBox(height: 16),
@@ -669,16 +718,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   message,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[700],
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
                 ),
               ],
             ),
@@ -708,9 +757,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             child: Text(
               text,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.indigo.shade700,
-                    height: 1.35,
-                  ),
+                color: Colors.indigo.shade700,
+                height: 1.35,
+              ),
             ),
           ),
         ],
@@ -719,8 +768,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 
   int _estimateReadingTime(StudyDocument document) {
-    final sourceText =
-        document.content.isNotEmpty ? document.content : document.description;
+    final sourceText = document.content.isNotEmpty
+        ? document.content
+        : document.description;
     final estimatedMinutes = (sourceText.length / 500).ceil();
     return estimatedMinutes.clamp(5, 30);
   }
@@ -740,44 +790,43 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     switch (normalized) {
       case 'toán':
       case 'toan':
-        return const _SubjectCardConfig(Icons.calculate, Colors.blue);
+        return const _SubjectCardConfig(Icons.calculate, Color(0xFF3B82F6));
       case 'ngữ văn':
       case 'ngu van':
-        return const _SubjectCardConfig(Icons.menu_book, Colors.red);
+        return const _SubjectCardConfig(Icons.menu_book, Color(0xFFFB7185));
       case 'tiếng anh':
       case 'tieng anh':
-        return const _SubjectCardConfig(Icons.language, Colors.green);
+        return const _SubjectCardConfig(Icons.language, AppColors.success);
       case 'vật lý':
       case 'vat ly':
-        return const _SubjectCardConfig(Icons.science, Colors.purple);
+        return const _SubjectCardConfig(Icons.science, Color(0xFF8B5CF6));
       case 'hóa học':
       case 'hoa hoc':
-        return const _SubjectCardConfig(Icons.science, Colors.orange);
+        return const _SubjectCardConfig(Icons.science, AppColors.accent);
       case 'sinh học':
       case 'sinh hoc':
-        return const _SubjectCardConfig(Icons.biotech, Colors.pink);
+        return const _SubjectCardConfig(Icons.biotech, Color(0xFF22C55E));
       case 'lịch sử':
       case 'lich su':
-        return const _SubjectCardConfig(Icons.history_edu, Colors.brown);
+        return const _SubjectCardConfig(Icons.history_edu, Color(0xFFB45309));
       case 'địa lý':
       case 'dia ly':
-        return const _SubjectCardConfig(Icons.public, Colors.teal);
+        return const _SubjectCardConfig(Icons.public, Color(0xFF0891B2));
       case 'gdcd':
       case 'giáo dục công dân':
       case 'giao duc cong dan':
       case 'giáo dục kinh tế và pháp luật':
       case 'giao duc kinh te va phap luat':
-        return const _SubjectCardConfig(Icons.gavel, Colors.indigo);
+        return const _SubjectCardConfig(Icons.gavel, AppColors.primary);
       default:
-        return const _SubjectCardConfig(Icons.subject, Colors.grey);
+        return const _SubjectCardConfig(Icons.subject, AppColors.muted);
     }
   }
 
   String _normalizeSubjectName(String value) {
-    return _displayText(value)
-        .toLowerCase()
-        .trim()
-        .replaceAll(RegExp(r'\s+'), ' ');
+    return _displayText(
+      value,
+    ).toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
   }
 
   String _displayText(String? value, {String fallback = ''}) {
@@ -798,7 +847,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       }
 
       final decoded = _tryDecodeUtf8AsLatin1(current);
-      if (decoded == null || _mojibakeScore(decoded) >= _mojibakeScore(current)) {
+      if (decoded == null ||
+          _mojibakeScore(decoded) >= _mojibakeScore(current)) {
         break;
       }
 
@@ -920,4 +970,36 @@ class _SubjectCardConfig {
   final Color color;
 
   const _SubjectCardConfig(this.icon, this.color);
+}
+
+class _GreetingPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _GreetingPill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

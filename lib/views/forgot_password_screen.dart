@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
+import 'package:thpt_exam_prep_app/widgets/app_text_field.dart';
+import 'package:thpt_exam_prep_app/widgets/gradient_header.dart';
+import 'package:thpt_exam_prep_app/widgets/primary_gradient_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -56,11 +60,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Email đặt lại mật khẩu đã được gửi'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
 
-      Navigator.pop(context); // Go back to login
+      Navigator.pop(context);
     } else {
       if (!mounted) return;
 
@@ -71,7 +75,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ? authProvider.errorMessage
                 : 'Gửi email thất bại',
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.error,
         ),
       );
     }
@@ -80,57 +84,53 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quên mật khẩu'),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                const SizedBox(height: 40),
-                const Icon(
-                  Icons.lock_reset,
-                  size: 90,
-                  color: Colors.blue,
-                ),
-                const SizedBox(height: 30),
-                const Text(
-                  'Nhập email để nhận link đặt lại mật khẩu',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFE0F7FA), AppColors.background],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GradientHeader(
+                    title: 'Quên mật khẩu',
+                    subtitle: 'Nhập email để nhận liên kết đặt lại mật khẩu',
+                    icon: Icons.lock_reset_rounded,
+                    gradient: AppGradients.success,
+                    trailing: IconButton(
+                      onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      tooltip: 'Đóng',
+                    ),
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: _validateEmail,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppTextField(
+                    controller: _emailController,
+                    label: 'Email',
+                    hintText: 'Nhập email đã đăng ký',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: _validateEmail,
+                    enabled: !_isLoading,
                   ),
-                ),
-                const SizedBox(height: 30),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
+                  const SizedBox(height: AppSpacing.xl),
+                  PrimaryGradientButton(
+                    label: _isLoading ? 'Đang gửi...' : 'Gửi email',
+                    icon: Icons.mark_email_read_outlined,
+                    isLoading: _isLoading,
+                    gradient: AppGradients.success,
                     onPressed: _isLoading ? null : _handleSendResetEmail,
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Gửi email'),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

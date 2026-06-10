@@ -31,38 +31,39 @@ class _StudentMainScreenState extends State<StudentMainScreen> {
         index: _selectedIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        height: 72,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        onDestinationSelected: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Trang chủ',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.description_outlined),
-            activeIcon: Icon(Icons.description),
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book_rounded),
             label: 'Tài liệu',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.quiz_outlined),
-            activeIcon: Icon(Icons.quiz),
+            selectedIcon: Icon(Icons.quiz_rounded),
             label: 'Thi thử',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.trending_up_outlined),
-            activeIcon: Icon(Icons.trending_up),
+            selectedIcon: Icon(Icons.trending_up_rounded),
             label: 'Tiến độ',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outlined),
-            activeIcon: Icon(Icons.person),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Cá nhân',
           ),
         ],
@@ -70,4 +71,3 @@ class _StudentMainScreenState extends State<StudentMainScreen> {
     );
   }
 }
-

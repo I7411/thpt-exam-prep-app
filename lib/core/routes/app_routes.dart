@@ -1,4 +1,4 @@
-﻿/// Application route definitions
+/// Application route definitions
 class AppRoutes {
   // Splash
   static const String splash = '/splash';
@@ -19,6 +19,7 @@ class AppRoutes {
   static const String studentProgress = '/student/progress';
   static const String studentNotifications = '/student/notifications';
   static const String studentProfile = '/student/profile';
+  static const String studentTeacherRequests = '/student/teacher-requests';
 
   // Exam flow aliases
   static const String examList = studentExams;
@@ -32,6 +33,7 @@ class AppRoutes {
   static const String teacherQuestions = '/teacher/questions';
   static const String teacherSchedule = '/teacher/schedule';
   static const String teacherProfile = '/teacher/profile';
+  static const String teacherStudents = '/teacher/students';
 
   // Admin Routes
   static const String adminDashboard = '/admin/dashboard';
@@ -62,12 +64,14 @@ class AppRoutes {
       studentProgress,
       studentNotifications,
       studentProfile,
+      studentTeacherRequests,
       teacherDashboard,
       teacherClasses,
       teacherClassDetail,
       teacherQuestions,
       teacherSchedule,
       teacherProfile,
+      teacherStudents,
       adminDashboard,
       adminUsers,
       adminDocuments,
@@ -76,4 +80,3 @@ class AppRoutes {
     ];
   }
 }
-

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:thpt_exam_prep_app/app_routes.dart';
+import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/providers_auth.dart';
 
@@ -55,8 +56,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              side: const BorderSide(color: AppColors.line),
             ),
             child: Column(
               children: [
@@ -97,8 +98,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              side: const BorderSide(color: AppColors.line),
             ),
             child: Column(
               children: [
@@ -142,10 +143,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               icon: const Icon(Icons.logout),
               label: const Text('Đăng xuất'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                backgroundColor: AppColors.error,
               ),
             ),
           ),
@@ -162,12 +160,15 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [Colors.indigo.shade600, Colors.blue.shade500],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
+        gradient: AppGradients.primary,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.2),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -233,9 +234,9 @@ class _InfoRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.line),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

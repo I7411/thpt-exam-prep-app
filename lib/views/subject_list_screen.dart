@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_theme.dart';
 import '../core/routes/app_routes.dart';
 import '../models.dart';
 import '../repository_service.dart';
@@ -59,33 +60,86 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
             );
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: subjects.length,
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 220,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.95,
-            ),
-            itemBuilder: (context, index) {
-              final subject = subjects[index];
-              final config = _subjectConfig(subject.name);
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.primary,
+                      borderRadius: BorderRadius.circular(AppRadius.panel),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.18),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Icon(
+                            Icons.school_rounded,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            'Chọn môn học để xem tài liệu và đề thi thử phù hợp.',
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.95,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final subject = subjects[index];
+                      final config = _subjectConfig(subject.name);
 
-              return SubjectCard(
-                name: subject.name,
-                icon: config.icon,
-                color: config.color,
-                progress: '${subject.totalDocuments} tài liệu',
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    AppRoutes.studentDocuments,
-                    arguments: subject.id,
-                  );
-                },
-              );
-            },
+                      return SubjectCard(
+                        name: subject.name,
+                        icon: config.icon,
+                        color: config.color,
+                        progress: '${subject.totalDocuments} tài liệu',
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.studentDocuments,
+                            arguments: subject.id,
+                          );
+                        },
+                      );
+                    },
+                    childCount: subjects.length,
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -95,25 +149,25 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
   _SubjectConfig _subjectConfig(String subjectName) {
     switch (subjectName.toLowerCase()) {
       case 'toán':
-        return const _SubjectConfig(Icons.calculate, Colors.blue);
+        return const _SubjectConfig(Icons.calculate, Color(0xFF3B82F6));
       case 'ngữ văn':
-        return const _SubjectConfig(Icons.menu_book, Colors.red);
+        return const _SubjectConfig(Icons.menu_book, Color(0xFFFB7185));
       case 'tiếng anh':
-        return const _SubjectConfig(Icons.language, Colors.green);
+        return const _SubjectConfig(Icons.language, AppColors.success);
       case 'vật lý':
-        return const _SubjectConfig(Icons.science, Colors.purple);
+        return const _SubjectConfig(Icons.science, Color(0xFF8B5CF6));
       case 'hóa học':
-        return const _SubjectConfig(Icons.science, Colors.orange);
+        return const _SubjectConfig(Icons.science, AppColors.accent);
       case 'sinh học':
-        return const _SubjectConfig(Icons.favorite, Colors.pink);
+        return const _SubjectConfig(Icons.favorite, Color(0xFF22C55E));
       case 'lịch sử':
-        return const _SubjectConfig(Icons.history_edu, Colors.brown);
+        return const _SubjectConfig(Icons.history_edu, Color(0xFFB45309));
       case 'địa lý':
-        return const _SubjectConfig(Icons.public, Colors.teal);
+        return const _SubjectConfig(Icons.public, Color(0xFF0891B2));
       case 'giáo dục kinh tế và pháp luật':
-        return const _SubjectConfig(Icons.gavel, Colors.indigo);
+        return const _SubjectConfig(Icons.gavel, AppColors.primary);
       default:
-        return const _SubjectConfig(Icons.subject, Colors.grey);
+        return const _SubjectConfig(Icons.subject, AppColors.muted);
     }
   }
 }
@@ -124,4 +178,3 @@ class _SubjectConfig {
 
   const _SubjectConfig(this.icon, this.color);
 }
-

@@ -92,16 +92,335 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   else
                     ...users.map((user) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
-                          child: _UserCard(user: user),
+                          child: _UserCard(
+                            user: user,
+                            onEdit: () => _showEditUserDialog(context, user),
+                            onDelete: () => _showDeleteUserDialog(context, user),
+                          ),
                         )),
                 ],
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo UI: thêm tài khoản'))),
+        onPressed: () => _showCreateUserDialog(context),
         icon: const Icon(Icons.person_add),
         label: const Text('Thêm user'),
       ),
+    );
+  }
+
+  void _showCreateUserDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    String email = '';
+    String password = '';
+    String fullName = '';
+    UserRole role = UserRole.student;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool localLoading = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Thêm tài khoản mới'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Email không được để trống';
+                          if (!value.contains('@')) return 'Email không hợp lệ';
+                          return null;
+                        },
+                        onChanged: (val) => email = val,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Mật khẩu',
+                          border: OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Mật khẩu không được để trống';
+                          if (value.length < 6) return 'Mật khẩu phải từ 6 ký tự trở lên';
+                          return null;
+                        },
+                        onChanged: (val) => password = val,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Họ và tên',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Họ tên không được để trống';
+                          return null;
+                        },
+                        onChanged: (val) => fullName = val,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<UserRole>(
+                        value: role,
+                        decoration: const InputDecoration(
+                          labelText: 'Vai trò',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: UserRole.values.map((r) {
+                          return DropdownMenuItem(value: r, child: Text(r.getDisplayName()));
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              role = val;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: localLoading ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: localLoading
+                      ? null
+                      : () async {
+                          if (formKey.currentState!.validate()) {
+                            setState(() {
+                              localLoading = true;
+                            });
+                            try {
+                              await context.read<AdminController>().createUser(
+                                    email: email,
+                                    password: password,
+                                    fullName: fullName,
+                                    role: role,
+                                  );
+                              if (dialogContext.mounted) {
+                                Navigator.of(dialogContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Đã tạo tài khoản thành công!')),
+                                );
+                              }
+                            } catch (e) {
+                              setState(() {
+                                localLoading = false;
+                              });
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Tạo tài khoản thất bại: $e')),
+                                );
+                              }
+                            }
+                          }
+                        },
+                  child: localLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Lưu'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showEditUserDialog(BuildContext context, AppUser user) {
+    final formKey = GlobalKey<FormState>();
+    String fullName = user.fullName;
+    UserRole role = user.role;
+    bool isActive = user.isActive;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        bool localLoading = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Sửa tài khoản: ${user.email}'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        initialValue: fullName,
+                        decoration: const InputDecoration(
+                          labelText: 'Họ và tên',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) return 'Họ tên không được để trống';
+                          return null;
+                        },
+                        onChanged: (val) => fullName = val,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<UserRole>(
+                        value: role,
+                        decoration: const InputDecoration(
+                          labelText: 'Vai trò',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: UserRole.values.map((r) {
+                          return DropdownMenuItem(value: r, child: Text(r.getDisplayName()));
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              role = val;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Kích hoạt tài khoản'),
+                        value: isActive,
+                        onChanged: (val) {
+                          setState(() {
+                            isActive = val;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: localLoading ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: localLoading
+                      ? null
+                      : () async {
+                          if (formKey.currentState!.validate()) {
+                            setState(() {
+                              localLoading = true;
+                            });
+                            try {
+                              final updatedUser = user.copyWith(
+                                fullName: fullName,
+                                role: role,
+                                isActive: isActive,
+                                updatedAt: DateTime.now(),
+                              );
+                              await context.read<AdminController>().updateUser(updatedUser);
+                              if (dialogContext.mounted) {
+                                Navigator.of(dialogContext).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Đã cập nhật tài khoản thành công!')),
+                                );
+                              }
+                            } catch (e) {
+                              setState(() {
+                                localLoading = false;
+                              });
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Cập nhật tài khoản thất bại: $e')),
+                                );
+                              }
+                            }
+                          }
+                        },
+                  child: localLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Lưu'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showDeleteUserDialog(BuildContext context, AppUser user) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        bool localLoading = false;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Xóa tài khoản'),
+              content: Text('Bạn có chắc chắn muốn xóa tài khoản "${user.fullName}" (${user.email}) không? Hành động này không thể hoàn tác.'),
+              actions: [
+                TextButton(
+                  onPressed: localLoading ? null : () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Hủy'),
+                ),
+                ElevatedButton(
+                  onPressed: localLoading
+                      ? null
+                      : () async {
+                          setState(() {
+                            localLoading = true;
+                          });
+                          try {
+                            await context.read<AdminController>().deleteUser(user.id);
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Đã xóa tài khoản thành công!')),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() {
+                              localLoading = false;
+                            });
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Xóa tài khoản thất bại: $e')),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                  child: localLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Text('Xóa'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -129,8 +448,14 @@ class _SummaryBar extends StatelessWidget {
 
 class _UserCard extends StatelessWidget {
   final AppUser user;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
-  const _UserCard({required this.user});
+  const _UserCard({
+    required this.user,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -173,8 +498,16 @@ class _UserCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.edit), label: const Text('Sửa')),
-              TextButton.icon(onPressed: () {}, icon: const Icon(Icons.delete), label: const Text('Xóa')),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit),
+                label: const Text('Sửa'),
+              ),
+              TextButton.icon(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete),
+                label: const Text('Xóa'),
+              ),
             ],
           ),
         ],

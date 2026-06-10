@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/mock_progress.dart';
 import 'package:thpt_exam_prep_app/repository_service.dart';
@@ -71,29 +73,39 @@ class TeacherController extends ChangeNotifier {
   List<TeacherQuestionSummary> _questionBank = [];
   List<TeacherScheduleItem> _schedule = [];
   Map<String, List<TeacherStudentSummary>> _studentsByClass = {};
+  int _totalStudents = 0;
 
   bool get isLoading => _isLoading;
   AppUser? get teacher => _teacher;
   List<TeacherClass> get classes => List.unmodifiable(_classes);
   List<Subject> get subjects => List.unmodifiable(_subjects);
   List<Exam> get assignedExams => List.unmodifiable(_assignedExams);
-  List<TeacherQuestionSummary> get questionBank => List.unmodifiable(_questionBank);
+  List<TeacherQuestionSummary> get questionBank =>
+      List.unmodifiable(_questionBank);
   List<TeacherScheduleItem> get schedule => List.unmodifiable(_schedule);
-  Map<String, List<TeacherStudentSummary>> get studentsByClass => _studentsByClass;
+  Map<String, List<TeacherStudentSummary>> get studentsByClass =>
+      _studentsByClass;
 
-  int get totalStudents => _classes.fold<int>(0, (sum, teacherClass) => sum + teacherClass.studentCount);
+  int get totalStudents => _totalStudents;
 
   double get averageProgress {
-    final subjectIds = _classes.map((teacherClass) => teacherClass.subjectId).toSet();
-    final progressStats = MockProgressData.progressStats.where((stat) => subjectIds.contains(stat.subjectId)).toList();
+    final subjectIds = _classes
+        .map((teacherClass) => teacherClass.subjectId)
+        .toSet();
+    final progressStats = MockProgressData.progressStats
+        .where((stat) => subjectIds.contains(stat.subjectId))
+        .toList();
     if (progressStats.isEmpty) return 0;
-    final total = progressStats.fold<double>(0, (sum, stat) => sum + stat.completionPercentage);
+    final total = progressStats.fold<double>(
+      0,
+      (sum, stat) => sum + stat.completionPercentage,
+    );
     return total / progressStats.length;
   }
 
-  Future<void> ensureLoaded(AppUser? teacher) async {
+  Future<void> ensureLoaded(AppUser? teacher, {bool force = false}) async {
     if (teacher == null || teacher.role != UserRole.teacher) return;
-    if (_teacherId == teacher.id && _classes.isNotEmpty) return;
+    if (!force && _teacherId == teacher.id && _classes.isNotEmpty) return;
     await loadTeacher(teacher);
   }
 
@@ -101,26 +113,67 @@ class TeacherController extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    _teacher = teacher;
-    _teacherId = teacher.id;
+    try {
+      _teacher = teacher;
+      _teacherId = teacher.id;
 
-    final service = RepositoryService.instance;
-    final loadedClasses = await service.teacher.getClassesByTeacher(teacher.id);
-    final loadedSubjects = await service.subject.getAllSubjects();
-    final allExams = await service.exam.getAllExams();
+      final service = RepositoryService.instance;
 
-    final subjectIds = loadedClasses.map((teacherClass) => teacherClass.subjectId).toSet();
-    final progressStats = MockProgressData.progressStats.where((stat) => subjectIds.contains(stat.subjectId)).toList();
+      // Load accepted student count from repository
+      final loadedStudentCount = await service.teacher
+          .getAcceptedStudentCount(teacher.id)
+          .timeout(const Duration(seconds: 12));
+      _totalStudents = loadedStudentCount;
 
-    _classes = loadedClasses;
-    _subjects = loadedSubjects;
-    _assignedExams = allExams.where((exam) => subjectIds.contains(exam.subjectId)).toList();
-    _questionBank = await _loadQuestionBank(service, _assignedExams, loadedSubjects);
-    _studentsByClass = _buildStudentsByClass(loadedClasses, loadedSubjects, progressStats);
-    _schedule = _buildSchedule(loadedClasses, loadedSubjects, _assignedExams);
+      // Print debug logs in debug mode (development)
+      if (kDebugMode) {
+        debugPrint('--- Teacher Dashboard Query ---');
+        debugPrint('Current FirebaseAuth UID: ${FirebaseAuth.instance.currentUser?.uid}');
+        debugPrint('Teacher model id: ${teacher.id}');
+        debugPrint('Firestore collection queried: teacher_student_requests');
+        debugPrint('Accepted student query result length: $_totalStudents');
+        debugPrint('--------------------------------');
+      }
 
-    _isLoading = false;
-    notifyListeners();
+      final loadedClasses = await service.teacher
+          .getClassesByTeacher(teacher.id)
+          .timeout(const Duration(seconds: 12));
+      final loadedSubjects = await service.subject.getAllSubjects().timeout(
+        const Duration(seconds: 12),
+      );
+      final allExams = (await service.exam.getAllExams().timeout(
+        const Duration(seconds: 12),
+      )).take(20).toList();
+
+      final subjectIds = loadedClasses
+          .map((teacherClass) => teacherClass.subjectId)
+          .toSet();
+      final progressStats = MockProgressData.progressStats
+          .where((stat) => subjectIds.contains(stat.subjectId))
+          .toList();
+
+      _classes = loadedClasses;
+      _subjects = loadedSubjects;
+      _assignedExams = allExams
+          .where((exam) => subjectIds.contains(exam.subjectId))
+          .toList();
+      _questionBank = await _loadQuestionBank(
+        service,
+        _assignedExams,
+        loadedSubjects,
+      );
+      _studentsByClass = _buildStudentsByClass(
+        loadedClasses,
+        loadedSubjects,
+        progressStats,
+      );
+      _schedule = _buildSchedule(loadedClasses, loadedSubjects, _assignedExams);
+    } catch (e) {
+      debugPrint('Không tải được dữ liệu giáo viên: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<List<TeacherQuestionSummary>> _loadQuestionBank(
@@ -135,7 +188,8 @@ class TeacherController extends ChangeNotifier {
       if (subject == null) continue;
 
       for (final question in questions) {
-        final correctOption = question.options.where((option) => option.isCorrect).isNotEmpty
+        final correctOption =
+            question.options.where((option) => option.isCorrect).isNotEmpty
             ? question.options.firstWhere((option) => option.isCorrect)
             : null;
         entries.add(
@@ -151,7 +205,10 @@ class TeacherController extends ChangeNotifier {
       }
     }
 
-    entries.sort((left, right) => left.question.orderNumber.compareTo(right.question.orderNumber));
+    entries.sort(
+      (left, right) =>
+          left.question.orderNumber.compareTo(right.question.orderNumber),
+    );
     return entries;
   }
 
@@ -164,7 +221,9 @@ class TeacherController extends ChangeNotifier {
     for (var index = 0; index < classes.length; index++) {
       final teacherClass = classes[index];
       final subject = _findSubject(subjects, teacherClass.subjectId);
-      final subjectStats = progressStats.where((stat) => stat.subjectId == teacherClass.subjectId).toList();
+      final subjectStats = progressStats
+          .where((stat) => stat.subjectId == teacherClass.subjectId)
+          .toList();
       map[teacherClass.id] = _buildDemoStudents(
         teacherClass: teacherClass,
         subjectName: subject?.name ?? 'Môn học',
@@ -246,8 +305,15 @@ class TeacherController extends ChangeNotifier {
         TeacherScheduleItem(
           id: 'lesson_${teacherClass.id}',
           title: 'Dạy ${teacherClass.className}',
-          subtitle: '${subject?.name ?? 'MÃ´n há»c'} • ${teacherClass.studentCount} học sinh',
-          startTime: DateTime(now.year, now.month, now.day + index + 1, 7 + index, 30),
+          subtitle:
+              '${subject?.name ?? 'MÃ´n há»c'} • ${teacherClass.studentCount} học sinh',
+          startTime: DateTime(
+            now.year,
+            now.month,
+            now.day + index + 1,
+            7 + index,
+            30,
+          ),
           durationMinutes: 90,
           icon: Icons.class_,
           color: Colors.blue,
@@ -262,7 +328,8 @@ class TeacherController extends ChangeNotifier {
         TeacherScheduleItem(
           id: 'exam_${exam.id}',
           title: 'Giao ${exam.title}',
-          subtitle: '${subject?.name ?? 'MÃ´n há»c'} • ${exam.questionCount} câu',
+          subtitle:
+              '${subject?.name ?? 'MÃ´n há»c'} • ${exam.questionCount} câu',
           startTime: DateTime(now.year, now.month, now.day + index + 2, 19, 0),
           durationMinutes: exam.durationMinutes,
           icon: Icons.assignment_turned_in,
@@ -284,10 +351,10 @@ class TeacherController extends ChangeNotifier {
   }
 
   String getSubjectName(String subjectId) {
-    final subject = _subjects.where((item) => item.id == subjectId).cast<Subject?>().firstWhere(
-          (item) => item != null,
-          orElse: () => null,
-        );
+    final subject = _subjects
+        .where((item) => item.id == subjectId)
+        .cast<Subject?>()
+        .firstWhere((item) => item != null, orElse: () => null);
     return subject?.name ?? subjectId;
   }
 
@@ -309,4 +376,3 @@ class TeacherController extends ChangeNotifier {
     return 'Khó';
   }
 }
-
