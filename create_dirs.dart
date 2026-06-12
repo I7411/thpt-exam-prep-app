@@ -3,7 +3,7 @@ import 'package:path/path.dart' as path;
 
 void main() async {
   final baseDir = 'lib';
-
+  
   final directories = [
     'core/config',
     'core/constants',
@@ -32,12 +32,12 @@ void main() async {
   for (var dir in directories) {
     final dirPath = path.join(baseDir, dir);
     final directory = Directory(dirPath);
-
+    
     if (!await directory.exists()) {
       await directory.create(recursive: true);
-      stdout.writeln('Created: $dir');
+      print('Created: $dir');
     }
   }
-
-  stdout.writeln('All directories created successfully!');
+  
+  print('All directories created successfully!');
 }

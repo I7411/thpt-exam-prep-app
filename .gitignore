@@ -43,7 +43,3 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-# Temporary AI/refactor scripts
-refactor_*.py
-scratch_*.py
