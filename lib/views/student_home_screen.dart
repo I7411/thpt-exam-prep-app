@@ -7,10 +7,12 @@ import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/controllers/notification_controller.dart';
 import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/widgets/document_card.dart';
 import 'package:thpt_exam_prep_app/widgets/subject_card.dart';
+import 'package:thpt_exam_prep_app/controllers/student_home_controller.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -20,17 +22,7 @@ class StudentHomeScreen extends StatefulWidget {
 }
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
-  late final RepositoryService _repositoryService;
-  Future<_StudentHomeData>? _homeFuture;
-  String? _loadedStudentId;
-  bool _favoritesLoaded = false;
-  final Map<String, DateTime> _favoritesMap = <String, DateTime>{};
-
-  @override
-  void initState() {
-    super.initState();
-    _repositoryService = RepositoryService.instance;
-  }
+  String? _requestedStudentId;
 
   @override
   void didChangeDependencies() {
@@ -42,16 +34,20 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
 
     final studentId = _resolveStudentId(authProvider);
-    if (studentId == null) {
-      _loadedStudentId = null;
-      _homeFuture = null;
+    if (studentId == null || studentId.isEmpty) {
       return;
     }
 
-    if (_loadedStudentId != studentId) {
-      _loadedStudentId = studentId;
-      _homeFuture = _loadHomeData(studentId);
+    if (_requestedStudentId == studentId) {
+      return;
     }
+
+    _requestedStudentId = studentId;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<StudentHomeController>().loadHomeData(studentId);
+    });
   }
 
   String? _resolveStudentId(AuthController authProvider) {
@@ -67,96 +63,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     return null;
   }
 
-  Future<_StudentHomeData> _loadHomeData(String studentId) async {
-    final subjectsFuture = _repositoryService.subject.getAllSubjects().timeout(
-      const Duration(seconds: 12),
-    );
-    final documentsFuture = _repositoryService.document
-        .getAllDocuments()
-        .timeout(const Duration(seconds: 12));
-    final examsFuture = _repositoryService.exam.getAllExams().timeout(
-      const Duration(seconds: 12),
-    );
-    final progressStatsFuture = _repositoryService.progress
-        .getProgressByStudent(studentId)
-        .timeout(const Duration(seconds: 12));
-    final averageScoreFuture = _repositoryService.progress
-        .getAverageScoreByStudent(studentId)
-        .timeout(const Duration(seconds: 12));
-    final totalExamsFuture = _repositoryService.progress
-        .getTotalExamsByStudent(studentId)
-        .timeout(const Duration(seconds: 12));
-    final examsPassedFuture = _repositoryService.progress
-        .getExamsPassedByStudent(studentId)
-        .timeout(const Duration(seconds: 12));
-
-    final favoritesFuture = FirebaseFirestore.instance
-        .collection('saved_materials')
-        .where('userId', isEqualTo: studentId)
-        .where('isFavorite', isEqualTo: true)
-        .get()
-        .timeout(const Duration(seconds: 10));
-
-    final learnedCountFuture = _repositoryService.progress
-        .getTotalLearnedDocuments(studentId)
-        .timeout(const Duration(seconds: 10));
-
-    final subjects = await subjectsFuture;
-    final documents = (await documentsFuture).take(20).toList();
-    final exams = (await examsFuture).take(20).toList();
-    final progressStats = await progressStatsFuture;
-    final averageScore = await averageScoreFuture;
-    final totalExams = await totalExamsFuture;
-    final examsPassed = await examsPassedFuture;
-    final favoritesSnapshot = await favoritesFuture;
-
-    final favoritesMap = <String, DateTime>{};
-    for (final doc in favoritesSnapshot.docs) {
-      final data = doc.data();
-      final materialId = data['materialId'] as String?;
-      final favoriteAtVal = data['favoriteAt'];
-      if (materialId != null) {
-        DateTime favTime = DateTime.now();
-        if (favoriteAtVal is Timestamp) {
-          favTime = favoriteAtVal.toDate();
-        } else if (favoriteAtVal is String) {
-          favTime = DateTime.tryParse(favoriteAtVal) ?? DateTime.now();
-        }
-        favoritesMap[materialId] = favTime;
-      }
-    }
-
-    final totalLearnedDocuments = await learnedCountFuture;
-
-    return _StudentHomeData(
-      subjects: subjects,
-      documents: documents,
-      exams: exams,
-      progressStats: progressStats,
-      averageScore: averageScore,
-      totalExams: totalExams,
-      examsPassed: examsPassed,
-      totalLearnedDocuments: totalLearnedDocuments,
-      favoritesMap: favoritesMap,
-    );
-  }
-
   void _retryLoad() {
-    final studentId = _resolveStudentId(context.read<AuthController>());
-    if (studentId == null) {
-      setState(() {
-        _loadedStudentId = null;
-        _homeFuture = null;
-        _favoritesLoaded = false;
-      });
-      return;
+    final studentId = _requestedStudentId;
+    if (studentId != null && studentId.isNotEmpty) {
+      context.read<StudentHomeController>().retryLoad(studentId);
     }
-
-    setState(() {
-      _loadedStudentId = studentId;
-      _homeFuture = _loadHomeData(studentId);
-      _favoritesLoaded = false;
-    });
   }
 
   @override
@@ -164,16 +75,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     final authProvider = Provider.of<AuthController>(context);
 
     if (authProvider.isLoading && authProvider.currentUser == null) {
-      return const SafeArea(child: Center(child: CircularProgressIndicator()));
+      return ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: const SafeArea(
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
     }
 
     final studentId = _resolveStudentId(authProvider);
     if (studentId == null) {
-      return SafeArea(child: _buildLoginRequiredState(context));
+      return ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SafeArea(child: _buildLoginRequiredState(context)),
+      );
     }
-
-    final future = _homeFuture ??= _loadHomeData(studentId);
-    _loadedStudentId ??= studentId;
 
     final userName = _displayText(
       authProvider.currentUser?.fullName.isNotEmpty == true
@@ -182,240 +98,266 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       fallback: 'Học sinh',
     );
 
-    return SafeArea(
-      child: FutureBuilder<_StudentHomeData>(
-        future: future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return _buildErrorState(context, snapshot.error);
-          }
-
-          final data = snapshot.data;
-          if (data == null) {
-            return _buildEmptyState(
-              context,
-              icon: Icons.inbox_outlined,
-              title: 'Chưa có dữ liệu trang chủ',
-              message: 'Hãy thử tải lại hoặc kiểm tra kết nối dữ liệu.',
-              actionText: 'Thử lại',
-              onActionTap: _retryLoad,
-            );
-          }
-
-          if (!_favoritesLoaded) {
-            _favoritesMap.clear();
-            _favoritesMap.addAll(data.favoritesMap);
-            _favoritesLoaded = true;
-          }
-
-          final recentDocuments = data.documents.toList()
-            ..sort((left, right) {
-              final leftFavTime = _favoritesMap[left.id];
-              final rightFavTime = _favoritesMap[right.id];
-
-              if (leftFavTime != null && rightFavTime != null) {
-                return rightFavTime.compareTo(leftFavTime);
-              } else if (leftFavTime != null) {
-                return -1;
-              } else if (rightFavTime != null) {
-                return 1;
-              } else {
-                return right.createdAt.compareTo(left.createdAt);
-              }
-            });
-          final featuredSubjects = data.subjects.take(4).toList();
-          final highlightedDocuments = recentDocuments.take(3).toList();
-          final suggestedExams =
-              data.exams.where((exam) => exam.isPublished).toList()..sort(
-                (left, right) => right.createdAt.compareTo(left.createdAt),
-              );
-          final progressSummary = _ProgressSummary.from(
-            data.progressStats,
-            learnedDocumentsCount: data.totalLearnedDocuments,
-          );
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              _retryLoad();
-              await _homeFuture;
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildGreeting(context, userName),
-                  const SizedBox(height: 24),
-                  _buildSectionHeader(
-                    context,
-                    title: 'Tiến độ hôm nay',
-                    actionText: null,
-                    onActionTap: null,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildProgressGrid(context, data, progressSummary),
-                  if (data.progressStats.isEmpty) ...[
-                    const SizedBox(height: 12),
-                    _buildCompactMessage(
-                      context,
-                      icon: Icons.insights_outlined,
-                      text:
-                          'Chưa có dữ liệu tiến độ. Hãy đọc tài liệu hoặc làm đề thi để bắt đầu.',
-                    ),
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        child: Consumer<StudentHomeController>(
+          builder: (context, controller, child) {
+            if (controller.isLoading && !controller.hasData) {
+              return const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Đang tải trang chủ...'),
                   ],
-                  const SizedBox(height: 24),
-                  _buildSectionHeader(
-                    context,
-                    title: 'Môn học chính',
-                    actionText: 'Xem tất cả',
-                    onActionTap: () {
-                      Navigator.pushNamed(context, AppRoutes.studentSubjects);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (featuredSubjects.isEmpty)
-                    _buildSectionEmptyState(
+                ),
+              );
+            }
+
+            if (controller.errorMessage != null && !controller.hasData) {
+              return _buildEmptyState(
+                context,
+                icon: Icons.error_outline,
+                title: 'Lỗi tải trang chủ',
+                message: controller.errorMessage!,
+                actionText: 'Thử lại',
+                onActionTap: _retryLoad,
+              );
+            }
+
+            final data = controller.homeData;
+            if (data == null) {
+              return _buildEmptyState(
+                context,
+                icon: Icons.inbox_outlined,
+                title: 'Chưa có dữ liệu trang chủ',
+                message: 'Hãy thử tải lại hoặc kiểm tra kết nối dữ liệu.',
+                actionText: 'Thử lại',
+                onActionTap: _retryLoad,
+              );
+            }
+
+            if (data.isEmpty) {
+              return _buildEmptyState(
+                context,
+                icon: Icons.history_edu,
+                title: 'Chưa có dữ liệu học tập',
+                message: 'Bắt đầu bằng cách xem tài liệu hoặc làm đề thi thử.',
+                actionText: 'Tải lại',
+                onActionTap: _retryLoad,
+              );
+            }
+
+            final recentDocuments = data.documents.toList()
+              ..sort((left, right) {
+                final leftFavTime = data.favoritesMap[left.id];
+                final rightFavTime = data.favoritesMap[right.id];
+
+                if (leftFavTime != null && rightFavTime != null) {
+                  return rightFavTime.compareTo(leftFavTime);
+                } else if (leftFavTime != null) {
+                  return -1;
+                } else if (rightFavTime != null) {
+                  return 1;
+                } else {
+                  return right.createdAt.compareTo(left.createdAt);
+                }
+              });
+
+            final featuredSubjects = data.subjects.take(4).toList();
+            final highlightedDocuments = recentDocuments.take(3).toList();
+            final suggestedExams =
+                data.exams.where((exam) => exam.isPublished).toList()..sort(
+                  (left, right) => right.createdAt.compareTo(left.createdAt),
+                );
+            final progressSummary = _ProgressSummary.from(
+              data.progressStats,
+              learnedDocumentsCount: data.totalLearnedDocuments,
+            );
+
+            return RefreshIndicator(
+              onRefresh: () => controller.refresh(studentId),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildGreeting(context, userName),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(
                       context,
-                      icon: Icons.subject_outlined,
-                      title: 'Chưa có môn học nào',
-                      message:
-                          'Danh sách môn học sẽ hiển thị tại đây khi có dữ liệu.',
-                    )
-                  else
-                    _buildSubjectGrid(context, featuredSubjects),
-                  const SizedBox(height: 24),
-                  _buildSectionHeader(
-                    context,
-                    title: 'Đề thi thử nổi bật',
-                    actionText: 'Xem tất cả',
-                    onActionTap: () {
-                      Navigator.pushNamed(context, AppRoutes.studentExams);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (suggestedExams.isEmpty)
-                    _buildSectionEmptyState(
-                      context,
-                      icon: Icons.quiz_outlined,
-                      title: 'Chưa có đề thi gợi ý',
-                      message: 'Các đề thi mới sẽ xuất hiện tại đây.',
-                    )
-                  else
-                    _buildSuggestedExams(
-                      context,
-                      exams: suggestedExams.take(3).toList(),
-                      subjects: data.subjects,
+                      title: 'Tiến độ hôm nay',
+                      actionText: null,
+                      onActionTap: null,
                     ),
-                  const SizedBox(height: 24),
-                  _buildSectionHeader(
-                    context,
-                    title: 'Tài liệu mới',
-                    actionText: 'Xem tất cả',
-                    onActionTap: () {
-                      Navigator.pushNamed(
+                    const SizedBox(height: 12),
+                    _buildProgressGrid(context, data, progressSummary),
+                    if (data.progressStats.isEmpty) ...[
+                      const SizedBox(height: 12),
+                      _buildCompactMessage(
                         context,
-                        AppRoutes.studentDocuments,
-                        arguments: 'new_materials',
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (highlightedDocuments.isEmpty)
-                    _buildSectionEmptyState(
+                        icon: Icons.insights_outlined,
+                        text:
+                            'Chưa có dữ liệu tiến độ. Hãy đọc tài liệu hoặc làm đề thi để bắt đầu.',
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(
                       context,
-                      icon: Icons.description_outlined,
-                      title: 'Chưa có tài liệu mới',
-                      message: 'Tài liệu học tập mới sẽ hiển thị tại đây.',
-                    )
-                  else
-                    ...highlightedDocuments.map((document) {
-                      final subjectName = _findSubjectName(
-                        data.subjects,
-                        document.subjectId,
-                      );
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: SizedBox(
-                          height: 176,
-                          child: DocumentCard(
-                            title: _displayText(document.title),
-                            subject: subjectName,
-                            duration:
-                                '${_estimateReadingTime(document)} phút đọc',
-                            preview: _displayText(document.description),
-                            isMarked: _favoritesMap.containsKey(document.id),
-                            onTap: () async {
-                              await Navigator.pushNamed(
-                                context,
-                                AppRoutes.studentDocumentDetail,
-                                arguments: document,
-                              );
-                              _retryLoad();
-                            },
-                            onMarkTap: () async {
-                              final isMarked = _favoritesMap.containsKey(document.id);
-                              final nextIsFavorite = !isMarked;
-                              final authProvider = context.read<AuthController>();
-                              final userId = authProvider.currentUser?.id ?? 'student_001';
-
-                              final docRef = FirebaseFirestore.instance
-                                  .collection('saved_materials')
-                                  .doc('${userId}_${document.id}');
-
-                              if (nextIsFavorite) {
-                                await docRef.set({
-                                  'userId': userId,
-                                  'materialId': document.id,
-                                  'isFavorite': true,
-                                  'favoriteAt': FieldValue.serverTimestamp(),
-                                  'savedAt': FieldValue.serverTimestamp(),
-                                });
-                              } else {
-                                await docRef.delete();
-                              }
-
-                              setState(() {
-                                if (nextIsFavorite) {
-                                  _favoritesMap[document.id] = DateTime.now();
-                                } else {
-                                  _favoritesMap.remove(document.id);
-                                }
-                              });
-
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      nextIsFavorite
-                                          ? 'Đã đánh dấu: ${document.title}'
-                                          : 'Bỏ đánh dấu: ${document.title}',
-                                    ),
-                                    duration: const Duration(seconds: 1),
-                                  ),
+                      title: 'Môn học chính',
+                      actionText: 'Xem tất cả',
+                      onActionTap: () {
+                        Navigator.pushNamed(context, AppRoutes.studentSubjects);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (featuredSubjects.isEmpty)
+                      _buildSectionEmptyState(
+                        context,
+                        icon: Icons.subject_outlined,
+                        title: 'Chưa có môn học nào',
+                        message:
+                            'Danh sách môn học sẽ hiển thị tại đây khi có dữ liệu.',
+                      )
+                    else
+                      _buildSubjectGrid(context, featuredSubjects),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(
+                      context,
+                      title: 'Đề thi thử nổi bật',
+                      actionText: 'Xem tất cả',
+                      onActionTap: () {
+                        Navigator.pushNamed(context, AppRoutes.studentExams);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (suggestedExams.isEmpty)
+                      _buildSectionEmptyState(
+                        context,
+                        icon: Icons.quiz_outlined,
+                        title: 'Chưa có đề thi gợi ý',
+                        message: 'Các đề thi mới sẽ xuất hiện tại đây.',
+                      )
+                    else
+                      _buildSuggestedExams(
+                        context,
+                        exams: suggestedExams.take(3).toList(),
+                        subjects: data.subjects,
+                      ),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(
+                      context,
+                      title: 'Tài liệu mới',
+                      actionText: 'Xem tất cả',
+                      onActionTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.studentDocuments,
+                          arguments: 'new_materials',
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (highlightedDocuments.isEmpty)
+                      _buildSectionEmptyState(
+                        context,
+                        icon: Icons.description_outlined,
+                        title: 'Chưa có tài liệu mới',
+                        message: 'Tài liệu học tập mới sẽ hiển thị tại đây.',
+                      )
+                    else
+                      ...highlightedDocuments.map((document) {
+                        final subjectName = _findSubjectName(
+                          data.subjects,
+                          document.subjectId,
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: SizedBox(
+                            height: 176,
+                            child: DocumentCard(
+                              title: _displayText(document.title),
+                              subject: subjectName,
+                              duration:
+                                  '${_estimateReadingTime(document)} phút đọc',
+                              preview: _displayText(document.description),
+                              isMarked: data.favoritesMap.containsKey(document.id),
+                              onTap: () async {
+                                await Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.studentDocumentDetail,
+                                  arguments: document,
                                 );
-                              }
-                            },
+                                _retryLoad();
+                              },
+                              onMarkTap: () async {
+                                final isMarked = data.favoritesMap.containsKey(
+                                  document.id,
+                                );
+                                final nextIsFavorite = !isMarked;
+                                final authProvider = context
+                                    .read<AuthController>();
+                                final userId =
+                                    authProvider.currentUser?.id ??
+                                    'student_001';
+
+                                final docRef = FirebaseFirestore.instance
+                                    .collection('saved_materials')
+                                    .doc('${userId}_${document.id}');
+
+                                if (nextIsFavorite) {
+                                  await docRef.set({
+                                    'userId': userId,
+                                    'materialId': document.id,
+                                    'isFavorite': true,
+                                    'favoriteAt': FieldValue.serverTimestamp(),
+                                    'savedAt': FieldValue.serverTimestamp(),
+                                  });
+                                } else {
+                                  await docRef.delete();
+                                }
+
+                                setState(() {
+                                  if (nextIsFavorite) {
+                                    data.favoritesMap[document.id] = DateTime.now();
+                                  } else {
+                                    data.favoritesMap.remove(document.id);
+                                  }
+                                });
+
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        nextIsFavorite
+                                            ? 'Đã đánh dấu: ${document.title}'
+                                            : 'Bỏ đánh dấu: ${document.title}',
+                                      ),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    }),
-                ],
+                        );
+                      }),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildProgressGrid(
     BuildContext context,
-    _StudentHomeData data,
+    StudentHomeData data,
     _ProgressSummary progressSummary,
   ) {
     return SingleChildScrollView(
@@ -503,9 +445,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     return Container(
       width: 104,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: InkWell(
         onTap: onTap,
@@ -518,7 +460,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -527,10 +469,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               Text(
                 value,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                    ),
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -538,10 +480,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
               Text(
                 title,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                    ),
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -613,7 +555,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         gradient: AppGradients.primary,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -652,18 +594,27 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     ),
                     tooltip: 'Lời mời giáo viên',
                   ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        AppRoutes.studentNotifications,
+                  Consumer<NotificationController>(
+                    builder: (context, notificationProvider, child) {
+                      final unreadCount = notificationProvider.unreadCount;
+                      return IconButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            AppRoutes.studentNotifications,
+                          );
+                        },
+                        icon: Badge(
+                          isLabelVisible: unreadCount > 0,
+                          label: Text(unreadCount.toString()),
+                          child: const Icon(
+                            Icons.notifications_none,
+                            color: Colors.white,
+                          ),
+                        ),
+                        tooltip: 'Thông báo',
                       );
                     },
-                    icon: const Icon(
-                      Icons.notifications_none,
-                      color: Colors.white,
-                    ),
-                    tooltip: 'Thông báo',
                   ),
                 ],
               ),
@@ -673,7 +624,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           Text(
             'Chọn nhanh tài liệu, đề thi thử hoặc theo dõi tiến độ để giữ nhịp ôn thi mỗi ngày.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               height: 1.4,
             ),
           ),
@@ -731,11 +682,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.deepPurple.withOpacity(0.18),
-            Colors.blue.withOpacity(0.12),
+            Colors.deepPurple.withValues(alpha: 0.18),
+            Colors.blue.withValues(alpha: 0.12),
           ],
         ),
-        border: Border.all(color: Colors.deepPurple.withOpacity(0.22)),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.22)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -786,13 +737,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             color: Colors.deepPurple,
                             fontWeight: FontWeight.w600,
                           ),
-                          backgroundColor: Colors.deepPurple.withOpacity(0.12),
+                          backgroundColor: Colors.deepPurple.withValues(
+                            alpha: 0.12,
+                          ),
                           side: BorderSide.none,
                         ),
                         Chip(
                           visualDensity: VisualDensity.compact,
                           label: Text('${exam.durationMinutes} phút'),
-                          backgroundColor: Colors.white.withOpacity(0.65),
+                          backgroundColor: Colors.white.withValues(alpha: 0.65),
                           side: BorderSide.none,
                         ),
                       ],
@@ -807,18 +760,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
-  Widget _buildErrorState(BuildContext context, Object? error) {
-    debugPrint('Lỗi tải trang chủ: $error');
-    return _buildEmptyState(
-      context,
-      icon: Icons.error_outline,
-      title: 'Lỗi tải trang chủ',
-      message:
-          'Không thể tải dữ liệu trang chủ. Vui lòng kiểm tra mạng và thử lại.',
-      actionText: 'Thử lại',
-      onActionTap: _retryLoad,
-    );
-  }
+
 
   Widget _buildLoginRequiredState(BuildContext context) {
     return _buildEmptyState(
@@ -937,7 +879,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.indigo.withOpacity(0.06),
+        color: Colors.indigo.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1109,30 +1051,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   }
 }
 
-class _StudentHomeData {
-  final List<Subject> subjects;
-  final List<StudyDocument> documents;
-  final List<Exam> exams;
-  final List<ProgressStat> progressStats;
-  final double averageScore;
-  final int totalExams;
-  final int examsPassed;
-  final int totalLearnedDocuments;
-  final Map<String, DateTime> favoritesMap;
-
-  const _StudentHomeData({
-    required this.subjects,
-    required this.documents,
-    required this.exams,
-    required this.progressStats,
-    required this.averageScore,
-    required this.totalExams,
-    required this.examsPassed,
-    required this.totalLearnedDocuments,
-    required this.favoritesMap,
-  });
-}
-
 class _ProgressSummary {
   final int totalDocumentsRead;
   final int maxStreakDays;
@@ -1179,7 +1097,7 @@ class _GreetingPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
+        color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(

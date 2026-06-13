@@ -1,4 +1,4 @@
-﻿/// Study document model (TÃ i liá»‡u Ã´n táº­p)
+/// Study document model (TÃ i liá»‡u Ã´n táº­p)
 class StudyDocument {
   final String id;
   final String topicId;
@@ -47,8 +47,12 @@ class StudyDocument {
       views: json['views'] as int? ?? 0,
       rating: (json['rating'] as num? ?? 0).toDouble(),
       ratingCount: json['ratingCount'] as int? ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 
@@ -110,4 +114,3 @@ class StudyDocument {
   @override
   String toString() => 'StudyDocument(id: $id, title: $title)';
 }
-

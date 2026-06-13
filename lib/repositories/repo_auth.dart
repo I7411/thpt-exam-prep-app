@@ -36,7 +36,7 @@ class FirebaseAuthRepository implements AuthRepository {
 
   @override
   Future<AppUser?> login(String email, String password) async {
-    final normalizedEmail = email.trim();
+    final normalizedEmail = email.trim().toLowerCase();
     final userCredential = await _firebaseAuth
         .signInWithEmailAndPassword(email: normalizedEmail, password: password)
         .timeout(_authTimeout);
@@ -60,7 +60,7 @@ class FirebaseAuthRepository implements AuthRepository {
     String fullName,
     UserRole role,
   ) async {
-    final normalizedEmail = email.trim();
+    final normalizedEmail = email.trim().toLowerCase();
     final normalizedName = fullName.trim();
     final userCredential = await _firebaseAuth
         .createUserWithEmailAndPassword(
@@ -75,6 +75,7 @@ class FirebaseAuthRepository implements AuthRepository {
     }
 
     await user.updateDisplayName(normalizedName).timeout(_authTimeout);
+    await user.sendEmailVerification().timeout(_authTimeout);
 
     final now = DateTime.now();
     final newAppUser = AppUser(
@@ -93,6 +94,7 @@ class FirebaseAuthRepository implements AuthRepository {
       fullName: normalizedName,
       role: role,
       isCreate: true,
+      signInProvider: 'email',
     );
 
     return newAppUser;
@@ -115,10 +117,11 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<void> logout() async {
     // Sign out of Google as well so the account picker shows next time.
-    final googleSignIn = GoogleSignIn(serverClientId: _googleServerClientId);
-    if (await googleSignIn.isSignedIn()) {
-      await googleSignIn.signOut();
-    }
+    // Use GoogleSignIn.instance for version 7.2.0 API
+    await GoogleSignIn.instance.initialize(
+      serverClientId: _googleServerClientId,
+    );
+    await GoogleSignIn.instance.signOut();
     await _firebaseAuth.signOut();
   }
 
@@ -130,7 +133,7 @@ class FirebaseAuthRepository implements AuthRepository {
   @override
   Future<bool> sendPasswordResetEmail(String email) async {
     await _firebaseAuth
-        .sendPasswordResetEmail(email: email.trim())
+        .sendPasswordResetEmail(email: email.trim().toLowerCase())
         .timeout(_authTimeout);
     return true;
   }
@@ -155,7 +158,9 @@ class FirebaseAuthRepository implements AuthRepository {
     required String fallbackEmail,
     required String fallbackFullName,
   }) async {
-    final normalizedEmail = (firebaseUser.email ?? fallbackEmail).trim().toLowerCase();
+    final normalizedEmail = (firebaseUser.email ?? fallbackEmail)
+        .trim()
+        .toLowerCase();
     final userDoc = _firestore.collection('users').doc(firebaseUser.uid);
     final doc = await userDoc.get().timeout(_firestoreTimeout);
 
@@ -165,19 +170,19 @@ class FirebaseAuthRepository implements AuthRepository {
         throw FirebaseException(
           plugin: 'cloud_firestore',
           code: 'missing-role',
-          message: 'This account has not been assigned a valid role.',
+          message: 'This account has not been assigned a role.',
         );
       }
 
       final roleValue = data['role'] as String?;
       if (roleValue == null ||
           (roleValue != 'student' &&
-           roleValue != 'teacher' &&
-           roleValue != 'admin')) {
+              roleValue != 'teacher' &&
+              roleValue != 'admin')) {
         throw FirebaseException(
           plugin: 'cloud_firestore',
           code: 'missing-role',
-          message: 'This account has not been assigned a valid role.',
+          message: 'This account has not been assigned a role.',
         );
       }
 
@@ -193,15 +198,17 @@ class FirebaseAuthRepository implements AuthRepository {
       return AppUser.fromFirestore(doc);
     }
 
-    // If Firestore document does not exist, automatically create it
-    UserRole assignedRole = UserRole.student;
-    String assignedFullName = 'Student';
-
-    if (_demoAccounts.containsKey(normalizedEmail)) {
-      final demoInfo = _demoAccounts[normalizedEmail]!;
-      assignedRole = demoInfo['role'] as UserRole;
-      assignedFullName = demoInfo['fullName'] as String;
+    if (!_demoAccounts.containsKey(normalizedEmail)) {
+      throw FirebaseException(
+        plugin: 'cloud_firestore',
+        code: 'profile-missing',
+        message: 'This account does not have a user profile in Firestore.',
+      );
     }
+
+    final demoInfo = _demoAccounts[normalizedEmail]!;
+    final assignedRole = demoInfo['role'] as UserRole;
+    final assignedFullName = demoInfo['fullName'] as String;
 
     await _setUserDocument(
       uid: firebaseUser.uid,
@@ -209,6 +216,7 @@ class FirebaseAuthRepository implements AuthRepository {
       fullName: assignedFullName,
       role: assignedRole,
       isCreate: true,
+      signInProvider: 'email',
     );
 
     final now = DateTime.now();
@@ -230,6 +238,7 @@ class FirebaseAuthRepository implements AuthRepository {
     required UserRole role,
     required bool isCreate,
     String? photoUrl,
+    String? signInProvider,
   }) async {
     final data = <String, dynamic>{
       'uid': uid,
@@ -240,10 +249,12 @@ class FirebaseAuthRepository implements AuthRepository {
       'isActive': true,
       // ignore: use_null_aware_elements
       if (photoUrl != null) 'photoUrl': photoUrl,
+      if (signInProvider != null) 'signInProvider': signInProvider,
     };
 
     if (isCreate) {
       data['createdAt'] = FieldValue.serverTimestamp();
+      data['sessionVersion'] = 0;
     }
 
     await _firestore
@@ -272,11 +283,13 @@ class FirebaseAuthRepository implements AuthRepository {
     // serverClientId is the Web OAuth 2.0 client_id (client_type=3) from
     // google-services.json. Without it, Android GoogleSignIn does NOT return
     // an idToken, causing Firebase Auth signInWithCredential to fail.
-    final googleSignIn = GoogleSignIn(serverClientId: _googleServerClientId);
+    await GoogleSignIn.instance.initialize(
+      serverClientId: _googleServerClientId,
+    );
 
     GoogleSignInAccount? googleUser;
     try {
-      googleUser = await googleSignIn.signIn();
+      googleUser = await GoogleSignIn.instance.authenticate();
     } on PlatformException catch (e) {
       // Log the exact platform error code for diagnosis
       throw FirebaseAuthException(
@@ -287,6 +300,11 @@ class FirebaseAuthRepository implements AuthRepository {
             'Make sure SHA-1 is registered in Firebase Console and '
             'google-services.json is up to date.',
       );
+    } catch (e) {
+      throw FirebaseAuthException(
+        code: 'google-sign-in-error',
+        message: 'Error during Google Sign-In: $e',
+      );
     }
 
     if (googleUser == null) {
@@ -294,7 +312,11 @@ class FirebaseAuthRepository implements AuthRepository {
       return null;
     }
 
-    final googleAuth = await googleUser.authentication;
+    // In 7.2.0, authentication is synchronous and only provides idToken
+    final googleAuth = googleUser.authentication;
+    final authz = await googleUser.authorizationClient.authorizationForScopes(
+      [],
+    );
 
     // If idToken is null the Web/Android OAuth client is missing or the
     // SHA-1 fingerprint has not been registered yet.
@@ -310,7 +332,7 @@ class FirebaseAuthRepository implements AuthRepository {
     }
 
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
+      accessToken: authz?.accessToken,
       idToken: googleAuth.idToken,
     );
 
@@ -343,9 +365,14 @@ class FirebaseAuthRepository implements AuthRepository {
         'updatedAt': FieldValue.serverTimestamp(),
         // ignore: use_null_aware_elements
         if (photoUrl != null) 'photoUrl': photoUrl,
+        'signInProvider': existingData['signInProvider'] ?? 'google',
       };
-      await userDoc.set(updates, SetOptions(merge: true)).timeout(_firestoreTimeout);
-      return AppUser.fromFirestore(await userDoc.get().timeout(_firestoreTimeout));
+      await userDoc
+          .set(updates, SetOptions(merge: true))
+          .timeout(_firestoreTimeout);
+      return AppUser.fromFirestore(
+        await userDoc.get().timeout(_firestoreTimeout),
+      );
     }
 
     // Document does not exist: create a new student profile.
@@ -357,6 +384,7 @@ class FirebaseAuthRepository implements AuthRepository {
       role: UserRole.student,
       isCreate: true,
       photoUrl: photoUrl,
+      signInProvider: 'google',
     );
 
     return AppUser(
@@ -375,7 +403,7 @@ class FirebaseAuthRepository implements AuthRepository {
   Future<bool> verifyEmailExists(String email) async {
     final query = await _firestore
         .collection('users')
-        .where('email', isEqualTo: email.trim())
+        .where('email', isEqualTo: email.trim().toLowerCase())
         .limit(1)
         .get()
         .timeout(_firestoreTimeout);

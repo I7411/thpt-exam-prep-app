@@ -22,12 +22,9 @@ class BlockPiece {
   final int width;
   final int height;
 
-  BlockPiece({
-    required this.id,
-    required this.cells,
-    required this.color,
-  })  : width = cells.map((e) => e.c).reduce(max) + 1,
-        height = cells.map((e) => e.r).reduce(max) + 1;
+  BlockPiece({required this.id, required this.cells, required this.color})
+    : width = cells.map((e) => e.c).reduce(max) + 1,
+      height = cells.map((e) => e.r).reduce(max) + 1;
 }
 
 class PlacedCell {
@@ -38,22 +35,23 @@ class PlacedCell {
 class ExamBlockPuzzleGameScreen extends StatefulWidget {
   final String examId;
 
-  const ExamBlockPuzzleGameScreen({
-    super.key,
-    required this.examId,
-  });
+  const ExamBlockPuzzleGameScreen({super.key, required this.examId});
 
   @override
-  State<ExamBlockPuzzleGameScreen> createState() => _ExamBlockPuzzleGameScreenState();
+  State<ExamBlockPuzzleGameScreen> createState() =>
+      _ExamBlockPuzzleGameScreenState();
 }
 
 class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
   static const int rows = 8;
   static const int cols = 8;
 
-  List<List<PlacedCell?>> _grid = List.generate(rows, (_) => List.filled(cols, null));
+  List<List<PlacedCell?>> _grid = List.generate(
+    rows,
+    (_) => List.filled(cols, null),
+  );
   List<BlockPiece> _availablePieces = [];
-  
+
   int _score = 0;
   int _bestScore = 0;
   bool _isGameOver = false;
@@ -76,7 +74,8 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
   Future<void> _loadBestScore() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _bestScore = prefs.getInt('block_puzzle_best_score_${widget.examId}') ?? 0;
+      _bestScore =
+          prefs.getInt('block_puzzle_best_score_${widget.examId}') ?? 0;
     });
   }
 
@@ -120,31 +119,43 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
       // 1x3 vertical
       [const Point2D(0, 0), const Point2D(1, 0), const Point2D(2, 0)],
       // 2x2 square
-      [const Point2D(0, 0), const Point2D(0, 1), const Point2D(1, 0), const Point2D(1, 1)],
+      [
+        const Point2D(0, 0),
+        const Point2D(0, 1),
+        const Point2D(1, 0),
+        const Point2D(1, 1),
+      ],
       // L shape small
       [const Point2D(0, 0), const Point2D(1, 0), const Point2D(1, 1)],
       // L shape mirrored
       [const Point2D(0, 1), const Point2D(1, 1), const Point2D(1, 0)],
       // T shape
-      [const Point2D(0, 0), const Point2D(0, 1), const Point2D(0, 2), const Point2D(1, 1)],
+      [
+        const Point2D(0, 0),
+        const Point2D(0, 1),
+        const Point2D(0, 2),
+        const Point2D(1, 1),
+      ],
     ];
 
     _availablePieces = [];
     for (int i = 0; i < 3; i++) {
       final shape = shapes[_random.nextInt(shapes.length)];
       final color = colors[_random.nextInt(colors.length)];
-      _availablePieces.add(BlockPiece(
-        id: DateTime.now().microsecondsSinceEpoch.toString() + i.toString(),
-        cells: shape,
-        color: color,
-      ));
+      _availablePieces.add(
+        BlockPiece(
+          id: DateTime.now().microsecondsSinceEpoch.toString() + i.toString(),
+          cells: shape,
+          color: color,
+        ),
+      );
     }
     _checkGameOver();
   }
 
   void _checkGameOver() {
     if (_availablePieces.isEmpty) return;
-    
+
     bool canFitAny = false;
     for (final piece in _availablePieces) {
       if (_canFitAnywhere(piece)) {
@@ -265,7 +276,8 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
     setState(() {
       _showingQuestion = true;
       _wrongAttempts = 0;
-      _currentQuestion = controller.reviewQuestions[_random.nextInt(controller.reviewQuestions.length)];
+      _currentQuestion = controller
+          .reviewQuestions[_random.nextInt(controller.reviewQuestions.length)];
     });
   }
 
@@ -316,10 +328,13 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
               padding: const EdgeInsets.only(right: 16.0),
               child: Text(
                 'High Score: $_bestScore',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
               ),
             ),
-          )
+          ),
         ],
       ),
       body: Column(
@@ -330,12 +345,26 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Điểm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.muted)),
-                Text('$_score', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: AppColors.ink)),
+                const Text(
+                  'Điểm',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.muted,
+                  ),
+                ),
+                Text(
+                  '$_score',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.ink,
+                  ),
+                ),
               ],
             ),
           ),
-          
+
           Expanded(
             child: _showingQuestion ? _buildQuestionPanel() : _buildGameBoard(),
           ),
@@ -360,7 +389,7 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                   width: cellSize * cols,
                   height: cellSize * rows,
                   decoration: BoxDecoration(
-                    color: AppColors.line.withOpacity(0.3),
+                    color: AppColors.line.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Stack(
@@ -376,7 +405,9 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                             child: Container(
                               margin: const EdgeInsets.all(1),
                               decoration: BoxDecoration(
-                                color: _grid[r][c] != null ? _grid[r][c]!.color : AppColors.surface,
+                                color: _grid[r][c] != null
+                                    ? _grid[r][c]!.color
+                                    : AppColors.surface,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -387,15 +418,18 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
               },
               onWillAcceptWithDetails: (details) => true,
               onAcceptWithDetails: (details) {
-                final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                final RenderBox renderBox =
+                    context.findRenderObject() as RenderBox;
                 final localPosition = renderBox.globalToLocal(details.offset);
-                
+
                 // Details offset is the top-left of the dragged widget
                 // However, depending on where they grabbed it, the offset might be slightly off.
                 // We estimate the startRow and startCol by dividing the local Y and X by cellSize.
                 // Adding half a cellSize helps center the drop target.
-                int startR = ((localPosition.dy + cellSize / 2) / cellSize).floor();
-                int startC = ((localPosition.dx + cellSize / 2) / cellSize).floor();
+                int startR = ((localPosition.dy + cellSize / 2) / cellSize)
+                    .floor();
+                int startC = ((localPosition.dx + cellSize / 2) / cellSize)
+                    .floor();
 
                 final piece = details.data;
 
@@ -406,16 +440,18 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
             );
           },
         ),
-        
+
         const Spacer(),
-        
+
         // Available Pieces
         Container(
           height: 160,
           padding: const EdgeInsets.all(16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _availablePieces.map((piece) => _buildDraggablePiece(piece)).toList(),
+            children: _availablePieces
+                .map((piece) => _buildDraggablePiece(piece))
+                .toList(),
           ),
         ),
       ],
@@ -424,7 +460,7 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
 
   Widget _buildDraggablePiece(BlockPiece piece) {
     const double baseCellSize = 30.0;
-    
+
     final pieceWidget = SizedBox(
       width: piece.width * baseCellSize,
       height: piece.height * baseCellSize,
@@ -443,7 +479,7 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                 borderRadius: BorderRadius.circular(4),
                 boxShadow: [
                   BoxShadow(
-                    color: piece.color.withOpacity(0.5),
+                    color: piece.color.withValues(alpha: 0.5),
                     blurRadius: 4,
                     offset: const Offset(1, 1),
                   ),
@@ -474,7 +510,11 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.panel),
           boxShadow: [
-            BoxShadow(color: AppColors.shadow, blurRadius: 16, offset: const Offset(0, 8)),
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
         child: Column(
@@ -488,16 +528,25 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                     color: AppColors.primarySoft,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.help_outline_rounded, color: AppColors.primary),
+                  child: const Icon(
+                    Icons.help_outline_rounded,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Text(
                   'Trả lời để nhận khối mới',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.muted),
+                  icon: const Icon(
+                    Icons.refresh_rounded,
+                    color: AppColors.muted,
+                  ),
                   onPressed: _pickRandomQuestion,
                   tooltip: 'Đổi câu hỏi khác',
                 ),
@@ -506,16 +555,24 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
             const SizedBox(height: 24),
             Text(
               _currentQuestion!.content,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, height: 1.5, color: AppColors.ink),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                height: 1.5,
+                color: AppColors.ink,
+              ),
             ),
             const SizedBox(height: 24),
-            
+
             if (_wrongAttempts > 0 && _wrongAttempts < 3)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
                 child: Text(
                   'Sai rồi! Bạn còn ${3 - _wrongAttempts} lần thử.',
-                  style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -525,28 +582,41 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                 margin: const EdgeInsets.only(bottom: 16.0),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Rất tiếc! Đáp án đúng là:',
-                      style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _currentQuestion!.options.firstWhere((o) => o.isCorrect, orElse: () => _currentQuestion!.options.first).content,
+                      _currentQuestion!.options
+                          .firstWhere(
+                            (o) => o.isCorrect,
+                            orElse: () => _currentQuestion!.options.first,
+                          )
+                          .content,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 12),
-                    const Text('Giải thích:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Giải thích:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 4),
                     Text(
-                      _currentQuestion!.explanation.trim().isEmpty 
-                          ? 'Chưa có lời giải chi tiết.' 
+                      _currentQuestion!.explanation.trim().isEmpty
+                          ? 'Chưa có lời giải chi tiết.'
                           : _currentQuestion!.explanation,
                     ),
                   ],
@@ -567,7 +637,10 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                       padding: const EdgeInsets.all(16),
                     ),
                     onPressed: () => _onAnswerOption(option),
-                    child: Text(option.content, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    child: Text(
+                      option.content,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
                   ),
                 );
               }),
@@ -593,15 +666,19 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.extension_rounded, size: 80, color: Color(0xFFF472B6)),
+              const Icon(
+                Icons.extension_rounded,
+                size: 80,
+                color: Color(0xFFF472B6),
+              ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Hết chỗ trống!',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFF472B6),
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFF472B6),
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               Container(
@@ -610,7 +687,11 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.panel),
                   boxShadow: [
-                    BoxShadow(color: AppColors.shadow, blurRadius: 16, offset: const Offset(0, 8)),
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -618,16 +699,38 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Điểm của bạn', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.muted)),
-                        Text('$_score', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.ink)),
+                        Text(
+                          'Điểm của bạn',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(color: AppColors.muted),
+                        ),
+                        Text(
+                          '$_score',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.ink,
+                              ),
+                        ),
                       ],
                     ),
                     const Divider(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Kỷ lục', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.muted)),
-                        Text('$_bestScore', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        Text(
+                          'Kỷ lục',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(color: AppColors.muted),
+                        ),
+                        Text(
+                          '$_bestScore',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                        ),
                       ],
                     ),
                   ],
@@ -635,7 +738,9 @@ class _ExamBlockPuzzleGameScreenState extends State<ExamBlockPuzzleGameScreen> {
               ),
               const SizedBox(height: AppSpacing.xxl),
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF472B6)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF472B6),
+                ),
                 onPressed: _initGame,
                 icon: const Icon(Icons.replay_rounded),
                 label: const Text('Chơi lại'),

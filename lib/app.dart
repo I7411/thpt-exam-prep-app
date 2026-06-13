@@ -54,10 +54,16 @@ import 'views/document_list_screen.dart';
 import 'views/forgot_password_screen.dart';
 import 'views/login_screen.dart';
 import 'views/register_screen.dart';
+import 'views/verify_email_screen.dart';
 
 import 'views/splash_screen.dart';
 import 'views/student_main_screen.dart';
 import 'views/subject_list_screen.dart';
+
+// ================= REMINDERS =================
+import 'views/reminder/reminder_list_screen.dart';
+import 'views/reminder/reminder_form_screen.dart';
+import 'views/reminder/alarm_ringing_screen.dart';
 
 class ThptSmartLearnApp extends StatefulWidget {
   const ThptSmartLearnApp({super.key});
@@ -133,6 +139,12 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
       case AppRoutes.forgotPassword:
         return MaterialPageRoute(
           builder: (_) => const ForgotPasswordScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.verifyEmail:
+        return MaterialPageRoute(
+          builder: (_) => const VerifyEmailScreen(),
           settings: settings,
         );
 
@@ -298,6 +310,29 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
         );
 
       // ===================================================
+      // REMINDERS
+      // ===================================================
+      case AppRoutes.reminderList:
+        return MaterialPageRoute(
+          builder: (_) => const ReminderListScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.reminderForm:
+        final reminder = args is StudyReminder ? args : null;
+        return MaterialPageRoute(
+          builder: (_) => ReminderFormScreen(reminder: reminder),
+          settings: settings,
+        );
+
+      case AppRoutes.reminderAlarmRinging:
+        final reminderId = args is int ? args : 0;
+        return MaterialPageRoute(
+          builder: (_) => AlarmRingingScreen(reminderId: reminderId),
+          settings: settings,
+        );
+
+      // ===================================================
       // PROFILE
       // ===================================================
       case AppRoutes.studentProfile:
@@ -340,8 +375,6 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
           settings: settings,
         );
 
-
-
       case AppRoutes.teacherProfile:
         return MaterialPageRoute(
           builder: (_) => const TeacherProfileScreen(),
@@ -380,11 +413,18 @@ class _ThptSmartLearnAppState extends State<ThptSmartLearnApp> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'Không tìm thấy ID đề thi.',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),

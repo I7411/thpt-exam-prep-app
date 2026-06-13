@@ -291,7 +291,7 @@ class _ExamCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.panel),
-        border: Border.all(color: difficultyColor.withOpacity(0.18)),
+        border: Border.all(color: difficultyColor.withValues(alpha: 0.18)),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadow,
@@ -411,7 +411,7 @@ class _InfoChip extends StatelessWidget {
     return Chip(
       label: Text(label),
       visualDensity: VisualDensity.compact,
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: color.withValues(alpha: 0.1),
       labelStyle: TextStyle(color: color, fontWeight: FontWeight.w800),
       side: BorderSide.none,
     );

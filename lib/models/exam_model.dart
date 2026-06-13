@@ -41,10 +41,16 @@ class Exam {
       durationMinutes: json['durationMinutes'] as int? ?? 60,
       totalScore: (json['totalScore'] as num? ?? 10).toDouble(),
       passingScore: (json['passingScore'] as num? ?? 5).toDouble(),
-      status: json['status'] as String? ?? (json['isPublished'] == true ? 'published' : 'draft'),
+      status:
+          json['status'] as String? ??
+          (json['isPublished'] == true ? 'published' : 'draft'),
       creatorId: json['creatorId'] as String? ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 
@@ -100,4 +106,3 @@ class Exam {
   @override
   String toString() => 'Exam(id: $id, title: $title)';
 }
-

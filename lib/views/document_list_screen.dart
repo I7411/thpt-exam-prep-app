@@ -120,11 +120,13 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           };
 
           final documents = data.documents.toList();
-          
+
           List<StudyDocument> filteredDocuments;
           if (_selectedSubjectId == 'new_materials') {
             filteredDocuments = documents.toList()
-              ..sort((left, right) => right.createdAt.compareTo(left.createdAt));
+              ..sort(
+                (left, right) => right.createdAt.compareTo(left.createdAt),
+              );
           } else if (_selectedSubjectId == null) {
             filteredDocuments = documents.toList();
             filteredDocuments.sort((left, right) {
@@ -172,7 +174,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                     color: AppColors.cyanSoft,
                     borderRadius: BorderRadius.circular(AppRadius.card),
                     border: Border.all(
-                      color: AppColors.secondary.withOpacity(0.18),
+                      color: AppColors.secondary.withValues(alpha: 0.18),
                     ),
                   ),
                   child: Row(
@@ -273,7 +275,9 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                           final subjectName =
                               subjectsById[document.subjectId]?.name ??
                               'Môn học';
-                          final isMarked = _favoritesMap.containsKey(document.id);
+                          final isMarked = _favoritesMap.containsKey(
+                            document.id,
+                          );
 
                           return SizedBox(
                             height: 176,
@@ -294,8 +298,11 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                               },
                               onMarkTap: () async {
                                 final nextIsFavorite = !isMarked;
-                                final authProvider = context.read<AuthController>();
-                                final userId = authProvider.currentUser?.id ?? 'student_001';
+                                final authProvider = context
+                                    .read<AuthController>();
+                                final userId =
+                                    authProvider.currentUser?.id ??
+                                    'student_001';
 
                                 final docRef = FirebaseFirestore.instance
                                     .collection('saved_materials')

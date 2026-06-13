@@ -18,6 +18,7 @@ class ExamController extends ChangeNotifier {
   final Map<String, String> _selectedOptionIds = <String, String>{};
   int _currentQuestionIndex = 0;
   bool _isSubmitted = false;
+
   /// Guard to prevent double-submit while the async flow is running.
   bool _isSubmitting = false;
   bool _isLoading = false;
@@ -40,6 +41,7 @@ class ExamController extends ChangeNotifier {
   List<Question> get questions => List.unmodifiable(_questions);
   int get currentQuestionIndex => _currentQuestionIndex;
   bool get isSubmitted => _isSubmitted;
+
   /// True while the submit async flow is running (prevents double-tap).
   bool get isSubmitting => _isSubmitting;
   bool get isLoading => _isLoading;
@@ -58,13 +60,17 @@ class ExamController extends ChangeNotifier {
 
   List<ExamResultData> get passedExams {
     return _history.where((result) {
-      final passingScore = result.exam.passingScore > 0 ? result.exam.passingScore : 5.0;
+      final passingScore = result.exam.passingScore > 0
+          ? result.exam.passingScore
+          : 5.0;
       return result.score >= passingScore;
     }).toList();
   }
 
   Question? get currentQuestion {
-    if (_questions.isEmpty || _currentQuestionIndex < 0 || _currentQuestionIndex >= _questions.length) {
+    if (_questions.isEmpty ||
+        _currentQuestionIndex < 0 ||
+        _currentQuestionIndex >= _questions.length) {
       return null;
     }
     return _questions[_currentQuestionIndex];
@@ -80,12 +86,17 @@ class ExamController extends ChangeNotifier {
   }
 
   String get remainingTimeLabel {
-    final minutes = _remainingTime.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = _remainingTime.inSeconds.remainder(60).toString().padLeft(2, '0');
+    final minutes = _remainingTime.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    final seconds = _remainingTime.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
     return '$minutes:$seconds';
   }
 
-  
   Future<void> loadAvailableExams() async {
     _isLoading = true;
     notifyListeners();
@@ -109,7 +120,9 @@ class ExamController extends ChangeNotifier {
       final exam = await _repositoryService.exam.getExamById(examId);
       if (exam != null) {
         _reviewExam = exam;
-        _reviewQuestions = await _repositoryService.exam.getQuestionsByExam(examId);
+        _reviewQuestions = await _repositoryService.exam.getQuestionsByExam(
+          examId,
+        );
       } else {
         _reviewErrorMessage = 'Không tìm thấy đề thi';
       }
@@ -136,7 +149,9 @@ class ExamController extends ChangeNotifier {
     debugPrint('[StudentHistory] loading exam history...');
     _studentId = studentId;
     _history = await _loadHistory(studentId);
-    debugPrint('[StudentHistory] loaded exam attempts count=${_history.length}');
+    debugPrint(
+      '[StudentHistory] loaded exam attempts count=${_history.length}',
+    );
     final passedCount = passedExams.length;
     debugPrint('[StudentHistory] passed exams count=$passedCount');
     notifyListeners();
@@ -245,7 +260,10 @@ class ExamController extends ChangeNotifier {
   /// Phase 2 (async/background): persist to SQLite + Firestore with timeout protection.
   Future<ExamResultData?> _submitExam({required bool autoSubmitted}) async {
     // Guard: already submitted or another submit in flight.
-    if (_currentExam == null || _studentId == null || _isSubmitted || _isSubmitting) {
+    if (_currentExam == null ||
+        _studentId == null ||
+        _isSubmitted ||
+        _isSubmitting) {
       return _currentResult;
     }
 
@@ -261,13 +279,17 @@ class ExamController extends ChangeNotifier {
     _currentResult = result;
     _currentAttempt = result.attempt;
 
-    debugPrint('[ExamSubmit] Result calculated. Score=${result.score.toStringAsFixed(1)}, '
-        'correct=${result.correctCount}, wrong=${result.wrongCount}');
+    debugPrint(
+      '[ExamSubmit] Result calculated. Score=${result.score.toStringAsFixed(1)}, '
+      'correct=${result.correctCount}, wrong=${result.wrongCount}',
+    );
 
     // Notify immediately so the build() → addPostFrameCallback → _goToResult
     // fires WITHOUT waiting for Firestore/SQLite.
     notifyListeners();
-    debugPrint('[ExamSubmit] notifyListeners() called — navigation will trigger on next frame');
+    debugPrint(
+      '[ExamSubmit] notifyListeners() called — navigation will trigger on next frame',
+    );
 
     // ── Phase 2: persist in background ──────────────────────────────────────
     // We deliberately do NOT await these; the result screen is already
@@ -283,7 +305,7 @@ class ExamController extends ChangeNotifier {
   void _persistInBackground(ExamResultData result) {
     Future<void> doSave() async {
       debugPrint('[ExamSubmit] Background save started…');
-      
+
       // Step 1: Persist exam attempt to SQLite first (independent of Firestore)
       debugPrint('[ExamHistory] Saving attempt to SQLite...');
       ProgressStat? localProgressStat;
@@ -302,10 +324,14 @@ class ExamController extends ChangeNotifier {
           updatedAt: DateTime.now(),
         );
 
-        await _persistResult(result, localProgressStat)
-            .timeout(const Duration(seconds: 8));
+        await _persistResult(
+          result,
+          localProgressStat,
+        ).timeout(const Duration(seconds: 8));
         debugPrint('[ExamHistory] Attempt saved to SQLite.');
-        debugPrint('[StudentHistory] exam attempt saved: examId=${result.exam.id}, score=${result.score}');
+        debugPrint(
+          '[StudentHistory] exam attempt saved: examId=${result.exam.id}, score=${result.score}',
+        );
       } catch (e, st) {
         debugPrint('[ExamSubmit] ⚠ SQLite persistence failed: $e');
         debugPrint('[ExamSubmit] StackTrace: $st');
@@ -322,17 +348,21 @@ class ExamController extends ChangeNotifier {
       // Step 3: Run Firestore progress update separately
       debugPrint('[ExamHistory] Updating Firestore progress...');
       try {
-        final progressStat = await _updateProgress(result)
-            .timeout(const Duration(seconds: 8));
+        final progressStat = await _updateProgress(
+          result,
+        ).timeout(const Duration(seconds: 8));
         debugPrint('[ExamHistory] Firestore progress updated.');
-        
+
         // If Firestore returned a more accurate progress stat, sync it back to SQLite
         try {
-          await _localRepository.upsertProgressStat(progressStat)
+          await _localRepository
+              .upsertProgressStat(progressStat)
               .timeout(const Duration(seconds: 5));
           debugPrint('[ExamSubmit] Updated progress stat synced to SQLite.');
         } catch (e) {
-          debugPrint('[ExamSubmit] ⚠ Syncing progress stat to SQLite failed: $e');
+          debugPrint(
+            '[ExamSubmit] ⚠ Syncing progress stat to SQLite failed: $e',
+          );
         }
       } catch (e) {
         debugPrint('[ExamHistory] Firestore progress update failed: $e');
@@ -354,9 +384,9 @@ class ExamController extends ChangeNotifier {
     for (final question in questions) {
       final selectedOptionId = _selectedOptionIds[question.id] ?? '';
       final selectedOption = question.options.cast<AnswerOption?>().firstWhere(
-            (option) => option?.id == selectedOptionId,
-            orElse: () => null,
-          );
+        (option) => option?.id == selectedOptionId,
+        orElse: () => null,
+      );
       final correctOption = question.options.firstWhere(
         (option) => option.isCorrect,
         orElse: () => question.options.first,
@@ -386,15 +416,21 @@ class ExamController extends ChangeNotifier {
     }
 
     final totalQuestions = questions.length;
-    final completionPercentage = totalQuestions == 0 ? 0.0 : (correctCount / totalQuestions) * 100;
+    final completionPercentage = totalQuestions == 0
+        ? 0.0
+        : (correctCount / totalQuestions) * 100;
     final durationSpent = _submittedAt!.difference(_startedAt ?? _submittedAt!);
-    final score = exam.totalScore <= 0 ? totalEarnedScore : (totalEarnedScore / exam.totalScore) * 10;
+    final score = exam.totalScore <= 0
+        ? totalEarnedScore
+        : (totalEarnedScore / exam.totalScore) * 10;
 
     final attempt = _currentAttempt!.copyWith(
       completedAt: _submittedAt,
       score: score,
       isPassed: score >= exam.passingScore,
-      answeredQuestionCount: _selectedOptionIds.values.where((value) => value.isNotEmpty).length,
+      answeredQuestionCount: _selectedOptionIds.values
+          .where((value) => value.isNotEmpty)
+          .length,
       totalQuestionCount: totalQuestions,
       isSubmitted: true,
     );
@@ -417,7 +453,8 @@ class ExamController extends ChangeNotifier {
 
   Future<ProgressStat> _updateProgress(ExamResultData result) async {
     final subjectId = result.exam.subjectId;
-    final existing = await _repositoryService.progress.getProgressByStudentSubject(result.studentId, subjectId);
+    final existing = await _repositoryService.progress
+        .getProgressByStudentSubject(result.studentId, subjectId);
 
     if (existing == null) {
       final createdProgress = ProgressStat(
@@ -438,12 +475,17 @@ class ExamController extends ChangeNotifier {
     }
 
     final newTotalExams = existing.totalExamsTaken + 1;
-    final newAverageScore = ((existing.averageScore * existing.totalExamsTaken) + result.score) / newTotalExams;
+    final newAverageScore =
+        ((existing.averageScore * existing.totalExamsTaken) + result.score) /
+        newTotalExams;
     final updatedProgress = existing.copyWith(
       totalExamsTaken: newTotalExams,
       examsPassed: existing.examsPassed + (result.attempt.isPassed ? 1 : 0),
       averageScore: newAverageScore,
-      completionPercentage: result.completionPercentage.clamp(existing.completionPercentage, 100),
+      completionPercentage: result.completionPercentage.clamp(
+        existing.completionPercentage,
+        100,
+      ),
       lastStudyDate: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -451,10 +493,19 @@ class ExamController extends ChangeNotifier {
     return updatedProgress;
   }
 
-  Future<void> _persistResult(ExamResultData result, ProgressStat progressStat) async {
-    await _localRepository.saveExamResult(result: result, progressStat: progressStat);
+  Future<void> _persistResult(
+    ExamResultData result,
+    ProgressStat progressStat,
+  ) async {
+    await _localRepository.saveExamResult(
+      result: result,
+      progressStat: progressStat,
+    );
     final currentItems = await _loadHistory(result.studentId);
-    _history = <ExamResultData>[result, ...currentItems.where((item) => item.attempt.id != result.attempt.id)];
+    _history = <ExamResultData>[
+      result,
+      ...currentItems.where((item) => item.attempt.id != result.attempt.id),
+    ];
     notifyListeners();
   }
 
@@ -466,7 +517,12 @@ class ExamController extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     final items = prefs.getStringList(_historyKey(studentId)) ?? <String>[];
-    return items.map((item) => ExamResultData.fromJson(jsonDecode(item) as Map<String, dynamic>)).toList();
+    return items
+        .map(
+          (item) =>
+              ExamResultData.fromJson(jsonDecode(item) as Map<String, dynamic>),
+        )
+        .toList();
   }
 
   Future<void> _saveDraft() async {
@@ -480,7 +536,10 @@ class ExamController extends ChangeNotifier {
       'remainingSeconds': _remainingTime.inSeconds,
       'startedAt': _startedAt?.toIso8601String(),
     };
-    await prefs.setString(_draftKey(_studentId!, _currentExam!.id), jsonEncode(payload));
+    await prefs.setString(
+      _draftKey(_studentId!, _currentExam!.id),
+      jsonEncode(payload),
+    );
   }
 
   Future<void> _clearDraft() async {
@@ -495,8 +554,10 @@ class ExamController extends ChangeNotifier {
   }
 
   String _historyKey(String studentId) => 'exam_history_$studentId';
-  String _draftKey(String studentId, String examId) => 'exam_draft_${studentId}_$examId';
-  String _buildAttemptId(String examId) => 'attempt_${examId}_${DateTime.now().millisecondsSinceEpoch}';
+  String _draftKey(String studentId, String examId) =>
+      'exam_draft_${studentId}_$examId';
+  String _buildAttemptId(String examId) =>
+      'attempt_${examId}_${DateTime.now().millisecondsSinceEpoch}';
 
   @override
   void dispose() {
@@ -559,7 +620,9 @@ class ExamResultData {
       questions: (json['questions'] as List<dynamic>? ?? [])
           .map((item) => Question.fromJson(item as Map<String, dynamic>))
           .toList(),
-      selectedOptionIds: Map<String, String>.from(json['selectedOptionIds'] as Map? ?? {}),
+      selectedOptionIds: Map<String, String>.from(
+        json['selectedOptionIds'] as Map? ?? {},
+      ),
       answers: (json['answers'] as List<dynamic>? ?? [])
           .map((item) => ExamAnswer.fromJson(item as Map<String, dynamic>))
           .toList(),
@@ -568,7 +631,8 @@ class ExamResultData {
       correctCount: json['correctCount'] as int? ?? 0,
       wrongCount: json['wrongCount'] as int? ?? 0,
       score: (json['score'] as num? ?? 0).toDouble(),
-      completionPercentage: (json['completionPercentage'] as num? ?? 0).toDouble(),
+      completionPercentage: (json['completionPercentage'] as num? ?? 0)
+          .toDouble(),
       timeSpent: Duration(seconds: json['timeSpentSeconds'] as int? ?? 0),
       autoSubmitted: json['autoSubmitted'] as bool? ?? false,
     );

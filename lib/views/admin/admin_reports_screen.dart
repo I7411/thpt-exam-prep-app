@@ -31,7 +31,9 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Báo cáo hệ thống'),
-        actions: [IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh))],
+        actions: [
+          IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _loadData,
@@ -61,10 +63,26 @@ class _TopCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _ReportCard(label: 'Lượt làm bài', value: report?.totalExamAttempts.toString() ?? '0', color: Colors.blue),
-      _ReportCard(label: 'Điểm TB', value: report?.averageExamScore.toStringAsFixed(1) ?? '0.0', color: Colors.green),
-      _ReportCard(label: 'Tỷ lệ đạt', value: '${report?.examPassRate ?? 0}%', color: Colors.orange),
-      _ReportCard(label: 'Người dùng hoạt động', value: report?.activeUsersThisWeek.toString() ?? '0', color: Colors.purple),
+      _ReportCard(
+        label: 'Lượt làm bài',
+        value: report?.totalExamAttempts.toString() ?? '0',
+        color: Colors.blue,
+      ),
+      _ReportCard(
+        label: 'Điểm TB',
+        value: report?.averageExamScore.toStringAsFixed(1) ?? '0.0',
+        color: Colors.green,
+      ),
+      _ReportCard(
+        label: 'Tỷ lệ đạt',
+        value: '${report?.examPassRate ?? 0}%',
+        color: Colors.orange,
+      ),
+      _ReportCard(
+        label: 'Người dùng hoạt động',
+        value: report?.activeUsersThisWeek.toString() ?? '0',
+        color: Colors.purple,
+      ),
     ];
 
     return GridView.builder(
@@ -92,7 +110,10 @@ class _SubjectScores extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Điểm trung bình theo môn', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text(
+          'Điểm trung bình theo môn',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         ...provider.subjectReports.map(
           (item) => Padding(
@@ -106,19 +127,33 @@ class _SubjectScores extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  CircleAvatar(backgroundColor: Colors.blue.withOpacity(0.12), child: Text(item.subject.name[0])),
+                  CircleAvatar(
+                    backgroundColor: Colors.blue.withValues(alpha: 0.12),
+                    child: Text(item.subject.name[0]),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item.subject.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(
+                          item.subject.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         const SizedBox(height: 4),
-                        Text('${item.documentCount} tài liệu • ${item.examCount} đề • ${item.questionCount} câu'),
+                        Text(
+                          '${item.documentCount} tài liệu • ${item.examCount} đề • ${item.questionCount} câu',
+                        ),
                       ],
                     ),
                   ),
-                  Text(item.averageScore.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    item.averageScore.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -139,7 +174,10 @@ class _DocumentStats extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Thống kê số tài liệu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const Text(
+          'Thống kê số tài liệu',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -150,15 +188,17 @@ class _DocumentStats extends StatelessWidget {
           ),
           child: Column(
             children: provider.subjectReports
-                .map((item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        children: [
-                          Expanded(child: Text(item.subject.name)),
-                          Text('${item.documentCount} tài liệu'),
-                        ],
-                      ),
-                    ))
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(item.subject.name)),
+                        Text('${item.documentCount} tài liệu'),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ),
@@ -172,7 +212,11 @@ class _ReportCard extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _ReportCard({required this.label, required this.value, required this.color});
+  const _ReportCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -181,16 +225,32 @@ class _ReportCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.16)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 6))],
+        border: Border.all(color: color.withValues(alpha: 0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+          ),
         ],
       ),
     );

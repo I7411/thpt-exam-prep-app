@@ -1,4 +1,4 @@
-﻿/// Admin report statistic model (Thá»‘ng kÃª bÃ¡o cÃ¡o)
+/// Admin report statistic model (Thá»‘ng kÃª bÃ¡o cÃ¡o)
 class AdminReportStat {
   final String id;
   final int totalUsers;
@@ -51,7 +51,9 @@ class AdminReportStat {
       averageExamScore: (json['averageExamScore'] as num? ?? 0).toDouble(),
       examPassRate: json['examPassRate'] as int? ?? 0,
       activeUsersThisWeek: json['activeUsersThisWeek'] as int? ?? 0,
-      generatedAt: DateTime.tryParse(json['generatedAt'] as String? ?? '') ?? DateTime.now(),
+      generatedAt:
+          DateTime.tryParse(json['generatedAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -104,4 +106,3 @@ class AdminReportStat {
   @override
   String toString() => 'AdminReportStat(id: $id, generatedAt: $generatedAt)';
 }
-

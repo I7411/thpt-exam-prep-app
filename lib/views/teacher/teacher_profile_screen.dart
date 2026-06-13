@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/controllers/teacher_controller.dart';
 import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/services/sensitive_screen_protection_service.dart';
+import 'package:thpt_exam_prep_app/widgets/app_password_field.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
@@ -23,13 +25,38 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   Future<void> _loadData() async {
     final authProvider = context.read<AuthController>();
-    await context.read<TeacherController>().ensureLoaded(authProvider.currentUser);
+    await context.read<TeacherController>().ensureLoaded(
+      authProvider.currentUser,
+    );
   }
 
   Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có muốn đăng xuất khỏi tài khoản này không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
     await context.read<AuthController>().logout();
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
   }
 
   @override
@@ -66,8 +93,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                     title: 'Thông tin tài khoản',
                     children: [
                       _InfoRow(label: 'Email', value: teacher?.email ?? '-'),
-                      _InfoRow(label: 'Trường', value: teacher?.schoolName ?? '-'),
-                      _InfoRow(label: 'Vai trò', value: teacher?.role.getDisplayName() ?? '-'),
+                      _InfoRow(
+                        label: 'Trường',
+                        value: teacher?.schoolName ?? '-',
+                      ),
+                      _InfoRow(
+                        label: 'Vai trò',
+                        value: teacher?.role.getDisplayName() ?? '-',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -88,12 +121,18 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                       _ActionRow(
                         icon: Icons.class_,
                         title: 'Danh sách lớp',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.teacherClasses),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.teacherClasses,
+                        ),
                       ),
                       _ActionRow(
                         icon: Icons.quiz,
                         title: 'Ngân hàng câu hỏi',
-                        onTap: () => Navigator.pushNamed(context, AppRoutes.teacherQuestions),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.teacherQuestions,
+                        ),
                       ),
 
                       _ActionRow(
@@ -125,10 +164,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundColor: Colors.white.withOpacity(0.16),
+            backgroundColor: Colors.white.withValues(alpha: 0.16),
             child: Text(
               (teacher?.fullName ?? 'G')[0].toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -138,12 +181,16 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
               children: [
                 Text(
                   teacher?.fullName ?? 'Giáo viên',
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   teacher?.bio ?? 'Quản lý lớp và đề thi',
-                  style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
                 ),
               ],
             ),
@@ -164,15 +211,34 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         childAspectRatio: 1.8,
       ),
       children: [
-        _ProfileStat(label: 'Lớp', value: teacherProvider.classes.length.toString(), color: Colors.blue),
-        _ProfileStat(label: 'Học sinh', value: teacherProvider.totalStudents.toString(), color: Colors.green),
-        _ProfileStat(label: 'Đề', value: teacherProvider.assignedExams.length.toString(), color: Colors.orange),
-        _ProfileStat(label: 'Tiến độ', value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%', color: Colors.purple),
+        _ProfileStat(
+          label: 'Lớp',
+          value: teacherProvider.classes.length.toString(),
+          color: Colors.blue,
+        ),
+        _ProfileStat(
+          label: 'Học sinh',
+          value: teacherProvider.totalStudents.toString(),
+          color: Colors.green,
+        ),
+        _ProfileStat(
+          label: 'Đề',
+          value: teacherProvider.assignedExams.length.toString(),
+          color: Colors.orange,
+        ),
+        _ProfileStat(
+          label: 'Tiến độ',
+          value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%',
+          color: Colors.purple,
+        ),
       ],
     );
   }
 
-  Widget _buildInfoCard({required String title, required List<Widget> children}) {
+  Widget _buildInfoCard({
+    required String title,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -183,7 +249,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 12),
           ...children,
         ],
@@ -222,14 +291,21 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                 }
                 if (name.length < 2) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Họ tên phải có ít nhất 2 ký tự.')),
+                    const SnackBar(
+                      content: Text('Họ tên phải có ít nhất 2 ký tự.'),
+                    ),
                   );
                   return;
                 }
                 Navigator.pop(context);
-                
-                final authProvider = Provider.of<AuthController>(context, listen: false);
-                final success = await authProvider.updateProfile(fullName: name);
+
+                final authProvider = Provider.of<AuthController>(
+                  context,
+                  listen: false,
+                );
+                final success = await authProvider.updateProfile(
+                  fullName: name,
+                );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -259,7 +335,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Đổi mật khẩu'),
           content: const Text(
-            'Tài khoản Google không thể đổi mật khẩu trong ứng dụng. Vui lòng quản lý mật khẩu trong tài khoản Google.'
+            'Tài khoản Google không thể đổi mật khẩu trong ứng dụng. Vui lòng quản lý mật khẩu trong tài khoản Google.',
           ),
           actions: [
             TextButton(
@@ -291,10 +367,8 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    bool obscureCurrent = true;
-    bool obscureNew = true;
-    bool obscureConfirm = true;
 
+    SensitiveScreenProtectionService.instance.enable();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -309,17 +383,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextFormField(
+                      AppPasswordField(
                         controller: currentPasswordController,
-                        obscureText: obscureCurrent,
-                        decoration: InputDecoration(
-                          labelText: 'Mật khẩu hiện tại',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => obscureCurrent = !obscureCurrent),
-                          ),
-                        ),
+                        label: 'Mật khẩu hiện tại',
+                        hintText: 'Nhập mật khẩu hiện tại',
+                        icon: null,
+                        showLabel: false,
+                        outlineBorder: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Vui lòng nhập mật khẩu hiện tại.';
@@ -328,17 +398,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AppPasswordField(
                         controller: newPasswordController,
-                        obscureText: obscureNew,
-                        decoration: InputDecoration(
-                          labelText: 'Mật khẩu mới',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => obscureNew = !obscureNew),
-                          ),
-                        ),
+                        label: 'Mật khẩu mới',
+                        hintText: 'Nhập mật khẩu mới',
+                        icon: null,
+                        showLabel: false,
+                        outlineBorder: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Vui lòng nhập mật khẩu mới.';
@@ -353,17 +419,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AppPasswordField(
                         controller: confirmPasswordController,
-                        obscureText: obscureConfirm,
-                        decoration: InputDecoration(
-                          labelText: 'Xác nhận mật khẩu mới',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => obscureConfirm = !obscureConfirm),
-                          ),
-                        ),
+                        label: 'Xác nhận mật khẩu mới',
+                        hintText: 'Nhập lại mật khẩu mới',
+                        icon: null,
+                        showLabel: false,
+                        outlineBorder: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Vui lòng xác nhận mật khẩu mới.';
@@ -386,15 +448,19 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     if (formKey.currentState?.validate() != true) return;
-                    
+
                     // Show progress indicator
                     showDialog(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => const Center(child: CircularProgressIndicator()),
+                      builder: (context) =>
+                          const Center(child: CircularProgressIndicator()),
                     );
 
-                    final authController = Provider.of<AuthController>(context, listen: false);
+                    final authController = Provider.of<AuthController>(
+                      context,
+                      listen: false,
+                    );
                     final success = await authController.changePassword(
                       currentPassword: currentPasswordController.text,
                       newPassword: newPasswordController.text,
@@ -421,9 +487,11 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(authController.errorMessage.isNotEmpty 
-                                ? authController.errorMessage 
-                                : 'Không thể đổi mật khẩu. Vui lòng thử lại.'),
+                            content: Text(
+                              authController.errorMessage.isNotEmpty
+                                  ? authController.errorMessage
+                                  : 'Không thể đổi mật khẩu. Vui lòng thử lại.',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -437,7 +505,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      SensitiveScreenProtectionService.instance.disable();
+      currentPasswordController.dispose();
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    });
   }
 }
 
@@ -446,7 +519,11 @@ class _ProfileStat extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _ProfileStat({required this.label, required this.value, required this.color});
+  const _ProfileStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -455,15 +532,25 @@ class _ProfileStat extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withOpacity(0.16)),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -482,8 +569,17 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text(label, style: TextStyle(color: Colors.grey.shade700))),
-          Expanded(flex: 3, child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+          Expanded(
+            flex: 2,
+            child: Text(label, style: TextStyle(color: Colors.grey.shade700)),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
@@ -496,7 +592,12 @@ class _ActionRow extends StatelessWidget {
   final VoidCallback onTap;
   final bool destructive;
 
-  const _ActionRow({required this.icon, required this.title, required this.onTap, this.destructive = false});
+  const _ActionRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.destructive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -509,7 +610,12 @@ class _ActionRow extends StatelessWidget {
           children: [
             Icon(icon, color: color),
             const SizedBox(width: 12),
-            Expanded(child: Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w600))),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              ),
+            ),
             const Icon(Icons.chevron_right),
           ],
         ),

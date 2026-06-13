@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
+import 'dart:convert';
 import 'app.dart';
 import 'core/utils/app_navigation.dart';
 
@@ -18,15 +19,15 @@ import 'controllers/teacher_controller.dart';
 import 'controllers/teacher_student_connection_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/learning_controller.dart';
+import 'controllers/student_home_controller.dart';
+import 'controllers/study_reminder_controller.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   debugPrint('Nhận thông báo FCM ở chế độ nền: ${message.messageId}');
 }
 
@@ -59,37 +60,51 @@ Future<void> main() async {
               return;
             }
 
+            if (payload.startsWith('{') && payload.contains('study_reminder')) {
+              try {
+                final Map<String, dynamic> data = jsonDecode(payload);
+                if (data['type'] == 'study_reminder') {
+                  final reminderId = data['reminderId'];
+                  navigator.pushNamed('/reminder/alarm-ringing', arguments: reminderId);
+                  return;
+                }
+              } catch (e) {
+                debugPrint('Lỗi giải mã payload báo thức: $e');
+              }
+            }
+
             navigator.pushNamed(payload);
           },
         )
         .timeout(const Duration(seconds: 8));
 
-    NotificationService.instance.onForegroundNotification = (id, title, body, payload) {
-      final context = appNavigatorKey.currentContext;
-      if (context != null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) {
-            return AlertDialog(
-              title: Text(title),
-              content: Text(body),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                    if (payload != null && payload.isNotEmpty) {
-                      appNavigatorKey.currentState?.pushNamed(payload);
-                    }
-                  },
-                  child: const Text('Xác nhận'),
-                ),
-              ],
+    NotificationService.instance.onForegroundNotification =
+        (id, title, body, payload) {
+          final context = appNavigatorKey.currentContext;
+          if (context != null) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogContext) {
+                return AlertDialog(
+                  title: Text(title),
+                  content: Text(body),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        if (payload != null && payload.isNotEmpty) {
+                          appNavigatorKey.currentState?.pushNamed(payload);
+                        }
+                      },
+                      child: const Text('Xác nhận'),
+                    ),
+                  ],
+                );
+              },
             );
-          },
-        );
-      }
-    };
+          }
+        };
   } catch (e) {
     debugPrint('Không thể khởi tạo thông báo local lúc mở app: $e');
   }
@@ -114,6 +129,9 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => TeacherStudentConnectionController(),
         ),
+
+        ChangeNotifierProvider(create: (_) => StudentHomeController()),
+        ChangeNotifierProvider(create: (_) => StudyReminderController()),
       ],
 
       child: const ThptSmartLearnApp(),

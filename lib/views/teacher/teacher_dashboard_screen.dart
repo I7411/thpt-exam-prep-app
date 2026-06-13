@@ -87,7 +87,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             children: [
               CircleAvatar(
                 radius: 28,
-                backgroundColor: Colors.white.withOpacity(0.18),
+                backgroundColor: Colors.white.withValues(alpha: 0.18),
                 child: Text(
                   (teacher?.fullName ?? 'G')[0].toUpperCase(),
                   style: const TextStyle(
@@ -113,7 +113,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     const SizedBox(height: 4),
                     Text(
                       teacher?.bio ?? 'Quản lý lớp học, đề thi và lịch dạy',
-                      style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
                     ),
                   ],
                 ),
@@ -246,9 +248,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: action.color.withOpacity(0.08),
+                  color: action.color.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: action.color.withOpacity(0.18)),
+                  border: Border.all(
+                    color: action.color.withValues(alpha: 0.18),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -379,8 +383,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       ],
     );
   }
-
-
 }
 
 class _StatItem {
@@ -413,7 +415,7 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

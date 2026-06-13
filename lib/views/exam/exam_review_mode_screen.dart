@@ -8,10 +8,7 @@ import '../../core/routes/app_routes.dart';
 class ExamReviewModeScreen extends StatefulWidget {
   final String examId;
 
-  const ExamReviewModeScreen({
-    super.key,
-    required this.examId,
-  });
+  const ExamReviewModeScreen({super.key, required this.examId});
 
   @override
   State<ExamReviewModeScreen> createState() => _ExamReviewModeScreenState();
@@ -65,7 +62,9 @@ class _ExamReviewModeScreenState extends State<ExamReviewModeScreen> {
 
           final exam = controller.reviewExam;
           if (exam == null) {
-            return const Center(child: Text('Không tìm thấy đề thi để ôn tập.'));
+            return const Center(
+              child: Text('Không tìm thấy đề thi để ôn tập.'),
+            );
           }
 
           return SafeArea(
@@ -82,7 +81,7 @@ class _ExamReviewModeScreenState extends State<ExamReviewModeScreen> {
                       borderRadius: BorderRadius.circular(AppRadius.panel),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 8),
                         ),
@@ -93,12 +92,17 @@ class _ExamReviewModeScreenState extends State<ExamReviewModeScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.quiz_rounded, color: Colors.white, size: 32),
+                            const Icon(
+                              Icons.quiz_rounded,
+                              color: Colors.white,
+                              size: 32,
+                            ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Text(
                                 exam.title,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -132,15 +136,16 @@ class _ExamReviewModeScreenState extends State<ExamReviewModeScreen> {
                   Text(
                     'Chọn chế độ ôn tập',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  
+
                   // Mode 1: Quiz Review
                   _ModeCard(
                     title: 'Trắc nghiệm ôn tập',
-                    description: 'Ôn lại kiến thức bằng các câu hỏi trắc nghiệm trong đề.',
+                    description:
+                        'Ôn lại kiến thức bằng các câu hỏi trắc nghiệm trong đề.',
                     icon: Icons.check_circle_outline_rounded,
                     colors: const [Color(0xFF4ADE80), Color(0xFF10B981)],
                     onTap: () {
@@ -156,7 +161,8 @@ class _ExamReviewModeScreenState extends State<ExamReviewModeScreen> {
                   // Mode 2: Blast Game
                   _ModeCard(
                     title: 'Blast Game',
-                    description: 'Ghép thuật ngữ với định nghĩa đúng. Bắn hạ tiểu hành tinh đúng trước khi hết thời gian.',
+                    description:
+                        'Ghép thuật ngữ với định nghĩa đúng. Bắn hạ tiểu hành tinh đúng trước khi hết thời gian.',
                     icon: Icons.rocket_launch_rounded,
                     colors: const [Color(0xFF818CF8), Color(0xFF6366F1)],
                     onTap: () {
@@ -172,7 +178,8 @@ class _ExamReviewModeScreenState extends State<ExamReviewModeScreen> {
                   // Mode 3: Block Puzzle
                   _ModeCard(
                     title: 'Khối hộp',
-                    description: 'Trả lời câu hỏi để nhận khối hình, lấp đầy hàng hoặc cột để ghi điểm.',
+                    description:
+                        'Trả lời câu hỏi để nhận khối hình, lấp đầy hàng hoặc cột để ghi điểm.',
                     icon: Icons.extension_rounded,
                     colors: const [Color(0xFFF472B6), Color(0xFFE11D48)],
                     onTap: () {
@@ -197,17 +204,14 @@ class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-  });
+  const _InfoChip({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -284,23 +288,27 @@ class _ModeCard extends StatelessWidget {
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: colors[1],
-                        ),
+                      fontWeight: FontWeight.w900,
+                      color: colors[1],
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          height: 1.4,
-                        ),
+                      color: AppColors.muted,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Icon(Icons.arrow_forward_ios_rounded, color: AppColors.line, size: 20),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: AppColors.line,
+              size: 20,
+            ),
           ],
         ),
       ),

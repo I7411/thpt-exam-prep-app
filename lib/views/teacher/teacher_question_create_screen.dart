@@ -15,19 +15,21 @@ class TeacherQuestionCreateScreen extends StatefulWidget {
   });
 
   @override
-  State<TeacherQuestionCreateScreen> createState() => _TeacherQuestionCreateScreenState();
+  State<TeacherQuestionCreateScreen> createState() =>
+      _TeacherQuestionCreateScreenState();
 }
 
-class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScreen> {
+class _TeacherQuestionCreateScreenState
+    extends State<TeacherQuestionCreateScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   final _contentController = TextEditingController();
   final _correctAnswerController = TextEditingController();
   final _wrong1Controller = TextEditingController();
   final _wrong2Controller = TextEditingController();
   final _wrong3Controller = TextEditingController();
   final _explanationController = TextEditingController();
-  
+
   String _selectedDifficulty = 'easy'; // 'easy' | 'medium' | 'hard'
   bool _isSaving = false;
   int _addedInSessionCount = 0;
@@ -45,19 +47,18 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
 
   void _showErrorSnackBar(String errorMsg) {
     String message = 'Không thể thực hiện thao tác. Vui lòng thử lại.';
-    if (errorMsg.contains('permission-denied') || errorMsg.contains('không có quyền')) {
+    if (errorMsg.contains('permission-denied') ||
+        errorMsg.contains('không có quyền')) {
       message = 'Bạn không có quyền thực hiện thao tác này.';
-    } else if (errorMsg.contains('network-request-failed') || errorMsg.contains('kết nối mạng')) {
+    } else if (errorMsg.contains('network-request-failed') ||
+        errorMsg.contains('kết nối mạng')) {
       message = 'Không có kết nối mạng. Vui lòng thử lại.';
     } else {
       message = errorMsg.replaceAll('Exception: ', '');
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -86,7 +87,9 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
     if (answersSet.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Các đáp án không được trùng nhau. Vui lòng kiểm tra lại.'),
+          content: Text(
+            'Các đáp án không được trùng nhau. Vui lòng kiểm tra lại.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -148,12 +151,12 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
   @override
   Widget build(BuildContext context) {
     final teacherProvider = context.watch<TeacherController>();
-    
+
     // Find active exam to display updated total questions count
     final activeExam = teacherProvider.createdExams.cast<Exam?>().firstWhere(
-          (e) => e?.id == widget.examId,
-          orElse: () => null,
-        );
+      (e) => e?.id == widget.examId,
+      orElse: () => null,
+    );
 
     final totalQuestions = activeExam?.questionCount ?? 0;
 
@@ -166,10 +169,13 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
               padding: const EdgeInsets.only(right: 16.0),
               child: Text(
                 'Tổng số: $totalQuestions câu',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
-          )
+          ),
         ],
       ),
       body: SafeArea(
@@ -180,7 +186,10 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 16),
-                    Text('Đang lưu câu hỏi...', style: TextStyle(color: AppColors.muted)),
+                    Text(
+                      'Đang lưu câu hỏi...',
+                      style: TextStyle(color: AppColors.muted),
+                    ),
                   ],
                 ),
               )
@@ -214,7 +223,10 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                             const SizedBox(height: 4),
                             Text(
                               'Đã thêm trong phiên này: $_addedInSessionCount câu',
-                              style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.orange.shade800,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -246,14 +258,26 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                         decoration: InputDecoration(
                           labelText: 'Đáp án đúng',
                           hintText: 'Nhập đáp án đúng...',
-                          prefixIcon: const Icon(Icons.check_circle_outline, color: AppColors.success),
+                          prefixIcon: const Icon(
+                            Icons.check_circle_outline,
+                            color: AppColors.success,
+                          ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: const BorderSide(color: AppColors.success, width: 1.8),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: const BorderSide(
+                              color: AppColors.success,
+                              width: 1.8,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: BorderSide(color: AppColors.success.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: BorderSide(
+                              color: AppColors.success.withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -271,14 +295,26 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                         decoration: InputDecoration(
                           labelText: 'Đáp án sai 1',
                           hintText: 'Nhập đáp án sai thứ nhất...',
-                          prefixIcon: const Icon(Icons.cancel_outlined, color: AppColors.error),
+                          prefixIcon: const Icon(
+                            Icons.cancel_outlined,
+                            color: AppColors.error,
+                          ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: const BorderSide(
+                              color: AppColors.error,
+                              width: 1.8,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: BorderSide(
+                              color: AppColors.error.withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -296,14 +332,26 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                         decoration: InputDecoration(
                           labelText: 'Đáp án sai 2',
                           hintText: 'Nhập đáp án sai thứ hai...',
-                          prefixIcon: const Icon(Icons.cancel_outlined, color: AppColors.error),
+                          prefixIcon: const Icon(
+                            Icons.cancel_outlined,
+                            color: AppColors.error,
+                          ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: const BorderSide(
+                              color: AppColors.error,
+                              width: 1.8,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: BorderSide(
+                              color: AppColors.error.withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -321,14 +369,26 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                         decoration: InputDecoration(
                           labelText: 'Đáp án sai 3',
                           hintText: 'Nhập đáp án sai thứ ba...',
-                          prefixIcon: const Icon(Icons.cancel_outlined, color: AppColors.error),
+                          prefixIcon: const Icon(
+                            Icons.cancel_outlined,
+                            color: AppColors.error,
+                          ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: const BorderSide(color: AppColors.error, width: 1.8),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: const BorderSide(
+                              color: AppColors.error,
+                              width: 1.8,
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.input),
-                            borderSide: BorderSide(color: AppColors.error.withOpacity(0.5)),
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.input,
+                            ),
+                            borderSide: BorderSide(
+                              color: AppColors.error.withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -349,7 +409,10 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                         ),
                         items: const [
                           DropdownMenuItem(value: 'easy', child: Text('Dễ')),
-                          DropdownMenuItem(value: 'medium', child: Text('Trung bình')),
+                          DropdownMenuItem(
+                            value: 'medium',
+                            child: Text('Trung bình'),
+                          ),
                           DropdownMenuItem(value: 'hard', child: Text('Khó')),
                         ],
                         onChanged: (val) {
@@ -404,7 +467,11 @@ class _TeacherQuestionCreateScreenState extends State<TeacherQuestionCreateScree
                           },
                           child: const Text(
                             'Hoàn tất',
-                            style: TextStyle(color: AppColors.muted, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),

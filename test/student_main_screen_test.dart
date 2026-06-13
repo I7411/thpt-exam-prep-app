@@ -12,7 +12,13 @@ import 'package:thpt_exam_prep_app/controllers/teacher_controller.dart';
 import 'package:thpt_exam_prep_app/controllers/teacher_student_connection_controller.dart';
 
 void main() {
-  testWidgets('StudentMainScreen should render without throwing', (WidgetTester tester) async {
+  testWidgets('StudentMainScreen should render without throwing', (
+    WidgetTester tester,
+  ) async {
+    final originalOnError = FlutterError.onError;
+    addTearDown(() {
+      FlutterError.onError = originalOnError;
+    });
     FlutterError.onError = (FlutterErrorDetails details) {
       // Ignore errors for this test
     };
@@ -27,17 +33,14 @@ void main() {
           ChangeNotifierProvider(create: (_) => LearningController()),
           ChangeNotifierProvider(create: (_) => NotificationController()),
           ChangeNotifierProvider(create: (_) => TeacherController()),
-          ChangeNotifierProvider(create: (_) => TeacherStudentConnectionController()),
+          ChangeNotifierProvider(
+            create: (_) => TeacherStudentConnectionController(),
+          ),
         ],
-        child: const MaterialApp(
-          home: StudentMainScreen(),
-        ),
+        child: const MaterialApp(home: StudentMainScreen()),
       ),
     );
 
     await tester.pump();
-    
-    // Let's print the widget tree!
-    debugDumpApp();
   });
 }

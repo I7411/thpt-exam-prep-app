@@ -1,4 +1,4 @@
-﻿/// Exam attempt model (Láº§n lÃ m bÃ i thi)
+/// Exam attempt model (Láº§n lÃ m bÃ i thi)
 class ExamAttempt {
   final String id;
   final String examId;
@@ -42,8 +42,12 @@ class ExamAttempt {
       id: json['id'] as String? ?? '',
       examId: json['examId'] as String? ?? '',
       studentId: json['studentId'] as String? ?? '',
-      startedAt: DateTime.tryParse(json['startedAt'] as String? ?? '') ?? DateTime.now(),
-      completedAt: json['completedAt'] != null ? DateTime.tryParse(json['completedAt'] as String) : null,
+      startedAt:
+          DateTime.tryParse(json['startedAt'] as String? ?? '') ??
+          DateTime.now(),
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'] as String)
+          : null,
       score: (json['score'] as num? ?? 0).toDouble(),
       isPassed: json['isPassed'] as bool? ?? false,
       answeredQuestionCount: json['answeredQuestionCount'] as int? ?? 0,
@@ -89,7 +93,8 @@ class ExamAttempt {
       completedAt: completedAt ?? this.completedAt,
       score: score ?? this.score,
       isPassed: isPassed ?? this.isPassed,
-      answeredQuestionCount: answeredQuestionCount ?? this.answeredQuestionCount,
+      answeredQuestionCount:
+          answeredQuestionCount ?? this.answeredQuestionCount,
       totalQuestionCount: totalQuestionCount ?? this.totalQuestionCount,
       isSubmitted: isSubmitted ?? this.isSubmitted,
     );
@@ -98,4 +103,3 @@ class ExamAttempt {
   @override
   String toString() => 'ExamAttempt(id: $id, examId: $examId)';
 }
-

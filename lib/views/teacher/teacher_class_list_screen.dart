@@ -23,14 +23,19 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
 
   Future<void> _loadData() async {
     final authProvider = context.read<AuthController>();
-    await context.read<TeacherController>().ensureLoaded(authProvider.currentUser, force: true);
+    await context.read<TeacherController>().ensureLoaded(
+      authProvider.currentUser,
+      force: true,
+    );
   }
 
   void _showCreateClassDialog(BuildContext context) {
     final classNameController = TextEditingController();
     final descriptionController = TextEditingController();
     final teacherProvider = context.read<TeacherController>();
-    String? selectedSubjectId = teacherProvider.subjects.isNotEmpty ? teacherProvider.subjects.first.id : null;
+    String? selectedSubjectId = teacherProvider.subjects.isNotEmpty
+        ? teacherProvider.subjects.first.id
+        : null;
 
     showDialog(
       context: context,
@@ -90,7 +95,11 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
 
                     if (className.isEmpty || subjectId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Vui lòng điền đầy đủ tên lớp và môn học.')),
+                        const SnackBar(
+                          content: Text(
+                            'Vui lòng điền đầy đủ tên lớp và môn học.',
+                          ),
+                        ),
                       );
                       return;
                     }
@@ -106,7 +115,9 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                            success ? 'Đã tạo lớp $className thành công.' : 'Lỗi khi tạo lớp học.',
+                            success
+                                ? 'Đã tạo lớp $className thành công.'
+                                : 'Lỗi khi tạo lớp học.',
                           ),
                         ),
                       );
@@ -130,10 +141,7 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
       appBar: AppBar(
         title: const Text('Danh sách lớp'),
         actions: [
-          IconButton(
-            onPressed: _loadData,
-            icon: const Icon(Icons.refresh),
-          ),
+          IconButton(onPressed: _loadData, icon: const Icon(Icons.refresh)),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -152,15 +160,21 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
                   _buildSummary(teacherProvider),
                   const SizedBox(height: 16),
                   if (teacherProvider.classes.isEmpty)
-                    const _EmptyState(message: 'Chưa có lớp nào được gán cho giáo viên này')
+                    const _EmptyState(
+                      message: 'Chưa có lớp nào được gán cho giáo viên này',
+                    )
                   else
                     ...teacherProvider.classes.map(
                       (teacherClass) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _ClassCard(
                           teacherClass: teacherClass,
-                          subjectName: teacherProvider.getSubjectName(teacherClass.subjectId),
-                          sampleStudents: teacherProvider.studentsForClass(teacherClass.id),
+                          subjectName: teacherProvider.getSubjectName(
+                            teacherClass.subjectId,
+                          ),
+                          sampleStudents: teacherProvider.studentsForClass(
+                            teacherClass.id,
+                          ),
                           onTap: () => Navigator.pushNamed(
                             context,
                             AppRoutes.teacherClassDetail,
@@ -189,13 +203,22 @@ class _TeacherClassListScreenState extends State<TeacherClassListScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _SummaryTile(label: 'Lớp', value: teacherProvider.classes.length.toString()),
+            child: _SummaryTile(
+              label: 'Lớp',
+              value: teacherProvider.classes.length.toString(),
+            ),
           ),
           Expanded(
-            child: _SummaryTile(label: 'Học sinh', value: teacherProvider.totalStudents.toString()),
+            child: _SummaryTile(
+              label: 'Học sinh',
+              value: teacherProvider.totalStudents.toString(),
+            ),
           ),
           Expanded(
-            child: _SummaryTile(label: 'Tiến độ TB', value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%'),
+            child: _SummaryTile(
+              label: 'Tiến độ TB',
+              value: '${teacherProvider.averageProgress.toStringAsFixed(0)}%',
+            ),
           ),
         ],
       ),
@@ -230,7 +253,7 @@ class _ClassCard extends StatelessWidget {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 6),
             ),
@@ -245,14 +268,20 @@ class _ClassCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     teacherClass.className,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const Icon(Icons.chevron_right),
               ],
             ),
             const SizedBox(height: 8),
-            Text(subjectName, style: TextStyle(color: Colors.blueGrey.shade700)),
+            Text(
+              subjectName,
+              style: TextStyle(color: Colors.blueGrey.shade700),
+            ),
             const SizedBox(height: 8),
             Text(teacherClass.description),
             const SizedBox(height: 12),
@@ -266,7 +295,10 @@ class _ClassCard extends StatelessWidget {
             ),
             if (topStudents.isNotEmpty) ...[
               const SizedBox(height: 12),
-              const Text('Học sinh tiêu biểu', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Học sinh tiêu biểu',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 8),
               ...topStudents.map(
                 (student) => Padding(
@@ -302,9 +334,22 @@ class _SummaryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 12,
+          ),
+        ),
       ],
     );
   }
@@ -323,7 +368,14 @@ class _Tag extends StatelessWidget {
         color: const Color(0xFFEEF4FF),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E5AA8))),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF1E5AA8),
+        ),
+      ),
     );
   }
 }

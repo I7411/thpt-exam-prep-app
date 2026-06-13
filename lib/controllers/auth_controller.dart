@@ -7,77 +7,167 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/repositories/repository_service.dart';
 import 'package:thpt_exam_prep_app/services/notification_service.dart';
+import 'package:thpt_exam_prep_app/services/secure_session_storage_service.dart';
 
 class AuthController extends ChangeNotifier {
   final RepositoryService _repositoryService = RepositoryService.getInstance();
+  final SecureSessionStorageService _secureSessionStorage;
 
   AppUser? _currentUser;
   bool _isLoading = false;
   String _errorMessage = '';
   bool _isAuthenticated = false;
+  bool _rememberMeEnabled = false;
+  String? _rememberedEmail;
+  bool _pendingRememberMe = false;
+  AuthCredential? _pendingGoogleCredential;
+  String? _pendingEmail;
+
+  AuthController({SecureSessionStorageService? secureSessionStorage})
+    : _secureSessionStorage =
+          secureSessionStorage ?? SecureSessionStorageService.instance;
 
   AppUser? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   bool get isAuthenticated => _isAuthenticated;
+  bool get rememberMeEnabled => _rememberMeEnabled;
+  String? get rememberedEmail => _rememberedEmail;
+  AuthCredential? get pendingGoogleCredential => _pendingGoogleCredential;
+  String? get pendingEmail => _pendingEmail;
+
+  Future<void> loadRememberMePreference() async {
+    final rememberedSession = await _secureSessionStorage.loadRememberedSession();
+    _rememberMeEnabled = rememberedSession.enabled &&
+        !rememberedSession.isExpired(
+          SecureSessionStorageService.rememberedSessionLifetime,
+        );
+    _rememberedEmail = _rememberMeEnabled ? rememberedSession.email : null;
+    notifyListeners();
+  }
 
   Future<bool> restoreSession() async {
-    debugPrint('Đang kiểm tra phiên đăng nhập hiện tại...');
+    return restoreRememberedSession();
+  }
+
+  Future<bool> restoreRememberedSession() async {
+    debugPrint('Checking remembered login session...');
     _setLoading(true);
     _errorMessage = '';
 
     try {
+      final rememberedSession =
+          await _secureSessionStorage.loadRememberedSession();
+      _rememberMeEnabled = rememberedSession.enabled;
+      _rememberedEmail = rememberedSession.enabled
+          ? rememberedSession.email
+          : null;
+
+      if (!rememberedSession.enabled) {
+        await FirebaseAuth.instance.signOut();
+        _clearAuthenticatedState();
+        debugPrint('Remember Me is disabled. Returning to login.');
+        return true;
+      }
+
+      if (rememberedSession.isExpired(
+        SecureSessionStorageService.rememberedSessionLifetime,
+      )) {
+        await _endRememberedSession(
+          'Saved login has expired. Please sign in again.',
+        );
+        return true;
+      }
+
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
+        await _endRememberedSession(
+          'Saved login is no longer valid. Please sign in again.',
+        );
+        return true;
+      }
+
+      await firebaseUser.reload().timeout(const Duration(seconds: 8));
+
       final user = await _repositoryService.auth.getCurrentUser().timeout(
         const Duration(seconds: 8),
       );
-      if (user != null) {
-        _currentUser = user;
-        _isAuthenticated = true;
-        debugPrint('Đã xác định vai trò người dùng: ${user.role.toValue()}');
-        NotificationService.instance.saveTokenToFirestore(user.id);
-      } else {
-        _currentUser = null;
-        _isAuthenticated = false;
-        debugPrint('Không có phiên đăng nhập. Chuyển về màn hình đăng nhập.');
+      if (user == null) {
+        await _endRememberedSession(
+          'Saved login is no longer valid. Please sign in again.',
+        );
+        return true;
       }
+
+      final storedVersion = rememberedSession.sessionVersion;
+      if (storedVersion != null && storedVersion != user.sessionVersion) {
+        await _endRememberedSession(
+          'Your saved login was revoked. Please sign in again.',
+        );
+        return true;
+      }
+
+      _currentUser = user;
+      _isAuthenticated = true;
+      debugPrint('Restored user role: ${user.role.toValue()}');
+      NotificationService.instance.saveTokenToFirestore(user.id);
       return true;
     } on TimeoutException {
-      _currentUser = null;
-      _isAuthenticated = false;
-      _errorMessage = 'Kiểm tra phiên đăng nhập quá lâu. Vui lòng thử lại.';
-      debugPrint('Kiểm tra phiên đăng nhập bị quá thời gian.');
+      _clearAuthenticatedState();
+      _errorMessage =
+          'Checking the saved login timed out. Please try again.';
+      debugPrint('Remembered session check timed out.');
       return false;
+    } on FirebaseAuthException catch (e, stackTrace) {
+      await _endRememberedSession(_getLoginFirebaseAuthErrorMessage(e));
+      _logFirebaseAuthException(
+        'Firebase Auth rejected the remembered session',
+        e,
+        stackTrace,
+      );
+      return true;
     } on FirebaseException catch (e, stackTrace) {
-      _currentUser = null;
-      _isAuthenticated = false;
+      _clearAuthenticatedState();
       _errorMessage = _getFirestoreErrorMessage(e);
       _logFirebaseException(
-        'Lỗi khi đọc hồ sơ người dùng từ Firestore',
+        'Firestore rejected the remembered session',
         e,
         stackTrace,
       );
-      return false;
+      await FirebaseAuth.instance.signOut();
+      await _secureSessionStorage.clearRememberedSession();
+      _rememberMeEnabled = false;
+      _rememberedEmail = null;
+      return true;
     } catch (e, stackTrace) {
-      _currentUser = null;
-      _isAuthenticated = false;
-      _errorMessage = 'Không thể khôi phục phiên đăng nhập. Vui lòng thử lại.';
+      _clearAuthenticatedState();
+      _errorMessage =
+          'Unable to restore the saved login. Please sign in again.';
       _logUnknownException(
-        'Lỗi không xác định khi khôi phục phiên đăng nhập',
+        'Unknown error while restoring remembered session',
         e,
         stackTrace,
       );
-      return false;
+      await FirebaseAuth.instance.signOut();
+      await _secureSessionStorage.clearRememberedSession();
+      _rememberMeEnabled = false;
+      _rememberedEmail = null;
+      return true;
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(
+    String email,
+    String password, {
+    bool rememberMe = false,
+  }) async {
     _setLoading(true);
     _errorMessage = '';
 
     try {
-      final normalizedEmail = email.trim();
+      final normalizedEmail = email.trim().toLowerCase();
       if (!_isValidEmail(normalizedEmail)) {
         _errorMessage = 'Email không hợp lệ.';
         return false;
@@ -97,6 +187,11 @@ class AuthController extends ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _isAuthenticated = true;
+        await _persistRememberedSession(
+          user: user,
+          email: normalizedEmail,
+          rememberMe: rememberMe,
+        );
         debugPrint('Đăng nhập thành công. Vai trò: ${user.role.toValue()}');
         NotificationService.instance.saveTokenToFirestore(user.id);
         return true;
@@ -113,9 +208,13 @@ class AuthController extends ChangeNotifier {
         stackTrace,
       );
 
-      final normalizedEmail = email.trim();
+      final normalizedEmail = email.trim().toLowerCase();
       if (_shouldAutoRegisterDemoAccount(normalizedEmail, e)) {
-        return _tryAutoRegisterDemoAccount(normalizedEmail, password);
+        return _tryAutoRegisterDemoAccount(
+          normalizedEmail,
+          password,
+          rememberMe,
+        );
       }
 
       _errorMessage = _getLoginFirebaseAuthErrorMessage(e);
@@ -152,7 +251,7 @@ class AuthController extends ChangeNotifier {
     _errorMessage = '';
 
     try {
-      final normalizedEmail = email.trim();
+      final normalizedEmail = email.trim().toLowerCase();
       final normalizedName = fullName.trim();
       if (normalizedName.isEmpty) {
         _errorMessage = 'Vui lòng nhập họ tên.';
@@ -190,6 +289,9 @@ class AuthController extends ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _isAuthenticated = true;
+        await _secureSessionStorage.clearRememberedSession();
+        _rememberMeEnabled = false;
+        _rememberedEmail = null;
         debugPrint(
           'Tạo hồ sơ người dùng thành công. Vai trò: ${user.role.toValue()}',
         );
@@ -235,7 +337,7 @@ class AuthController extends ChangeNotifier {
     _errorMessage = '';
 
     try {
-      final normalizedEmail = email.trim();
+      final normalizedEmail = email.trim().toLowerCase();
       if (!_isValidEmail(normalizedEmail)) {
         _errorMessage = 'Email không hợp lệ.';
         return false;
@@ -276,9 +378,31 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<bool> loginWithGoogle() async {
+  Future<bool> checkIsGoogleOnly(String email) async {
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email.trim().toLowerCase())
+          .limit(1)
+          .get()
+          .timeout(const Duration(seconds: 10));
+      if (query.docs.isNotEmpty) {
+        final data = query.docs.first.data();
+        final signInProvider = data['signInProvider'] as String?;
+        if (signInProvider == 'google') {
+          return true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Lỗi kiểm tra loại tài khoản từ Firestore: $e');
+    }
+    return false;
+  }
+
+  Future<bool> loginWithGoogle({bool rememberMe = false}) async {
     _setLoading(true);
     _errorMessage = '';
+    _pendingRememberMe = rememberMe;
 
     try {
       debugPrint('Đang đăng nhập bằng Google...');
@@ -287,7 +411,14 @@ class AuthController extends ChangeNotifier {
       if (user != null) {
         _currentUser = user;
         _isAuthenticated = true;
-        debugPrint('Đăng nhập Google thành công. Vai trò: ${user.role.toValue()}');
+        await _persistRememberedSession(
+          user: user,
+          email: user.email,
+          rememberMe: rememberMe,
+        );
+        debugPrint(
+          'Đăng nhập Google thành công. Vai trò: ${user.role.toValue()}',
+        );
         NotificationService.instance.saveTokenToFirestore(user.id);
         return true;
       }
@@ -299,10 +430,19 @@ class AuthController extends ChangeNotifier {
       return false;
     } on FirebaseAuthException catch (e, stackTrace) {
       _logFirebaseAuthException('Lỗi khi đăng nhập bằng Google', e, stackTrace);
+      if (e.code == 'account-exists-with-different-credential') {
+        _pendingGoogleCredential = e.credential;
+        _pendingEmail = e.email;
+        _errorMessage = 'account-exists-with-different-credential';
+        notifyListeners();
+        return false;
+      }
       _errorMessage = _getGoogleSignInErrorMessage(e);
       return false;
     } on PlatformException catch (e, stackTrace) {
-      debugPrint('PlatformException khi đăng nhập Google: code=${e.code}, message=${e.message}');
+      debugPrint(
+        'PlatformException khi đăng nhập Google: code=${e.code}, message=${e.message}',
+      );
       debugPrint('stackTrace: $stackTrace');
       if (e.code == 'sign_in_canceled' || e.code == 'network_error') {
         _errorMessage = e.code == 'network_error'
@@ -316,14 +456,22 @@ class AuthController extends ChangeNotifier {
       return false;
     } on FirebaseException catch (e, stackTrace) {
       _errorMessage = _getFirestoreErrorMessage(e);
-      _logFirebaseException('Lỗi Firestore sau khi đăng nhập Google', e, stackTrace);
+      _logFirebaseException(
+        'Lỗi Firestore sau khi đăng nhập Google',
+        e,
+        stackTrace,
+      );
       return false;
     } on TimeoutException {
       _errorMessage = 'Đăng nhập Google quá lâu. Vui lòng thử lại.';
       return false;
     } catch (e, stackTrace) {
       _errorMessage = 'Không thể đăng nhập bằng Google. Vui lòng thử lại.';
-      _logUnknownException('Lỗi không xác định khi đăng nhập Google', e, stackTrace);
+      _logUnknownException(
+        'Lỗi không xác định khi đăng nhập Google',
+        e,
+        stackTrace,
+      );
       return false;
     } finally {
       _setLoading(false);
@@ -333,8 +481,9 @@ class AuthController extends ChangeNotifier {
   Future<bool> verifyEmailExists(String email) async {
     _setLoading(true);
     _errorMessage = '';
+    final normalizedEmail = email.trim().toLowerCase();
     try {
-      final exists = await _repositoryService.auth.verifyEmailExists(email);
+      final exists = await _repositoryService.auth.verifyEmailExists(normalizedEmail);
       if (!exists) {
         _errorMessage = 'Không tìm thấy tài khoản với email này.';
       }
@@ -383,8 +532,10 @@ class AuthController extends ChangeNotifier {
 
     try {
       await _repositoryService.auth.logout();
-      _currentUser = null;
-      _isAuthenticated = false;
+      await _secureSessionStorage.clearRememberedSession();
+      _clearAuthenticatedState();
+      _rememberMeEnabled = false;
+      _rememberedEmail = null;
       _errorMessage = '';
       debugPrint('Đã đăng xuất.');
     } catch (e) {
@@ -400,6 +551,115 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearPendingCredentials() {
+    _pendingGoogleCredential = null;
+    _pendingEmail = null;
+    _pendingRememberMe = false;
+    notifyListeners();
+  }
+
+  Future<bool> linkGoogleAccount(String password) async {
+    if (_pendingGoogleCredential == null || _pendingEmail == null) {
+      _errorMessage = 'Không có thông tin liên kết tài khoản.';
+      return false;
+    }
+
+    _setLoading(true);
+    _errorMessage = '';
+
+    try {
+      debugPrint('Đang liên kết tài khoản Google với Email/Password...');
+      final emailCredential = EmailAuthProvider.credential(
+        email: _pendingEmail!,
+        password: password,
+      );
+      
+      final authResult = await FirebaseAuth.instance
+          .signInWithCredential(emailCredential)
+          .timeout(const Duration(seconds: 15));
+      
+      final user = authResult.user;
+      if (user == null) {
+        _errorMessage = 'Xác thực tài khoản Email thất bại.';
+        return false;
+      }
+
+      await user.linkWithCredential(_pendingGoogleCredential!).timeout(const Duration(seconds: 15));
+
+      // Update provider identifier in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({'signInProvider': 'email_google'}, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 10));
+      
+      final appUser = await _repositoryService.auth.getCurrentUser();
+      if (appUser != null) {
+        _currentUser = appUser;
+        _isAuthenticated = true;
+        await _persistRememberedSession(
+          user: appUser,
+          email: appUser.email,
+          rememberMe: _pendingRememberMe,
+        );
+        clearPendingCredentials();
+        NotificationService.instance.saveTokenToFirestore(appUser.id);
+        return true;
+      }
+      
+      _errorMessage = 'Không thể tải thông tin hồ sơ sau khi liên kết.';
+      return false;
+    } on FirebaseAuthException catch (e, stackTrace) {
+      _logFirebaseAuthException('Lỗi khi liên kết tài khoản Google', e, stackTrace);
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        _errorMessage = 'Mật khẩu không chính xác.';
+      } else {
+        _errorMessage = _getLoginFirebaseAuthErrorMessage(e);
+      }
+      return false;
+    } catch (e, stackTrace) {
+      _errorMessage = 'Liên kết tài khoản thất bại: $e';
+      _logUnknownException('Lỗi không xác định khi liên kết tài khoản', e, stackTrace);
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  void _clearAuthenticatedState() {
+    _currentUser = null;
+    _isAuthenticated = false;
+  }
+
+  Future<void> _endRememberedSession(String message) async {
+    await FirebaseAuth.instance.signOut();
+    await _secureSessionStorage.clearRememberedSession();
+    _clearAuthenticatedState();
+    _rememberMeEnabled = false;
+    _rememberedEmail = null;
+    _errorMessage = message;
+  }
+
+  Future<void> _persistRememberedSession({
+    required AppUser user,
+    required String email,
+    required bool rememberMe,
+  }) async {
+    if (rememberMe) {
+      await _secureSessionStorage.saveRememberedSession(
+        email: email.trim().isEmpty ? user.email : email.trim(),
+        sessionVersion: user.sessionVersion,
+      );
+      _rememberMeEnabled = true;
+      _rememberedEmail = email.trim().isEmpty ? user.email : email.trim();
+      return;
+    }
+
+    await _secureSessionStorage.clearRememberedSession();
+    _rememberMeEnabled = false;
+    _rememberedEmail = null;
+  }
+
   bool _isValidEmail(String email) {
     final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
     return emailRegex.hasMatch(email);
@@ -409,13 +669,15 @@ class AuthController extends ChangeNotifier {
     String email,
     FirebaseAuthException exception,
   ) {
-    // Only auto-register on clear user-not-found, not on invalid-credential or wrong-password
-    return exception.code == 'user-not-found' && _demoRoleForEmail(email) != null;
+    return (exception.code == 'user-not-found' ||
+            exception.code == 'invalid-credential') &&
+        _demoRoleForEmail(email) != null;
   }
 
   Future<bool> _tryAutoRegisterDemoAccount(
     String email,
     String password,
+    bool rememberMe,
   ) async {
     final role = _demoRoleForEmail(email);
     if (role == null) {
@@ -443,6 +705,11 @@ class AuthController extends ChangeNotifier {
       _currentUser = user;
       _isAuthenticated = true;
       _errorMessage = '';
+      await _persistRememberedSession(
+        user: user,
+        email: email,
+        rememberMe: rememberMe,
+      );
       debugPrint(
         'Tạo và đăng nhập tài khoản demo thành công. Vai trò: ${user.role.toValue()}',
       );
@@ -473,7 +740,8 @@ class AuthController extends ChangeNotifier {
     } on TimeoutException {
       _currentUser = null;
       _isAuthenticated = false;
-      _errorMessage = 'Không thể kết nối với Firestore. Vui lòng kiểm tra kết nối mạng của bạn.';
+      _errorMessage =
+          'Không thể kết nối với Firestore. Vui lòng kiểm tra kết nối mạng của bạn.';
       debugPrint('Tự tạo tài khoản demo bị quá thời gian.');
       return false;
     } catch (e, stackTrace) {
@@ -547,6 +815,13 @@ class AuthController extends ChangeNotifier {
       return 'Firebase Authentication chưa được cấu hình đúng. Hãy kiểm tra google-services.json, firebase_options.dart và bật Email/Password trong Firebase Console.';
     }
 
+    if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+      return 'Email or password is incorrect.';
+    }
+    if (e.code == 'network-request-failed') {
+      return 'Cannot connect to Firestore. Please check your network connection.';
+    }
+
     switch (e.code) {
       case 'CONFIGURATION_NOT_FOUND':
       case 'internal-error':
@@ -574,6 +849,10 @@ class AuthController extends ChangeNotifier {
   }
 
   String _getRegisterFirebaseAuthErrorMessage(FirebaseAuthException e) {
+    if (e.code == 'network-request-failed') {
+      return 'Cannot connect to Firestore. Please check your network connection.';
+    }
+
     switch (e.code) {
       case 'email-already-in-use':
         return 'Email này đã được sử dụng.';
@@ -595,6 +874,21 @@ class AuthController extends ChangeNotifier {
   }
 
   String _getFirestoreErrorMessage(FirebaseException e) {
+    if (e.code == 'permission-denied') {
+      return 'The app does not have permission to read Firestore data. Please check Firestore Rules.';
+    }
+    if (e.code == 'unavailable' ||
+        e.code == 'deadline-exceeded' ||
+        e.code == 'network-request-failed') {
+      return 'Cannot connect to Firestore. Please check your network connection.';
+    }
+    if (e.code == 'profile-missing') {
+      return 'This account does not have a user profile in Firestore.';
+    }
+    if (e.code == 'missing-role') {
+      return 'This account has not been assigned a role.';
+    }
+
     switch (e.code) {
       case 'permission-denied':
         return 'Ứng dụng không có quyền đọc dữ liệu từ Firestore. Vui lòng kiểm tra Firestore Rules.';
@@ -611,7 +905,10 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile({required String fullName, String? className}) async {
+  Future<bool> updateProfile({
+    required String fullName,
+    String? className,
+  }) async {
     if (_currentUser == null) return false;
     _setLoading(true);
     _errorMessage = '';
@@ -622,13 +919,13 @@ class AuthController extends ChangeNotifier {
         if (className != null) 'className': className.trim(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
-      
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .update(updates)
           .timeout(const Duration(seconds: 10));
-          
+
       // Update local state
       _currentUser = _currentUser!.copyWith(
         fullName: fullName.trim(),
@@ -668,8 +965,15 @@ class AuthController extends ChangeNotifier {
         password: currentPassword,
       );
 
-      await user.reauthenticateWithCredential(credential).timeout(const Duration(seconds: 15));
-      await user.updatePassword(newPassword).timeout(const Duration(seconds: 15));
+      await user
+          .reauthenticateWithCredential(credential)
+          .timeout(const Duration(seconds: 15));
+      await user
+          .updatePassword(newPassword)
+          .timeout(const Duration(seconds: 15));
+      await _secureSessionStorage.clearRememberedSession();
+      _rememberMeEnabled = false;
+      _rememberedEmail = null;
       return true;
     } on FirebaseAuthException catch (e) {
       debugPrint('Lỗi đổi mật khẩu: code=${e.code}, message=${e.message}');
@@ -678,7 +982,8 @@ class AuthController extends ChangeNotifier {
           _errorMessage = 'Mật khẩu hiện tại không đúng.';
           break;
         case 'requires-recent-login':
-          _errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi đổi mật khẩu.';
+          _errorMessage =
+              'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi đổi mật khẩu.';
           break;
         case 'weak-password':
           _errorMessage = 'Mật khẩu mới quá yếu.';

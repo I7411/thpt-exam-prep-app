@@ -23,10 +23,7 @@ class ReviewGameItem {
 class ExamBlastGameScreen extends StatefulWidget {
   final String examId;
 
-  const ExamBlastGameScreen({
-    super.key,
-    required this.examId,
-  });
+  const ExamBlastGameScreen({super.key, required this.examId});
 
   @override
   State<ExamBlastGameScreen> createState() => _ExamBlastGameScreenState();
@@ -62,7 +59,7 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
         (o) => o.isCorrect,
         orElse: () => q.options.first,
       );
-      
+
       final optionsText = q.options.map((o) => o.content).toList();
       optionsText.shuffle(Random());
 
@@ -182,7 +179,13 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
               children: [
                 const Icon(Icons.star_rounded, color: Colors.amber),
                 const SizedBox(width: 4),
-                Text('$_score', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(
+                  '$_score',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
             Row(
@@ -193,7 +196,9 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
                   '${_remainingSeconds}s',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: _remainingSeconds <= 10 ? Colors.redAccent : Colors.white,
+                    color: _remainingSeconds <= 10
+                        ? Colors.redAccent
+                        : Colors.white,
                   ),
                 ),
               ],
@@ -212,17 +217,17 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
             child: Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.panel),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Text(
                 currentItem.prompt,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -241,7 +246,10 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
                     onTap: () => _onOptionTap(option),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 20,
+                      ),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
                           colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
@@ -251,12 +259,16 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF4F46E5).withOpacity(0.4),
+                            color: const Color(
+                              0xFF4F46E5,
+                            ).withValues(alpha: 0.4),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        border: Border.all(color: Colors.white.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Text(
                         option,
@@ -287,7 +299,11 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
                     fontWeight: FontWeight.w900,
                     color: _feedbackColor,
                     shadows: const [
-                      Shadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4)),
+                      Shadow(
+                        color: Colors.black54,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
                     ],
                   ),
                 ),
@@ -300,7 +316,9 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
 
   Widget _buildResultScreen() {
     final totalAnswered = _correctCount + _wrongCount;
-    final accuracy = totalAnswered > 0 ? (_correctCount / totalAnswered * 100).toStringAsFixed(1) : '0.0';
+    final accuracy = totalAnswered > 0
+        ? (_correctCount / totalAnswered * 100).toStringAsFixed(1)
+        : '0.0';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -311,15 +329,19 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.rocket_launch_rounded, size: 80, color: AppColors.primary),
+              const Icon(
+                Icons.rocket_launch_rounded,
+                size: 80,
+                color: AppColors.primary,
+              ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Kết quả trò chơi',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               Container(
@@ -328,18 +350,38 @@ class _ExamBlastGameScreenState extends State<ExamBlastGameScreen> {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.panel),
                   boxShadow: [
-                    BoxShadow(color: AppColors.shadow, blurRadius: 16, offset: const Offset(0, 8)),
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    _ResultRow(label: 'Điểm số', value: '$_score', valueColor: AppColors.primary),
+                    _ResultRow(
+                      label: 'Điểm số',
+                      value: '$_score',
+                      valueColor: AppColors.primary,
+                    ),
                     const Divider(height: 24),
-                    _ResultRow(label: 'Số câu đúng', value: '$_correctCount', valueColor: AppColors.success),
+                    _ResultRow(
+                      label: 'Số câu đúng',
+                      value: '$_correctCount',
+                      valueColor: AppColors.success,
+                    ),
                     const SizedBox(height: 8),
-                    _ResultRow(label: 'Số câu sai', value: '$_wrongCount', valueColor: AppColors.error),
+                    _ResultRow(
+                      label: 'Số câu sai',
+                      value: '$_wrongCount',
+                      valueColor: AppColors.error,
+                    ),
                     const Divider(height: 24),
-                    _ResultRow(label: 'Độ chính xác', value: '$accuracy%', valueColor: AppColors.accent),
+                    _ResultRow(
+                      label: 'Độ chính xác',
+                      value: '$accuracy%',
+                      valueColor: AppColors.accent,
+                    ),
                   ],
                 ),
               ),
@@ -397,14 +439,16 @@ class _ResultRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.muted),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: AppColors.muted),
         ),
         Text(
           value,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: valueColor,
-              ),
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
         ),
       ],
     );

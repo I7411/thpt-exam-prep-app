@@ -75,4 +75,3 @@ class AppConstants {
   static const String notificationChannelDescription =
       'Thông báo từ ứng dụng THPT Smart Learn';
 }
-

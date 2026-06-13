@@ -33,31 +33,31 @@ class NotificationController extends ChangeNotifier {
     _streamSubscription = _repositoryService.notification
         .streamNotificationsByUser(userId)
         .listen(
-      (items) {
-        if (!_isLoading && _notifications.isNotEmpty) {
-          for (final item in items) {
-            final wasPresent = _notifications.any((n) => n.id == item.id);
-            if (!wasPresent && !item.isRead) {
-              NotificationService.instance.showLocalNotification(
-                id: item.id.hashCode,
-                title: item.title,
-                body: item.message,
-                payload: item.actionUrl ?? '/student/notifications',
-                deduplicationId: item.id,
-              );
+          (items) {
+            if (!_isLoading && _notifications.isNotEmpty) {
+              for (final item in items) {
+                final wasPresent = _notifications.any((n) => n.id == item.id);
+                if (!wasPresent && !item.isRead) {
+                  NotificationService.instance.showLocalNotification(
+                    id: item.id.hashCode,
+                    title: item.title,
+                    body: item.message,
+                    payload: item.actionUrl ?? '/student/notifications',
+                    deduplicationId: item.id,
+                  );
+                }
+              }
             }
-          }
-        }
-        _notifications = items;
-        _isLoading = false;
-        notifyListeners();
-      },
-      onError: (e) {
-        debugPrint('Lỗi stream thông báo Firestore: $e');
-        _isLoading = false;
-        notifyListeners();
-      },
-    );
+            _notifications = items;
+            _isLoading = false;
+            notifyListeners();
+          },
+          onError: (e) {
+            debugPrint('Lỗi stream thông báo Firestore: $e');
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
   }
 
   Future<void> markAsRead(String notificationId) async {
@@ -74,6 +74,23 @@ class NotificationController extends ChangeNotifier {
       await _repositoryService.notification.markAllAsRead(_userId!);
     } catch (e) {
       debugPrint('Lỗi đánh dấu tất cả đã đọc: $e');
+    }
+  }
+
+  Future<void> deleteNotification(String notificationId) async {
+    try {
+      await _repositoryService.notification.deleteNotification(notificationId);
+    } catch (e) {
+      debugPrint('Lỗi xóa thông báo: $e');
+    }
+  }
+
+  Future<void> deleteAllNotifications() async {
+    if (_userId == null) return;
+    try {
+      await _repositoryService.notification.deleteAllNotifications(_userId!);
+    } catch (e) {
+      debugPrint('Lỗi xóa tất cả thông báo: $e');
     }
   }
 

@@ -7,6 +7,11 @@ import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:thpt_exam_prep_app/services/alarm_audio_service.dart';
+import 'package:thpt_exam_prep_app/services/ringtone_catalog_service.dart';
+import 'package:thpt_exam_prep_app/services/sensitive_screen_protection_service.dart';
+import 'package:thpt_exam_prep_app/widgets/app_password_field.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});
@@ -23,6 +28,64 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   Future<String?>? _classNameFuture;
   String? _lastClassId;
 
+  String _defaultRingtone = 'assets/audios/file.mp3';
+  bool _isPreviewPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultRingtone();
+  }
+
+  @override
+  void dispose() {
+    AlarmAudioService.instance.stop();
+    super.dispose();
+  }
+
+  Future<void> _loadDefaultRingtone() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final saved = prefs.getString('study_reminder_ringtone_$uid');
+      if (saved != null) {
+        setState(() {
+          _defaultRingtone = saved;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveDefaultRingtone(String assetPath) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+      await prefs.setString('study_reminder_ringtone_$uid', assetPath);
+      setState(() {
+        _defaultRingtone = assetPath;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã lưu nhạc chuông mặc định.')),
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _togglePreview() async {
+    if (_isPreviewPlaying) {
+      await AlarmAudioService.instance.stop();
+      setState(() {
+        _isPreviewPlaying = false;
+      });
+    } else {
+      setState(() {
+        _isPreviewPlaying = true;
+      });
+      await AlarmAudioService.instance.previewRingtone(_defaultRingtone);
+    }
+  }
+
   Future<String?> _fetchClassName(String classId) async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -33,7 +96,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
       if (doc.exists) {
         final data = doc.data();
         if (data != null) {
-          return data['name'] as String? ?? data['className'] as String? ?? 'Lớp không tên';
+          return data['name'] as String? ??
+              data['className'] as String? ??
+              'Lớp không tên';
         }
       }
     } catch (e) {
@@ -72,9 +137,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   return;
                 }
                 Navigator.pop(context);
-                
-                final authProvider = Provider.of<AuthController>(context, listen: false);
-                final success = await authProvider.updateProfile(fullName: name);
+
+                final authProvider = Provider.of<AuthController>(
+                  context,
+                  listen: false,
+                );
+                final success = await authProvider.updateProfile(
+                  fullName: name,
+                );
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -101,7 +171,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     final user = authProvider.currentUser;
     final roleLabel = user?.role.toValue() ?? 'student';
 
-    final classId = user?.primaryClassId ?? (user?.classIds.isNotEmpty == true ? user?.classIds.first : null);
+    final classId =
+        user?.primaryClassId ??
+        (user?.classIds.isNotEmpty == true ? user?.classIds.first : null);
     if (classId != _lastClassId) {
       _lastClassId = classId;
       if (classId != null) {
@@ -130,9 +202,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           const SizedBox(height: 20),
           Text(
             'Thông tin học sinh',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           _InfoRow(label: 'Họ tên', value: user?.fullName ?? 'Học sinh'),
@@ -140,18 +212,22 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           FutureBuilder<String?>(
             future: _classNameFuture,
             builder: (context, snapshot) {
-              final className = snapshot.data ?? user?.className ?? 'Chưa tham gia';
+              final className =
+                  snapshot.data ?? user?.className ?? 'Chưa tham gia';
               return _InfoRow(label: 'Lớp', value: className);
             },
           ),
           _InfoRow(label: 'Mã tài khoản (UID)', value: user?.id ?? ''),
-          _InfoRow(label: 'Vai trò', value: roleLabel == 'student' ? 'Học sinh' : roleLabel),
+          _InfoRow(
+            label: 'Vai trò',
+            value: roleLabel == 'student' ? 'Học sinh' : roleLabel,
+          ),
           const SizedBox(height: 20),
           Text(
             'Cài đặt demo',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Card(
@@ -210,7 +286,22 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   subtitle: const Text('Xem các thông báo học tập gần đây'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    Navigator.pushNamed(context, AppRoutes.studentNotifications);
+                    Navigator.pushNamed(
+                      context,
+                      AppRoutes.studentNotifications,
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.alarm),
+                  title: const Text('Nhắc nhở học tập'),
+                  subtitle: const Text('Quản lý các lời nhắc giờ học'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/reminder/list',
+                    );
                   },
                 ),
                 ListTile(
@@ -227,12 +318,72 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          Text(
+            'Nhạc chuông nhắc học',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              side: const BorderSide(color: AppColors.line),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: _defaultRingtone,
+                    decoration: const InputDecoration(
+                      labelText: 'Nhạc chuông mặc định',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: RingtoneCatalogService.ringtones.map((ringtone) {
+                      return DropdownMenuItem<String>(
+                        value: ringtone.assetPath,
+                        child: Text(ringtone.name),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        _saveDefaultRingtone(val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _isPreviewPlaying ? 'Đang nghe thử...' : 'Nghe thử nhạc chuông',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      ElevatedButton.icon(
+                        icon: Icon(_isPreviewPlaying ? Icons.stop : Icons.play_arrow),
+                        label: Text(_isPreviewPlaying ? 'Dừng nghe thử' : 'Nghe thử'),
+                        onPressed: _togglePreview,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isPreviewPlaying ? Colors.red : Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
           Text(
             'Bảo mật tài khoản',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Card(
@@ -258,6 +409,29 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
               onPressed: authProvider.isLoading
                   ? null
                   : () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Đăng xuất'),
+                          content: const Text(
+                            'Bạn có muốn đăng xuất khỏi tài khoản này không?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Hủy'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error,
+                              ),
+                              child: const Text('Đăng xuất'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm != true || !mounted) return;
                       await authProvider.logout();
                       if (!mounted) return;
                       Navigator.of(context).pushNamedAndRemoveUntil(
@@ -267,9 +441,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                     },
               icon: const Icon(Icons.logout),
               label: const Text('Đăng xuất'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             ),
           ),
         ],
@@ -277,7 +449,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, AppUser? user, String roleLabel) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    AppUser? user,
+    String roleLabel,
+  ) {
     final initial = (user?.fullName ?? 'H').trim().isNotEmpty
         ? (user?.fullName ?? 'H').trim()[0].toUpperCase()
         : 'H';
@@ -289,7 +465,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         gradient: AppGradients.primary,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             blurRadius: 22,
             offset: const Offset(0, 12),
           ),
@@ -299,7 +475,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         children: [
           CircleAvatar(
             radius: 32,
-            backgroundColor: Colors.white.withOpacity(0.2),
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
             child: Text(
               initial,
               style: const TextStyle(
@@ -317,23 +493,23 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 Text(
                   user?.fullName ?? 'Học sinh',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   user?.email ?? 'student@example.com',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Vai trò: ${roleLabel == 'student' ? 'Học sinh' : roleLabel}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withOpacity(0.85),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.85),
+                  ),
                 ),
               ],
             ),
@@ -351,7 +527,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Đổi mật khẩu'),
           content: const Text(
-            'Tài khoản Google không thể đổi mật khẩu trong ứng dụng. Vui lòng quản lý mật khẩu trong tài khoản Google.'
+            'Tài khoản Google không thể đổi mật khẩu trong ứng dụng. Vui lòng quản lý mật khẩu trong tài khoản Google.',
           ),
           actions: [
             TextButton(
@@ -383,10 +559,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    bool obscureCurrent = true;
-    bool obscureNew = true;
-    bool obscureConfirm = true;
 
+    SensitiveScreenProtectionService.instance.enable();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -401,17 +575,13 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextFormField(
+                      AppPasswordField(
                         controller: currentPasswordController,
-                        obscureText: obscureCurrent,
-                        decoration: InputDecoration(
-                          labelText: 'Mật khẩu hiện tại',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => obscureCurrent = !obscureCurrent),
-                          ),
-                        ),
+                        label: 'Mật khẩu hiện tại',
+                        hintText: 'Nhập mật khẩu hiện tại',
+                        icon: null,
+                        showLabel: false,
+                        outlineBorder: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Vui lòng nhập mật khẩu hiện tại.';
@@ -420,17 +590,13 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AppPasswordField(
                         controller: newPasswordController,
-                        obscureText: obscureNew,
-                        decoration: InputDecoration(
-                          labelText: 'Mật khẩu mới',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => obscureNew = !obscureNew),
-                          ),
-                        ),
+                        label: 'Mật khẩu mới',
+                        hintText: 'Nhập mật khẩu mới',
+                        icon: null,
+                        showLabel: false,
+                        outlineBorder: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Vui lòng nhập mật khẩu mới.';
@@ -445,17 +611,13 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
+                      AppPasswordField(
                         controller: confirmPasswordController,
-                        obscureText: obscureConfirm,
-                        decoration: InputDecoration(
-                          labelText: 'Xác nhận mật khẩu mới',
-                          border: const OutlineInputBorder(),
-                          suffixIcon: IconButton(
-                            icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                            onPressed: () => setState(() => obscureConfirm = !obscureConfirm),
-                          ),
-                        ),
+                        label: 'Xác nhận mật khẩu mới',
+                        hintText: 'Nhập lại mật khẩu mới',
+                        icon: null,
+                        showLabel: false,
+                        outlineBorder: true,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Vui lòng xác nhận mật khẩu mới.';
@@ -478,15 +640,19 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     if (formKey.currentState?.validate() != true) return;
-                    
+
                     // Show progress indicator
                     showDialog(
                       context: context,
                       barrierDismissible: false,
-                      builder: (context) => const Center(child: CircularProgressIndicator()),
+                      builder: (context) =>
+                          const Center(child: CircularProgressIndicator()),
                     );
 
-                    final authController = Provider.of<AuthController>(context, listen: false);
+                    final authController = Provider.of<AuthController>(
+                      context,
+                      listen: false,
+                    );
                     final success = await authController.changePassword(
                       currentPassword: currentPasswordController.text,
                       newPassword: newPasswordController.text,
@@ -504,7 +670,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Đổi mật khẩu thành công. Vui lòng đăng nhập lại nếu được yêu cầu.'),
+                            content: Text(
+                              'Đổi mật khẩu thành công. Vui lòng đăng nhập lại nếu được yêu cầu.',
+                            ),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -513,9 +681,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(authController.errorMessage.isNotEmpty 
-                                ? authController.errorMessage 
-                                : 'Không thể đổi mật khẩu. Vui lòng thử lại.'),
+                            content: Text(
+                              authController.errorMessage.isNotEmpty
+                                  ? authController.errorMessage
+                                  : 'Không thể đổi mật khẩu. Vui lòng thử lại.',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -529,7 +699,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      SensitiveScreenProtectionService.instance.disable();
+      currentPasswordController.dispose();
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    });
   }
 }
 
@@ -537,10 +712,7 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _InfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -558,18 +730,18 @@ class _InfoRow extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],

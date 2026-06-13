@@ -11,10 +11,7 @@ import '../repositories/repository_service.dart';
 class DocumentDetailScreen extends StatefulWidget {
   final StudyDocument document;
 
-  const DocumentDetailScreen({
-    super.key,
-    required this.document,
-  });
+  const DocumentDetailScreen({super.key, required this.document});
 
   @override
   State<DocumentDetailScreen> createState() => _DocumentDetailScreenState();
@@ -60,7 +57,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           .collection('saved_materials')
           .doc('${userId}_${widget.document.id}')
           .get();
-      
+
       final learnedDoc = await FirebaseFirestore.instance
           .collection('learned_materials')
           .doc('${userId}_${widget.document.id}')
@@ -88,43 +85,46 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: _checkingFavorite ? null : () async {
-              final nextIsFavorite = !_isMarked;
-              final authProvider = context.read<AuthController>();
-              final userId = authProvider.currentUser?.id ?? 'student_001';
+            onPressed: _checkingFavorite
+                ? null
+                : () async {
+                    final nextIsFavorite = !_isMarked;
+                    final authProvider = context.read<AuthController>();
+                    final userId =
+                        authProvider.currentUser?.id ?? 'student_001';
 
-              final docRef = FirebaseFirestore.instance
-                  .collection('saved_materials')
-                  .doc('${userId}_${widget.document.id}');
+                    final docRef = FirebaseFirestore.instance
+                        .collection('saved_materials')
+                        .doc('${userId}_${widget.document.id}');
 
-              if (nextIsFavorite) {
-                await docRef.set({
-                  'userId': userId,
-                  'materialId': widget.document.id,
-                  'isFavorite': true,
-                  'favoriteAt': FieldValue.serverTimestamp(),
-                  'savedAt': FieldValue.serverTimestamp(),
-                });
-              } else {
-                await docRef.delete();
-              }
+                    if (nextIsFavorite) {
+                      await docRef.set({
+                        'userId': userId,
+                        'materialId': widget.document.id,
+                        'isFavorite': true,
+                        'favoriteAt': FieldValue.serverTimestamp(),
+                        'savedAt': FieldValue.serverTimestamp(),
+                      });
+                    } else {
+                      await docRef.delete();
+                    }
 
-              setState(() {
-                _isMarked = nextIsFavorite;
-              });
+                    setState(() {
+                      _isMarked = nextIsFavorite;
+                    });
 
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      nextIsFavorite
-                          ? 'Đã thêm vào bộ sưu tập'
-                          : 'Đã bỏ khỏi bộ sưu tập',
-                    ),
-                  ),
-                );
-              }
-            },
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            nextIsFavorite
+                                ? 'Đã thêm vào bộ sưu tập'
+                                : 'Đã bỏ khỏi bộ sưu tập',
+                          ),
+                        ),
+                      );
+                    }
+                  },
             icon: Icon(
               _isMarked ? Icons.bookmark_rounded : Icons.bookmark_outline,
               color: _isMarked ? AppColors.accent : null,
@@ -150,7 +150,7 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                     gradient: AppGradients.primary,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.18),
+                        color: AppColors.primary.withValues(alpha: 0.18),
                         blurRadius: 22,
                         offset: const Offset(0, 12),
                       ),
@@ -165,12 +165,13 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                           vertical: 7,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text(
                           subjectName,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -179,7 +180,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                       const SizedBox(height: AppSpacing.md),
                       Text(
                         widget.document.title,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
                             ),
@@ -220,7 +222,9 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
                         context,
                         label: 'Trạng thái',
                         value: _isLearned ? 'Đã học' : 'Đang học',
-                        color: _isLearned ? AppColors.success : AppColors.accent,
+                        color: _isLearned
+                            ? AppColors.success
+                            : AppColors.accent,
                       ),
                     ),
                   ],
@@ -258,7 +262,9 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
               if (userId.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Bạn cần đăng nhập để đánh dấu tài liệu đã học.'),
+                    content: Text(
+                      'Bạn cần đăng nhập để đánh dấu tài liệu đã học.',
+                    ),
                   ),
                 );
                 return;
@@ -332,8 +338,8 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.card),
-        color: color.withOpacity(0.08),
-        border: Border.all(color: color.withOpacity(0.18)),
+        color: color.withValues(alpha: 0.08),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,18 +347,18 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppColors.muted,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             value,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
         ],
       ),
@@ -379,8 +385,9 @@ class _DocumentDetailScreenState extends State<DocumentDetailScreen> {
   }
 
   int _estimateReadingTime(StudyDocument document) {
-    final sourceText =
-        document.content.isNotEmpty ? document.content : document.description;
+    final sourceText = document.content.isNotEmpty
+        ? document.content
+        : document.description;
     final estimatedMinutes = (sourceText.length / 500).ceil();
     return estimatedMinutes.clamp(5, 30);
   }
@@ -390,17 +397,14 @@ class _HeaderPill extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _HeaderPill({
-    required this.icon,
-    required this.label,
-  });
+  const _HeaderPill({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.18),
+        color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
@@ -411,9 +415,9 @@ class _HeaderPill extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),
@@ -430,9 +434,9 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w900,
-          ),
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
     );
   }
 }
@@ -441,10 +445,7 @@ class _ReadingPanel extends StatelessWidget {
   final String text;
   final Color softColor;
 
-  const _ReadingPanel({
-    required this.text,
-    this.softColor = AppColors.surface,
-  });
+  const _ReadingPanel({required this.text, this.softColor = AppColors.surface});
 
   @override
   Widget build(BuildContext context) {
@@ -458,10 +459,9 @@ class _ReadingPanel extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              height: 1.65,
-              color: AppColors.ink,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(height: 1.65, color: AppColors.ink),
       ),
     );
   }

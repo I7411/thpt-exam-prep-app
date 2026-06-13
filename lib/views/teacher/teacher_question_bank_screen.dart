@@ -7,7 +7,8 @@ class TeacherQuestionBankScreen extends StatefulWidget {
   const TeacherQuestionBankScreen({super.key});
 
   @override
-  State<TeacherQuestionBankScreen> createState() => _TeacherQuestionBankScreenState();
+  State<TeacherQuestionBankScreen> createState() =>
+      _TeacherQuestionBankScreenState();
 }
 
 class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
@@ -21,7 +22,9 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
 
   Future<void> _loadData() async {
     final authProvider = context.read<AuthController>();
-    await context.read<TeacherController>().ensureLoaded(authProvider.currentUser);
+    await context.read<TeacherController>().ensureLoaded(
+      authProvider.currentUser,
+    );
   }
 
   @override
@@ -40,33 +43,35 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
         child: teacherProvider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : teacherProvider.questionBank.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _buildSummary(teacherProvider),
-                      const SizedBox(height: 16),
-                      const _EmptyState(message: 'Chưa có câu hỏi nào trong ngân hàng'),
-                    ],
-                  )
-                : ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    itemCount: teacherProvider.questionBank.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildSummary(teacherProvider),
-                        );
-                      }
-                      final entry = teacherProvider.questionBank[index - 1];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _QuestionCard(entry: entry),
-                      );
-                    },
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildSummary(teacherProvider),
+                  const SizedBox(height: 16),
+                  const _EmptyState(
+                    message: 'Chưa có câu hỏi nào trong ngân hàng',
                   ),
+                ],
+              )
+            : ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: teacherProvider.questionBank.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildSummary(teacherProvider),
+                    );
+                  }
+                  final entry = teacherProvider.questionBank[index - 1];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _QuestionCard(entry: entry),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -76,9 +81,21 @@ class _TeacherQuestionBankScreenState extends State<TeacherQuestionBankScreen> {
       spacing: 12,
       runSpacing: 12,
       children: [
-        _MiniStat(label: 'Câu hỏi', value: teacherProvider.questionBank.length.toString(), color: Colors.blue),
-        _MiniStat(label: 'Đề liên quan', value: teacherProvider.assignedExams.length.toString(), color: Colors.orange),
-        _MiniStat(label: 'Môn phụ trách', value: teacherProvider.subjects.length.toString(), color: Colors.green),
+        _MiniStat(
+          label: 'Câu hỏi',
+          value: teacherProvider.questionBank.length.toString(),
+          color: Colors.blue,
+        ),
+        _MiniStat(
+          label: 'Đề liên quan',
+          value: teacherProvider.assignedExams.length.toString(),
+          color: Colors.orange,
+        ),
+        _MiniStat(
+          label: 'Môn phụ trách',
+          value: teacherProvider.subjects.length.toString(),
+          color: Colors.green,
+        ),
       ],
     );
   }
@@ -99,7 +116,7 @@ class _QuestionCard extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 6),
           ),
@@ -115,11 +132,17 @@ class _QuestionCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.12),
+                  color: Colors.orange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(
-                  child: Text('${entry.question.orderNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                  child: Text(
+                    '${entry.question.orderNumber}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -127,9 +150,21 @@ class _QuestionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(entry.question.content, style: const TextStyle(fontWeight: FontWeight.w600, height: 1.4)),
+                    Text(
+                      entry.question.content,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        height: 1.4,
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    Text('${entry.subject.name} • ${entry.exam.title}', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                    Text(
+                      '${entry.subject.name} • ${entry.exam.title}',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -141,8 +176,14 @@ class _QuestionCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               _Tag(label: entry.difficulty, color: Colors.blue),
-              _Tag(label: entry.status, color: entry.exam.isPublished ? Colors.green : Colors.orange),
-              _Tag(label: 'Đáp án: ${entry.correctAnswer}', color: Colors.purple),
+              _Tag(
+                label: entry.status,
+                color: entry.exam.isPublished ? Colors.green : Colors.orange,
+              ),
+              _Tag(
+                label: 'Đáp án: ${entry.correctAnswer}',
+                color: Colors.purple,
+              ),
             ],
           ),
         ],
@@ -156,23 +197,37 @@ class _MiniStat extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _MiniStat({required this.label, required this.value, required this.color});
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.16)),
+        border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -190,10 +245,17 @@ class _Tag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

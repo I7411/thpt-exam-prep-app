@@ -354,7 +354,11 @@ class TeacherStudentConnectionController extends ChangeNotifier {
     _successMessage = '';
 
     try {
-      final requestDoc = await _firestore.collection(_requestCollection).doc(requestId).get().timeout(_connectionTimeout);
+      final requestDoc = await _firestore
+          .collection(_requestCollection)
+          .doc(requestId)
+          .get()
+          .timeout(_connectionTimeout);
       final requestData = requestDoc.data();
       final classId = requestData?['classId'] as String?;
       final studentId = requestData?['studentId'] as String?;
@@ -369,7 +373,10 @@ class TeacherStudentConnectionController extends ChangeNotifier {
           })
           .timeout(_connectionTimeout);
 
-      if (status == TeacherStudentRequestStatus.accepted && classId != null && studentId != null && teacherId != null) {
+      if (status == TeacherStudentRequestStatus.accepted &&
+          classId != null &&
+          studentId != null &&
+          teacherId != null) {
         await _firestore.collection('classes').doc(classId).update({
           'studentIds': FieldValue.arrayUnion([studentId]),
           'studentCount': FieldValue.increment(1),

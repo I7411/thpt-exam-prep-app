@@ -30,16 +30,26 @@ class Question {
     if (rawOptions.isNotEmpty && rawOptions.first is String) {
       final int correctIdx = json['correctAnswerIndex'] as int? ?? 0;
       for (int i = 0; i < rawOptions.length; i++) {
-        optionsList.add(AnswerOption(
-          id: 'opt_${json['id']}_$i',
-          label: i == 0 ? 'A' : i == 1 ? 'B' : i == 2 ? 'C' : 'D',
-          content: rawOptions[i] as String,
-          isCorrect: i == correctIdx,
-        ));
+        optionsList.add(
+          AnswerOption(
+            id: 'opt_${json['id']}_$i',
+            label: i == 0
+                ? 'A'
+                : i == 1
+                ? 'B'
+                : i == 2
+                ? 'C'
+                : 'D',
+            content: rawOptions[i] as String,
+            isCorrect: i == correctIdx,
+          ),
+        );
       }
     } else {
       optionsList = rawOptions
-          .map((option) => AnswerOption.fromJson(option as Map<String, dynamic>))
+          .map(
+            (option) => AnswerOption.fromJson(option as Map<String, dynamic>),
+          )
           .toList();
     }
 
@@ -51,7 +61,9 @@ class Question {
       orderNumber: json['orderNumber'] as int? ?? 0,
       score: (json['score'] as num? ?? 1).toDouble(),
       options: optionsList,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -99,4 +111,3 @@ class Question {
   @override
   String toString() => 'Question(id: $id, orderNumber: $orderNumber)';
 }
-

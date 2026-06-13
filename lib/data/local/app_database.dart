@@ -1,4 +1,4 @@
-﻿import 'package:path/path.dart';
+import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
@@ -11,7 +11,7 @@ class AppDatabase {
   static final AppDatabase instance = AppDatabase._internal();
 
   static const String _databaseName = 'thpt_exam_prep_app.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   Database? _database;
 
@@ -30,7 +30,11 @@ class AppDatabase {
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
-      onCreate: _onCreate,
+      onCreate: (db, version) async {
+        await _onCreate(db, version);
+        await _createStudyRemindersTable(db);
+      },
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -77,11 +81,50 @@ class AppDatabase {
       )
     ''');
 
-    await db.execute('CREATE INDEX idx_exam_attempts_user_id ON exam_attempts(user_id)');
-    await db.execute('CREATE INDEX idx_exam_attempts_exam_id ON exam_attempts(exam_id)');
-    await db.execute('CREATE INDEX idx_exam_answers_attempt_id ON exam_answers(attempt_id)');
-    await db.execute('CREATE INDEX idx_progress_stats_student_id ON progress_stats(student_id)');
-    await db.execute('CREATE INDEX idx_progress_stats_subject_id ON progress_stats(subject_id)');
+    await db.execute(
+      'CREATE INDEX idx_exam_attempts_user_id ON exam_attempts(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_exam_attempts_exam_id ON exam_attempts(exam_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_exam_answers_attempt_id ON exam_answers(attempt_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_progress_stats_student_id ON progress_stats(student_id)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_progress_stats_subject_id ON progress_stats(subject_id)',
+    );
+  }
+
+  Future<void> _createStudyRemindersTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE study_reminders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        title TEXT NOT NULL,
+        description TEXT,
+        hour INTEGER NOT NULL,
+        minute INTEGER NOT NULL,
+        weekdays TEXT NOT NULL,
+        ringtone_asset TEXT NOT NULL,
+        android_sound_resource TEXT,
+        vibration_enabled INTEGER NOT NULL DEFAULT 1,
+        is_enabled INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX idx_study_reminders_user_id ON study_reminders(user_id)',
+    );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await _createStudyRemindersTable(db);
+    }
   }
 
   Future<void> close() async {
@@ -105,36 +148,34 @@ class AppLocalRepository {
   }) async {
     final db = await _database.database;
     await db.transaction((txn) async {
-      await txn.insert(
-        'exam_attempts',
-        {
-          'id': result.attempt.id,
-          'user_id': result.studentId,
-          'exam_id': result.exam.id,
-          'score': result.score,
-          'correct_count': result.correctCount,
-          'wrong_count': result.wrongCount,
-          'started_at': result.attempt.startedAt.toIso8601String(),
-          'submitted_at': result.attempt.completedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await txn.insert('exam_attempts', {
+        'id': result.attempt.id,
+        'user_id': result.studentId,
+        'exam_id': result.exam.id,
+        'score': result.score,
+        'correct_count': result.correctCount,
+        'wrong_count': result.wrongCount,
+        'started_at': result.attempt.startedAt.toIso8601String(),
+        'submitted_at':
+            result.attempt.completedAt?.toIso8601String() ??
+            DateTime.now().toIso8601String(),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
 
-      await txn.delete('exam_answers', where: 'attempt_id = ?', whereArgs: [result.attempt.id]);
+      await txn.delete(
+        'exam_answers',
+        where: 'attempt_id = ?',
+        whereArgs: [result.attempt.id],
+      );
       for (final answer in result.answers) {
-        await txn.insert(
-          'exam_answers',
-          {
-            'id': answer.id,
-            'attempt_id': answer.examAttemptId,
-            'question_id': answer.questionId,
-            'selected_option_id': answer.selectedOptionId,
-            'answered_at': answer.answeredAt.toIso8601String(),
-            'is_correct': answer.isCorrect ? 1 : 0,
-            'earned_score': answer.earnedScore,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        await txn.insert('exam_answers', {
+          'id': answer.id,
+          'attempt_id': answer.examAttemptId,
+          'question_id': answer.questionId,
+          'selected_option_id': answer.selectedOptionId,
+          'answered_at': answer.answeredAt.toIso8601String(),
+          'is_correct': answer.isCorrect ? 1 : 0,
+          'earned_score': answer.earnedScore,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
 
       await txn.insert(
@@ -160,7 +201,9 @@ class AppLocalRepository {
       final exam = await _repositoryService.exam.getExamById(examId);
       if (exam == null) continue;
 
-      final questions = await _repositoryService.exam.getQuestionsByExam(examId);
+      final questions = await _repositoryService.exam.getQuestionsByExam(
+        examId,
+      );
       final answersRows = await db.query(
         'exam_answers',
         where: 'attempt_id = ?',
@@ -170,13 +213,18 @@ class AppLocalRepository {
 
       final answers = answersRows.map(_answerFromMap).toList();
       final selectedOptionIds = <String, String>{
-        for (final answer in answers) answer.questionId: answer.selectedOptionId,
+        for (final answer in answers)
+          answer.questionId: answer.selectedOptionId,
       };
 
       final startedAt = DateTime.parse(attemptRow['started_at'] as String);
       final submittedAt = DateTime.parse(attemptRow['submitted_at'] as String);
-      final correctCount = (attemptRow['correct_count'] as int?) ?? answers.where((answer) => answer.isCorrect).length;
-      final wrongCount = (attemptRow['wrong_count'] as int?) ?? (answers.length - correctCount);
+      final correctCount =
+          (attemptRow['correct_count'] as int?) ??
+          answers.where((answer) => answer.isCorrect).length;
+      final wrongCount =
+          (attemptRow['wrong_count'] as int?) ??
+          (answers.length - correctCount);
       final score = (attemptRow['score'] as num).toDouble();
       final attempt = ExamAttempt(
         id: attemptRow['id'] as String,
@@ -202,7 +250,9 @@ class AppLocalRepository {
           correctCount: correctCount,
           wrongCount: wrongCount,
           score: score,
-          completionPercentage: questions.isEmpty ? 0 : (correctCount / questions.length) * 100,
+          completionPercentage: questions.isEmpty
+              ? 0
+              : (correctCount / questions.length) * 100,
           timeSpent: submittedAt.difference(startedAt),
           autoSubmitted: false,
         ),
@@ -223,7 +273,10 @@ class AppLocalRepository {
     return rows.map(_progressFromMap).toList();
   }
 
-  Future<ProgressStat?> getProgressStatBySubject(String studentId, String subjectId) async {
+  Future<ProgressStat?> getProgressStatBySubject(
+    String studentId,
+    String subjectId,
+  ) async {
     final db = await _database.database;
     final rows = await db.query(
       'progress_stats',
@@ -270,9 +323,14 @@ class AppLocalRepository {
       examsPassed: map['exams_passed'] as int? ?? 0,
       averageScore: (map['average_score'] as num? ?? 0).toDouble(),
       streakDays: map['streak_days'] as int? ?? 0,
-      lastStudyDate: DateTime.tryParse(map['last_study_date'] as String? ?? '') ?? DateTime.now(),
-      completionPercentage: (map['completion_percentage'] as num? ?? 0).toDouble(),
-      updatedAt: DateTime.tryParse(map['updated_at'] as String? ?? '') ?? DateTime.now(),
+      lastStudyDate:
+          DateTime.tryParse(map['last_study_date'] as String? ?? '') ??
+          DateTime.now(),
+      completionPercentage: (map['completion_percentage'] as num? ?? 0)
+          .toDouble(),
+      updatedAt:
+          DateTime.tryParse(map['updated_at'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -282,9 +340,59 @@ class AppLocalRepository {
       examAttemptId: map['attempt_id'] as String? ?? '',
       questionId: map['question_id'] as String? ?? '',
       selectedOptionId: map['selected_option_id'] as String? ?? '',
-      answeredAt: DateTime.tryParse(map['answered_at'] as String? ?? '') ?? DateTime.now(),
+      answeredAt:
+          DateTime.tryParse(map['answered_at'] as String? ?? '') ??
+          DateTime.now(),
       isCorrect: (map['is_correct'] as int? ?? 0) == 1,
       earnedScore: (map['earned_score'] as num? ?? 0).toDouble(),
+    );
+  }
+
+  // --- STUDY REMINDERS CRUD ---
+  Future<List<StudyReminder>> getRemindersByUser(String userId) async {
+    final db = await _database.database;
+    final rows = await db.query(
+      'study_reminders',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'hour ASC, minute ASC',
+    );
+    return rows.map((row) => StudyReminder.fromMap(row)).toList();
+  }
+
+  Future<StudyReminder> createReminder(StudyReminder reminder) async {
+    final db = await _database.database;
+    final map = reminder.toMap();
+    map.remove('id');
+    final id = await db.insert('study_reminders', map);
+    return reminder.copyWith(id: id);
+  }
+
+  Future<void> updateReminder(StudyReminder reminder) async {
+    final db = await _database.database;
+    await db.update(
+      'study_reminders',
+      reminder.toMap(),
+      where: 'id = ?',
+      whereArgs: [reminder.id],
+    );
+  }
+
+  Future<void> deleteReminder(int id) async {
+    final db = await _database.database;
+    await db.delete(
+      'study_reminders',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteAllRemindersForUser(String userId) async {
+    final db = await _database.database;
+    await db.delete(
+      'study_reminders',
+      where: 'user_id = ?',
+      whereArgs: [userId],
     );
   }
 }

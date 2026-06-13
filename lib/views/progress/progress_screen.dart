@@ -55,8 +55,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 Text(
                   'Tiến độ theo môn',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...provider.subjectProgress.map((progress) {
@@ -73,14 +73,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   _EmptyState(
                     icon: Icons.timeline,
                     title: 'Chưa có tiến độ',
-                    message: 'Hãy làm một vài đề thi để hệ thống tạo dữ liệu tiến độ.',
+                    message:
+                        'Hãy làm một vài đề thi để hệ thống tạo dữ liệu tiến độ.',
                   ),
                 const SizedBox(height: 24),
                 Text(
                   'Lịch sử bài làm',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...provider.recentHistory().map((result) {
@@ -93,7 +94,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   _EmptyState(
                     icon: Icons.history,
                     title: 'Chưa có lịch sử bài làm',
-                    message: 'Sau khi nộp bài thi thử, lịch sử sẽ xuất hiện ở đây.',
+                    message:
+                        'Sau khi nộp bài thi thử, lịch sử sẽ xuất hiện ở đây.',
                   ),
               ],
             ),
@@ -154,7 +156,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.panel),
         gradient: LinearGradient(
-          colors: [AppColors.primary.withOpacity(0.1), AppColors.success.withOpacity(0.08)],
+          colors: [
+            AppColors.primary.withValues(alpha: 0.1),
+            AppColors.success.withValues(alpha: 0.08),
+          ],
         ),
         border: Border.all(color: AppColors.line),
       ),
@@ -163,9 +168,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
         children: [
           Text(
             'Nhận xét nhanh',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(provider.strongestSubjectLabel),
@@ -201,9 +206,9 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -212,7 +217,7 @@ class _SummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -221,17 +226,17 @@ class _SummaryCard extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -267,16 +272,16 @@ class _SubjectProgressCard extends StatelessWidget {
                 child: Text(
                   subjectName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               Text(
                 '${progress.completionPercentage.toStringAsFixed(0)}%',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -325,9 +330,9 @@ class _HistoryCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   result.exam.title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               _StatusPill(
@@ -367,15 +372,12 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -408,17 +410,17 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[700],
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 /// Progress repository for tracking student progress
 library;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -7,14 +8,19 @@ import 'package:thpt_exam_prep_app/data/mock/mock_progress.dart';
 
 abstract class ProgressRepository {
   Future<List<ProgressStat>> getProgressByStudent(String studentId);
-  Future<ProgressStat?> getProgressByStudentSubject(String studentId, String subjectId);
+  Future<ProgressStat?> getProgressByStudentSubject(
+    String studentId,
+    String subjectId,
+  );
   Future<void> updateProgress(ProgressStat progress);
   Future<void> createProgress(ProgressStat progress);
   Future<double> getAverageScoreByStudent(String studentId);
   Future<int> getTotalExamsByStudent(String studentId);
   Future<int> getExamsPassedByStudent(String studentId);
+
   /// Returns the number of unique documents learned by this student.
   Future<int> getTotalLearnedDocuments(String studentId);
+
   /// Writes the document to learned_materials (idempotent) and updates
   /// progress_stats.documentsRead for the student.
   Future<void> markDocumentAsLearned({
@@ -27,7 +33,9 @@ abstract class ProgressRepository {
 
 /// Mock implementation
 class MockProgressRepository implements ProgressRepository {
-  final List<ProgressStat> _progressStats = List.from(MockProgressData.progressStats);
+  final List<ProgressStat> _progressStats = List.from(
+    MockProgressData.progressStats,
+  );
 
   @override
   Future<List<ProgressStat>> getProgressByStudent(String studentId) async {
@@ -68,7 +76,9 @@ class MockProgressRepository implements ProgressRepository {
   @override
   Future<double> getAverageScoreByStudent(String studentId) async {
     await Future.delayed(Duration(milliseconds: 300));
-    final stats = _progressStats.where((p) => p.studentId == studentId).toList();
+    final stats = _progressStats
+        .where((p) => p.studentId == studentId)
+        .toList();
     if (stats.isEmpty) return 0.0;
 
     double totalScore = 0;
@@ -126,7 +136,10 @@ class FirestoreProgressRepository implements ProgressRepository {
 
   Future<StudentProgress> _getOrCreateStudentProgress(String studentId) async {
     try {
-      final doc = await _firestore.collection('progress_stats').doc(studentId).get();
+      final doc = await _firestore
+          .collection('progress_stats')
+          .doc(studentId)
+          .get();
       if (doc.exists) {
         return StudentProgress.fromFirestore(doc);
       }
@@ -143,10 +156,15 @@ class FirestoreProgressRepository implements ProgressRepository {
   }
 
   @override
-  Future<ProgressStat?> getProgressByStudentSubject(String studentId, String subjectId) async {
+  Future<ProgressStat?> getProgressByStudentSubject(
+    String studentId,
+    String subjectId,
+  ) async {
     final progress = await _getOrCreateStudentProgress(studentId);
     try {
-      return progress.subjectProgress.firstWhere((p) => p.subjectId == subjectId);
+      return progress.subjectProgress.firstWhere(
+        (p) => p.subjectId == subjectId,
+      );
     } catch (_) {
       return null;
     }
@@ -160,10 +178,16 @@ class FirestoreProgressRepository implements ProgressRepository {
   @override
   Future<void> createProgress(ProgressStat progress) async {
     try {
-      final studentProgress = await _getOrCreateStudentProgress(progress.studentId);
-      
-      final currentList = List<ProgressStat>.from(studentProgress.subjectProgress);
-      final index = currentList.indexWhere((p) => p.subjectId == progress.subjectId);
+      final studentProgress = await _getOrCreateStudentProgress(
+        progress.studentId,
+      );
+
+      final currentList = List<ProgressStat>.from(
+        studentProgress.subjectProgress,
+      );
+      final index = currentList.indexWhere(
+        (p) => p.subjectId == progress.subjectId,
+      );
       if (index >= 0) {
         currentList[index] = progress;
       } else {
@@ -184,7 +208,9 @@ class FirestoreProgressRepository implements ProgressRepository {
       }
 
       final avgScore = totalExams == 0 ? 0.0 : totalScore / totalExams;
-      final avgCompletion = currentList.isEmpty ? 0.0 : totalCompletion / currentList.length;
+      final avgCompletion = currentList.isEmpty
+          ? 0.0
+          : totalCompletion / currentList.length;
 
       final updatedProgress = studentProgress.copyWith(
         totalExamsCompleted: totalExams,
@@ -221,7 +247,10 @@ class FirestoreProgressRepository implements ProgressRepository {
   @override
   Future<int> getExamsPassedByStudent(String studentId) async {
     final progress = await _getOrCreateStudentProgress(studentId);
-    return progress.subjectProgress.fold<int>(0, (total, p) => total + p.examsPassed);
+    return progress.subjectProgress.fold<int>(
+      0,
+      (total, p) => total + p.examsPassed,
+    );
   }
 
   // ── Document learned tracking ─────────────────────────────────────────────
@@ -236,7 +265,9 @@ class FirestoreProgressRepository implements ProgressRepository {
           .get()
           .timeout(const Duration(seconds: 10));
       final count = snap.count ?? 0;
-      debugPrint('[Progress] getTotalLearnedDocuments: userId=$studentId, count=$count');
+      debugPrint(
+        '[Progress] getTotalLearnedDocuments: userId=$studentId, count=$count',
+      );
       return count;
     } catch (e) {
       debugPrint('[Progress] getTotalLearnedDocuments error: $e');
@@ -251,7 +282,9 @@ class FirestoreProgressRepository implements ProgressRepository {
     required String title,
     required String subjectId,
   }) async {
-    debugPrint('[Progress] markDocumentAsLearned: userId=$userId, documentId=$materialId');
+    debugPrint(
+      '[Progress] markDocumentAsLearned: userId=$userId, documentId=$materialId',
+    );
 
     // ── Step 1: write learned_materials/{userId}_{materialId} (idempotent) ──
     final docRef = _firestore
@@ -260,20 +293,25 @@ class FirestoreProgressRepository implements ProgressRepository {
 
     final existing = await docRef.get().timeout(const Duration(seconds: 8));
     if (!existing.exists) {
-      await docRef.set({
-        'userId': userId,
-        'materialId': materialId,
-        'title': title,
-        'subjectId': subjectId,
-        'learnedAt': FieldValue.serverTimestamp(),
-        'createdAt': FieldValue.serverTimestamp(),
-      }).timeout(const Duration(seconds: 8));
+      await docRef
+          .set({
+            'userId': userId,
+            'materialId': materialId,
+            'title': title,
+            'subjectId': subjectId,
+            'learnedAt': FieldValue.serverTimestamp(),
+            'createdAt': FieldValue.serverTimestamp(),
+          })
+          .timeout(const Duration(seconds: 8));
       debugPrint('[Progress] learned_materials written');
     } else {
       // Update learnedAt timestamp even on re-open; do NOT increment counter.
-      await docRef.update({'learnedAt': FieldValue.serverTimestamp()})
+      await docRef
+          .update({'learnedAt': FieldValue.serverTimestamp()})
           .timeout(const Duration(seconds: 8));
-      debugPrint('[Progress] learned_materials already exists — updated learnedAt only');
+      debugPrint(
+        '[Progress] learned_materials already exists — updated learnedAt only',
+      );
     }
 
     // ── Step 2: recalculate total from source of truth ───────────────────────

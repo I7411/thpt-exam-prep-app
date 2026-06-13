@@ -1,4 +1,4 @@
-﻿/// Progress statistic model (Tiáº¿n Ä‘á»™ há»c táº­p)
+/// Progress statistic model (Tiáº¿n Ä‘á»™ há»c táº­p)
 class ProgressStat {
   final String id;
   final String studentId;
@@ -43,9 +43,14 @@ class ProgressStat {
       examsPassed: json['examsPassed'] as int? ?? 0,
       averageScore: (json['averageScore'] as num? ?? 0).toDouble(),
       streakDays: json['streakDays'] as int? ?? 0,
-      lastStudyDate: DateTime.tryParse(json['lastStudyDate'] as String? ?? '') ?? DateTime.now(),
-      completionPercentage: (json['completionPercentage'] as num? ?? 0).toDouble(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+      lastStudyDate:
+          DateTime.tryParse(json['lastStudyDate'] as String? ?? '') ??
+          DateTime.now(),
+      completionPercentage: (json['completionPercentage'] as num? ?? 0)
+          .toDouble(),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -98,4 +103,3 @@ class ProgressStat {
   @override
   String toString() => 'ProgressStat(id: $id, studentId: $studentId)';
 }
-

@@ -75,7 +75,9 @@ class ProgressController extends ChangeNotifier {
           .getTotalLearnedDocuments(studentId)
           .timeout(const Duration(seconds: 10));
 
-      debugPrint('[Progress] Progress screen loaded documentsRead=$_totalLearnedDocuments');
+      debugPrint(
+        '[Progress] Progress screen loaded documentsRead=$_totalLearnedDocuments',
+      );
 
       final localHistory = await _localRepository.getExamHistory(studentId);
       _examHistory = localHistory;

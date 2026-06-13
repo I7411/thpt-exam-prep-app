@@ -8,10 +8,7 @@ import '../../models.dart';
 class ExamQuizReviewScreen extends StatefulWidget {
   final String examId;
 
-  const ExamQuizReviewScreen({
-    super.key,
-    required this.examId,
-  });
+  const ExamQuizReviewScreen({super.key, required this.examId});
 
   @override
   State<ExamQuizReviewScreen> createState() => _ExamQuizReviewScreenState();
@@ -44,13 +41,11 @@ class _ExamQuizReviewScreenState extends State<ExamQuizReviewScreen> {
           return ListView.separated(
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: questions.length,
-            separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.lg),
+            separatorBuilder: (context, index) =>
+                const SizedBox(height: AppSpacing.lg),
             itemBuilder: (context, index) {
               final question = questions[index];
-              return _QuizReviewCard(
-                index: index + 1,
-                question: question,
-              );
+              return _QuizReviewCard(index: index + 1, question: question);
             },
           );
         },
@@ -63,10 +58,7 @@ class _QuizReviewCard extends StatelessWidget {
   final int index;
   final Question question;
 
-  const _QuizReviewCard({
-    required this.index,
-    required this.question,
-  });
+  const _QuizReviewCard({required this.index, required this.question});
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +86,7 @@ class _QuizReviewCard extends StatelessWidget {
                 height: 32,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Text(
@@ -110,9 +102,9 @@ class _QuizReviewCard extends StatelessWidget {
                 child: Text(
                   question.content,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.4,
-                      ),
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ],
@@ -122,9 +114,14 @@ class _QuizReviewCard extends StatelessWidget {
             final isCorrect = option.isCorrect;
             return Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
               decoration: BoxDecoration(
-                color: isCorrect ? AppColors.success.withOpacity(0.1) : Colors.transparent,
+                color: isCorrect
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(AppRadius.button),
                 border: Border.all(
                   color: isCorrect ? AppColors.success : AppColors.line,
@@ -134,7 +131,9 @@ class _QuizReviewCard extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    isCorrect ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                    isCorrect
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked,
                     color: isCorrect ? AppColors.success : AppColors.muted,
                     size: 20,
                   ),
@@ -143,9 +142,11 @@ class _QuizReviewCard extends StatelessWidget {
                     child: Text(
                       option.content,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isCorrect ? AppColors.success : AppColors.ink,
-                            fontWeight: isCorrect ? FontWeight.w600 : FontWeight.normal,
-                          ),
+                        color: isCorrect ? AppColors.success : AppColors.ink,
+                        fontWeight: isCorrect
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
                 ],
@@ -157,16 +158,22 @@ class _QuizReviewCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.secondary.withOpacity(0.05),
+              color: AppColors.secondary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(AppRadius.button),
-              border: Border.all(color: AppColors.secondary.withOpacity(0.2)),
+              border: Border.all(
+                color: AppColors.secondary.withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.lightbulb_outline_rounded, color: AppColors.secondary, size: 20),
+                    Icon(
+                      Icons.lightbulb_outline_rounded,
+                      color: AppColors.secondary,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Giải thích',
@@ -182,9 +189,9 @@ class _QuizReviewCard extends StatelessWidget {
                   (question.explanation.trim().isEmpty)
                       ? 'Chưa có lời giải chi tiết cho câu hỏi này.'
                       : question.explanation,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        height: 1.4,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.4),
                 ),
               ],
             ),

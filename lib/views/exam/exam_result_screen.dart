@@ -17,14 +17,16 @@ class ExamResultScreen extends StatelessWidget {
         final result = this.result ?? provider.currentResult;
         if (result == null) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Kết quả thi'),
-            ),
+            appBar: AppBar(title: const Text('Kết quả thi')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.assessment_outlined, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.assessment_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Chưa có kết quả thi',
@@ -33,7 +35,10 @@ class ExamResultScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.pushReplacementNamed(context, AppRoutes.studentExams);
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.studentExams,
+                      );
                     },
                     child: const Text('Về danh sách đề thi'),
                   ),
@@ -44,10 +49,7 @@ class ExamResultScreen extends StatelessWidget {
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Kết quả thi'),
-            centerTitle: true,
-          ),
+          appBar: AppBar(title: const Text('Kết quả thi'), centerTitle: true),
           body: Column(
             children: [
               Expanded(
@@ -61,15 +63,19 @@ class ExamResultScreen extends StatelessWidget {
                     Text(
                       'Chi tiết câu hỏi',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     ...result.questions.map((question) {
                       final selectedId = result.selectedOptionFor(question.id);
                       final selectedOption = _findOption(question, selectedId);
-                      final correctOption = question.options.firstWhere((option) => option.isCorrect);
-                      final isCorrect = selectedOption != null && selectedOption.id == correctOption.id;
+                      final correctOption = question.options.firstWhere(
+                        (option) => option.isCorrect,
+                      );
+                      final isCorrect =
+                          selectedOption != null &&
+                          selectedOption.id == correctOption.id;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _ReviewCard(
@@ -90,7 +96,10 @@ class ExamResultScreen extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.pushReplacementNamed(context, AppRoutes.studentExams);
+                          Navigator.pushReplacementNamed(
+                            context,
+                            AppRoutes.studentExams,
+                          );
                         },
                         child: const Text('Làm đề khác'),
                       ),
@@ -99,7 +108,10 @@ class ExamResultScreen extends StatelessWidget {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pushReplacementNamed(context, AppRoutes.studentHome);
+                          Navigator.pushReplacementNamed(
+                            context,
+                            AppRoutes.studentHome,
+                          );
                         },
                         child: const Text('Về trang chủ'),
                       ),
@@ -125,11 +137,11 @@ class ExamResultScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [scoreColor, scoreColor.withOpacity(0.68)],
+          colors: [scoreColor, scoreColor.withValues(alpha: 0.68)],
         ),
         boxShadow: [
           BoxShadow(
-            color: scoreColor.withOpacity(0.24),
+            color: scoreColor.withValues(alpha: 0.24),
             blurRadius: 22,
             offset: const Offset(0, 12),
           ),
@@ -141,31 +153,31 @@ class ExamResultScreen extends StatelessWidget {
           Text(
             result.exam.title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             passed ? 'Đạt yêu cầu' : 'Cần ôn thêm',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
-                ),
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             '${result.score.toStringAsFixed(1)} điểm',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Thời gian làm bài: ${_formatDuration(result.timeSpent)}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
-                ),
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
           ),
         ],
       ),
@@ -174,7 +186,9 @@ class ExamResultScreen extends StatelessWidget {
 
   Widget _buildStatsGrid(BuildContext context, ExamResultData result) {
     final totalQuestions = result.questions.length;
-    final answeredCount = result.selectedOptionIds.values.where((id) => id.isNotEmpty).length;
+    final answeredCount = result.selectedOptionIds.values
+        .where((id) => id.isNotEmpty)
+        .length;
     final unansweredCount = totalQuestions - answeredCount;
     final wrongAnsweredCount = result.wrongCount - unansweredCount;
 
@@ -189,12 +203,36 @@ class ExamResultScreen extends StatelessWidget {
           crossAxisSpacing: 12,
           childAspectRatio: 1.3,
           children: [
-            _ResultStatCard(label: 'Đúng', value: '${result.correctCount}', color: AppColors.success),
-            _ResultStatCard(label: 'Sai', value: '$wrongAnsweredCount', color: AppColors.error),
-            _ResultStatCard(label: 'Chưa trả lời', value: '$unansweredCount', color: Colors.blueGrey),
-            _ResultStatCard(label: 'Tổng số câu', value: '$totalQuestions', color: Colors.indigo),
-            _ResultStatCard(label: 'Hoàn thành', value: '${result.completionPercentage.toStringAsFixed(0)}%', color: AppColors.primary),
-            _ResultStatCard(label: 'Thời gian', value: _formatDuration(result.timeSpent), color: AppColors.accent),
+            _ResultStatCard(
+              label: 'Đúng',
+              value: '${result.correctCount}',
+              color: AppColors.success,
+            ),
+            _ResultStatCard(
+              label: 'Sai',
+              value: '$wrongAnsweredCount',
+              color: AppColors.error,
+            ),
+            _ResultStatCard(
+              label: 'Chưa trả lời',
+              value: '$unansweredCount',
+              color: Colors.blueGrey,
+            ),
+            _ResultStatCard(
+              label: 'Tổng số câu',
+              value: '$totalQuestions',
+              color: Colors.indigo,
+            ),
+            _ResultStatCard(
+              label: 'Hoàn thành',
+              value: '${result.completionPercentage.toStringAsFixed(0)}%',
+              color: AppColors.primary,
+            ),
+            _ResultStatCard(
+              label: 'Thời gian',
+              value: _formatDuration(result.timeSpent),
+              color: AppColors.accent,
+            ),
           ],
         );
       },
@@ -249,9 +287,9 @@ class _ResultStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -260,17 +298,17 @@ class _ResultStatCard extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -298,7 +336,9 @@ class _ReviewCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         color: Colors.white,
         border: Border.all(
-          color: isCorrect ? Colors.green.withOpacity(0.25) : Colors.red.withOpacity(0.25),
+          color: isCorrect
+              ? Colors.green.withValues(alpha: 0.25)
+              : Colors.red.withValues(alpha: 0.25),
         ),
       ),
       child: ExpansionTile(
@@ -306,9 +346,9 @@ class _ReviewCard extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         title: Text(
           'Câu ${question.orderNumber}: ${question.content}',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
@@ -318,7 +358,9 @@ class _ReviewCard extends StatelessWidget {
             children: [
               _LabelChip(
                 label: 'Đã chọn: ${selectedOption?.label ?? 'Chưa chọn'}',
-                color: selectedOption == null ? Colors.grey : (isCorrect ? Colors.green : Colors.red),
+                color: selectedOption == null
+                    ? Colors.grey
+                    : (isCorrect ? Colors.green : Colors.red),
               ),
               _LabelChip(
                 label: 'Đáp án đúng: ${correctOption.label}',
@@ -332,18 +374,18 @@ class _ReviewCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               'Lời giải',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             question.explanation,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.5,
-                  color: Colors.grey[800],
-                ),
+              height: 1.5,
+              color: Colors.grey[800],
+            ),
           ),
         ],
       ),
@@ -355,20 +397,14 @@ class _LabelChip extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _LabelChip({
-    required this.label,
-    required this.color,
-  });
+  const _LabelChip({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Chip(
       label: Text(label),
-      backgroundColor: color.withOpacity(0.1),
-      labelStyle: TextStyle(
-        color: color,
-        fontWeight: FontWeight.w600,
-      ),
+      backgroundColor: color.withValues(alpha: 0.1),
+      labelStyle: TextStyle(color: color, fontWeight: FontWeight.w600),
       side: BorderSide.none,
       visualDensity: VisualDensity.compact,
     );

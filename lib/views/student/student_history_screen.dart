@@ -16,19 +16,16 @@ import 'package:intl/intl.dart';
 class StudentHistoryScreen extends StatefulWidget {
   final int initialTab;
 
-  const StudentHistoryScreen({
-    super.key,
-    required this.initialTab,
-  });
+  const StudentHistoryScreen({super.key, required this.initialTab});
 
   @override
   State<StudentHistoryScreen> createState() => _StudentHistoryScreenState();
 }
 
-class _StudentHistoryScreenState extends State<StudentHistoryScreen> with SingleTickerProviderStateMixin {
+class _StudentHistoryScreenState extends State<StudentHistoryScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   late final RepositoryService _repositoryService;
-
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -76,13 +73,17 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       _allDocuments = docs;
 
       // 2. Fetch learned documents from LearningController
-      _learnedHistory = await context.read<LearningController>().getLearnedHistory(userId);
+      _learnedHistory = await context
+          .read<LearningController>()
+          .getLearnedHistory(userId);
 
       // 3. Fetch exam history from SQLite via ExamController
       await context.read<ExamController>().loadStudentExamHistory(userId);
 
       // 4. Fetch progress stats for streak count
-      final stats = await _repositoryService.progress.getProgressByStudent(userId);
+      final stats = await _repositoryService.progress.getProgressByStudent(
+        userId,
+      );
       _progressStats = stats;
 
       if (mounted) {
@@ -95,7 +96,8 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'Không thể tải lịch sử học tập. Vui lòng kiểm tra lại mạng.';
+          _errorMessage =
+              'Không thể tải lịch sử học tập. Vui lòng kiểm tra lại mạng.';
         });
       }
     }
@@ -105,7 +107,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
   Widget build(BuildContext context) {
     final examController = context.watch<ExamController>();
     final examHistoryList = examController.history;
-    
+
     // Sync for backwards compatibility with tabs that read _examHistory
     _examHistory = examHistoryList.toList();
 
@@ -127,32 +129,33 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error_outline, size: 56, color: AppColors.error),
-                        const SizedBox(height: 16),
-                        Text(_errorMessage!, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: _loadAllHistoryData,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Tải lại'),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : TabBarView(
-                  controller: _tabController,
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildLearnedMaterialsTab(),
-                    _buildStreakTab(),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 56,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(_errorMessage!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _loadAllHistoryData,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tải lại'),
+                    ),
                   ],
                 ),
+              ),
+            )
+          : TabBarView(
+              controller: _tabController,
+              children: [_buildLearnedMaterialsTab(), _buildStreakTab()],
+            ),
     );
   }
 
@@ -161,7 +164,8 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       return _buildEmptyState(
         icon: Icons.auto_stories_outlined,
         title: 'Chưa có tài liệu đã học',
-        message: 'Bạn sẽ thấy danh sách tài liệu đã học tại đây sau khi nhấn "Đánh dấu đã học" trong chi tiết tài liệu.',
+        message:
+            'Bạn sẽ thấy danh sách tài liệu đã học tại đây sau khi nhấn "Đánh dấu đã học" trong chi tiết tài liệu.',
       );
     }
 
@@ -185,7 +189,9 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
 
         return Card(
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -193,7 +199,11 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: AppColors.success, size: 16),
+                    const Icon(
+                      Icons.check_circle,
+                      color: AppColors.success,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Hoàn thành lúc $timeStr',
@@ -230,8 +240,6 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       },
     );
   }
-
-
 
   Widget _buildStreakTab() {
     int maxStreak = 0;
@@ -270,7 +278,9 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
       }
     }
 
-    activityLogs.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+    activityLogs.sort(
+      (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime),
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -288,7 +298,7 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.red.withOpacity(0.25),
+                  color: Colors.red.withValues(alpha: 0.25),
                   blurRadius: 18,
                   offset: const Offset(0, 10),
                 ),
@@ -315,17 +325,29 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
                     children: [
                       const Text(
                         'Chuỗi ngày học tập',
-                        style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '$maxStreak Ngày liên tục',
-                        style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         'Duy trì ôn thi đều đặn mỗi ngày để ghi điểm cao trong kỳ thi chính thức!',
-                        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, height: 1.4),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -336,14 +358,17 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
           const SizedBox(height: 28),
           Text(
             'Nhật ký học tập',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 16),
           if (activityLogs.isEmpty)
             _buildEmptyState(
               icon: Icons.calendar_today_outlined,
               title: 'Chưa ghi nhận hoạt động',
-              message: 'Hãy bắt đầu làm đề hoặc đọc tài liệu để ghi nhật ký hoạt động học tập đầu tiên của bạn.',
+              message:
+                  'Hãy bắt đầu làm đề hoặc đọc tài liệu để ghi nhật ký hoạt động học tập đầu tiên của bạn.',
             )
           else
             ListView.builder(
@@ -364,15 +389,21 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.12),
+                              color: color.withValues(alpha: 0.12),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(log['icon'] as IconData, color: color, size: 20),
+                            child: Icon(
+                              log['icon'] as IconData,
+                              color: color,
+                              size: 20,
+                            ),
                           ),
                           Expanded(
                             child: Container(
                               width: 2,
-                              color: index == activityLogs.length - 1 ? Colors.transparent : Colors.grey[300],
+                              color: index == activityLogs.length - 1
+                                  ? Colors.transparent
+                                  : Colors.grey[300],
                             ),
                           ),
                         ],
@@ -395,12 +426,18 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
                               const SizedBox(height: 4),
                               Text(
                                 log['title'] as String,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '${log['detail']} • $dateStr',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
                               ),
                             ],
                           ),
@@ -416,7 +453,11 @@ class _StudentHistoryScreenState extends State<StudentHistoryScreen> with Single
     );
   }
 
-  Widget _buildEmptyState({required IconData icon, required String title, required String message}) {
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),

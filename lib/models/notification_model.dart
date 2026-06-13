@@ -56,8 +56,12 @@ class NotificationItem {
       type: NotificationType.fromValue(json['type'] as String? ?? 'info'),
       actionUrl: json['actionUrl'] as String?,
       isRead: json['isRead'] as bool? ?? false,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      readAt: json['readAt'] != null ? DateTime.tryParse(json['readAt'] as String) : null,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      readAt: json['readAt'] != null
+          ? DateTime.tryParse(json['readAt'] as String)
+          : null,
       senderId: json['senderId'] as String?,
       senderRole: json['senderRole'] as String?,
     );
@@ -112,4 +116,3 @@ class NotificationItem {
   @override
   String toString() => 'NotificationItem(id: $id, title: $title)';
 }
-

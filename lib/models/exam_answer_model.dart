@@ -1,4 +1,4 @@
-﻿/// Exam answer model (CÃ¢u tráº£ lá»i cá»§a há»c sinh)
+/// Exam answer model (CÃ¢u tráº£ lá»i cá»§a há»c sinh)
 class ExamAnswer {
   final String id;
   final String examAttemptId;
@@ -25,7 +25,9 @@ class ExamAnswer {
       examAttemptId: json['examAttemptId'] as String? ?? '',
       questionId: json['questionId'] as String? ?? '',
       selectedOptionId: json['selectedOptionId'] as String? ?? '',
-      answeredAt: DateTime.tryParse(json['answeredAt'] as String? ?? '') ?? DateTime.now(),
+      answeredAt:
+          DateTime.tryParse(json['answeredAt'] as String? ?? '') ??
+          DateTime.now(),
       isCorrect: json['isCorrect'] as bool? ?? false,
       earnedScore: (json['earnedScore'] as num? ?? 0).toDouble(),
     );
@@ -68,4 +70,3 @@ class ExamAnswer {
   @override
   String toString() => 'ExamAnswer(id: $id, isCorrect: $isCorrect)';
 }
-

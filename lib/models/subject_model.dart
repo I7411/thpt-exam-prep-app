@@ -1,4 +1,4 @@
-﻿/// Subject model (MÃ´n há»c)
+/// Subject model (MÃ´n há»c)
 class Subject {
   final String id;
   final String name;
@@ -33,7 +33,9 @@ class Subject {
       totalExams: json['totalExams'] as int? ?? 0,
       iconUrl: json['iconUrl'] as String?,
       color: json['color'] as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -80,4 +82,3 @@ class Subject {
   @override
   String toString() => 'Subject(id: $id, name: $name)';
 }
-

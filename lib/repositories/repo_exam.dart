@@ -36,7 +36,7 @@ class MockExamRepository implements ExamRepository {
 
   Exam examFromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
-    
+
     final id = doc.id;
     final subjectId = data['subjectId'] as String? ?? '';
     final title = data['title'] as String? ?? '';
@@ -45,18 +45,22 @@ class MockExamRepository implements ExamRepository {
     final durationMinutes = data['durationMinutes'] as int? ?? 60;
     final totalScore = (data['totalScore'] as num? ?? 10.0).toDouble();
     final passingScore = (data['passingScore'] as num? ?? 5.0).toDouble();
-    final status = data['status'] as String? ?? (data['isPublished'] == true ? 'published' : 'draft');
-    final creatorId = data['creatorId'] as String? ?? data['teacherId'] as String? ?? '';
-    
+    final status =
+        data['status'] as String? ??
+        (data['isPublished'] == true ? 'published' : 'draft');
+    final creatorId =
+        data['creatorId'] as String? ?? data['teacherId'] as String? ?? '';
+
     DateTime createdAt;
     if (data['createdAt'] is Timestamp) {
       createdAt = (data['createdAt'] as Timestamp).toDate();
     } else if (data['createdAt'] is String) {
-      createdAt = DateTime.tryParse(data['createdAt'] as String) ?? DateTime.now();
+      createdAt =
+          DateTime.tryParse(data['createdAt'] as String) ?? DateTime.now();
     } else {
       createdAt = DateTime.now();
     }
-    
+
     DateTime? updatedAt;
     if (data['updatedAt'] is Timestamp) {
       updatedAt = (data['updatedAt'] as Timestamp).toDate();
@@ -82,14 +86,14 @@ class MockExamRepository implements ExamRepository {
 
   Question questionFromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
-    
+
     final id = doc.id;
     final examId = data['examId'] as String? ?? '';
     final content = data['content'] as String? ?? '';
     final explanation = data['explanation'] as String? ?? '';
     final orderNumber = data['orderNumber'] as int? ?? 0;
     final score = (data['score'] as num? ?? 1.0).toDouble();
-    
+
     final List<AnswerOption> optionsList = [];
     final rawOptions = data['options'] as List<dynamic>? ?? [];
     if (rawOptions.isNotEmpty) {
@@ -100,7 +104,13 @@ class MockExamRepository implements ExamRepository {
       } else {
         final int correctIdx = data['correctAnswerIndex'] as int? ?? 0;
         for (int i = 0; i < rawOptions.length; i++) {
-          final label = i == 0 ? 'A' : i == 1 ? 'B' : i == 2 ? 'C' : 'D';
+          final label = i == 0
+              ? 'A'
+              : i == 1
+              ? 'B'
+              : i == 2
+              ? 'C'
+              : 'D';
           final optionContent = rawOptions[i] as String? ?? '';
           optionsList.add(
             AnswerOption(
@@ -113,12 +123,13 @@ class MockExamRepository implements ExamRepository {
         }
       }
     }
-    
+
     DateTime createdAt;
     if (data['createdAt'] is Timestamp) {
       createdAt = (data['createdAt'] as Timestamp).toDate();
     } else if (data['createdAt'] is String) {
-      createdAt = DateTime.tryParse(data['createdAt'] as String) ?? DateTime.now();
+      createdAt =
+          DateTime.tryParse(data['createdAt'] as String) ?? DateTime.now();
     } else {
       createdAt = DateTime.now();
     }
@@ -166,9 +177,12 @@ class MockExamRepository implements ExamRepository {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       Query query = FirebaseFirestore.instance.collection('exams');
-      
+
       if (uid != null) {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
         if (userDoc.exists) {
           final role = userDoc.data()?['role'] as String? ?? 'student';
           if (role == 'teacher') {
@@ -213,10 +227,15 @@ class MockExamRepository implements ExamRepository {
     final List<Exam> examsList = [];
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
-      Query query = FirebaseFirestore.instance.collection('exams').where('subjectId', isEqualTo: subjectId);
-      
+      Query query = FirebaseFirestore.instance
+          .collection('exams')
+          .where('subjectId', isEqualTo: subjectId);
+
       if (uid != null) {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
         if (userDoc.exists) {
           final role = userDoc.data()?['role'] as String? ?? 'student';
           if (role == 'teacher') {
@@ -247,7 +266,8 @@ class MockExamRepository implements ExamRepository {
 
     final existingIds = examsList.map((e) => e.id).toSet();
     for (final mockExam in _exams) {
-      if (mockExam.subjectId == subjectId && !existingIds.contains(mockExam.id)) {
+      if (mockExam.subjectId == subjectId &&
+          !existingIds.contains(mockExam.id)) {
         examsList.add(mockExam);
       }
     }
@@ -327,7 +347,10 @@ class MockExamRepository implements ExamRepository {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       String teacherName = 'Giáo viên';
       if (uid != null) {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
         if (userDoc.exists) {
           teacherName = userDoc.data()?['fullName'] as String? ?? 'Giáo viên';
         }
@@ -348,7 +371,9 @@ class MockExamRepository implements ExamRepository {
         'totalScore': exam.totalScore,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-        'publishedAt': exam.status == 'published' ? FieldValue.serverTimestamp() : null,
+        'publishedAt': exam.status == 'published'
+            ? FieldValue.serverTimestamp()
+            : null,
       };
 
       await FirebaseFirestore.instance
@@ -356,7 +381,7 @@ class MockExamRepository implements ExamRepository {
           .doc(exam.id)
           .set(examData)
           .timeout(const Duration(seconds: 10));
-          
+
       return exam;
     } on FirebaseException catch (e) {
       _handleFirebaseException(e);
@@ -380,7 +405,9 @@ class MockExamRepository implements ExamRepository {
         'passingScore': exam.passingScore,
         'totalScore': exam.totalScore,
         'updatedAt': FieldValue.serverTimestamp(),
-        'publishedAt': exam.status == 'published' ? FieldValue.serverTimestamp() : null,
+        'publishedAt': exam.status == 'published'
+            ? FieldValue.serverTimestamp()
+            : null,
       };
 
       await FirebaseFirestore.instance
@@ -422,36 +449,44 @@ class MockExamRepository implements ExamRepository {
         }
       }
 
-      final examRef = FirebaseFirestore.instance.collection('exams').doc(question.examId);
+      final examRef = FirebaseFirestore.instance
+          .collection('exams')
+          .doc(question.examId);
       final questionRef = examRef.collection('questions').doc(question.id);
 
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final examDoc = await transaction.get(examRef);
-        if (!examDoc.exists) {
-          throw Exception('Đề thi không tồn tại.');
-        }
+      await FirebaseFirestore.instance
+          .runTransaction((transaction) async {
+            final examDoc = await transaction.get(examRef);
+            if (!examDoc.exists) {
+              throw Exception('Đề thi không tồn tại.');
+            }
 
-        final currentCount = examDoc.data()?['questionCount'] as int? ?? 0;
+            final currentCount = examDoc.data()?['questionCount'] as int? ?? 0;
 
-        transaction.set(questionRef, {
-          'id': question.id,
-          'examId': question.examId,
-          'content': question.content,
-          'options': optionsList,
-          'correctAnswerIndex': correctAnswerIndex,
-          'difficulty': question.orderNumber <= 2 ? 'easy' : question.orderNumber <= 4 ? 'medium' : 'hard',
-          'explanation': question.explanation,
-          'orderNumber': question.orderNumber,
-          'score': question.score,
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+            transaction.set(questionRef, {
+              'id': question.id,
+              'examId': question.examId,
+              'content': question.content,
+              'options': optionsList,
+              'correctAnswerIndex': correctAnswerIndex,
+              'difficulty': question.orderNumber <= 2
+                  ? 'easy'
+                  : question.orderNumber <= 4
+                  ? 'medium'
+                  : 'hard',
+              'explanation': question.explanation,
+              'orderNumber': question.orderNumber,
+              'score': question.score,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
 
-        transaction.update(examRef, {
-          'questionCount': currentCount + 1,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }).timeout(const Duration(seconds: 12));
+            transaction.update(examRef, {
+              'questionCount': currentCount + 1,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          })
+          .timeout(const Duration(seconds: 12));
     } on FirebaseException catch (e) {
       _handleFirebaseException(e);
     } catch (e) {
@@ -462,23 +497,27 @@ class MockExamRepository implements ExamRepository {
   @override
   Future<void> deleteQuestion(String examId, String questionId) async {
     try {
-      final examRef = FirebaseFirestore.instance.collection('exams').doc(examId);
+      final examRef = FirebaseFirestore.instance
+          .collection('exams')
+          .doc(examId);
       final questionRef = examRef.collection('questions').doc(questionId);
 
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final examDoc = await transaction.get(examRef);
-        if (!examDoc.exists) {
-          throw Exception('Đề thi không tồn tại.');
-        }
+      await FirebaseFirestore.instance
+          .runTransaction((transaction) async {
+            final examDoc = await transaction.get(examRef);
+            if (!examDoc.exists) {
+              throw Exception('Đề thi không tồn tại.');
+            }
 
-        final currentCount = examDoc.data()?['questionCount'] as int? ?? 0;
+            final currentCount = examDoc.data()?['questionCount'] as int? ?? 0;
 
-        transaction.delete(questionRef);
-        transaction.update(examRef, {
-          'questionCount': currentCount > 0 ? currentCount - 1 : 0,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-      }).timeout(const Duration(seconds: 12));
+            transaction.delete(questionRef);
+            transaction.update(examRef, {
+              'questionCount': currentCount > 0 ? currentCount - 1 : 0,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          })
+          .timeout(const Duration(seconds: 12));
     } on FirebaseException catch (e) {
       _handleFirebaseException(e);
     } catch (e) {

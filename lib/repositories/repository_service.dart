@@ -1,5 +1,6 @@
 /// Service Locator for dependency injection of repositories
 library;
+
 import 'package:thpt_exam_prep_app/repositories/repo_auth.dart';
 import 'package:thpt_exam_prep_app/repositories/repo_subject.dart';
 import 'package:thpt_exam_prep_app/repositories/repo_document.dart';
@@ -78,4 +79,3 @@ class RepositoryService {
   /// Helper method for easy access from anywhere in the app
   static RepositoryService getInstance() => _instance;
 }
-

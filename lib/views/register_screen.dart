@@ -4,6 +4,8 @@ import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/app_theme.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
+import 'package:thpt_exam_prep_app/services/sensitive_screen_protection_service.dart';
+import 'package:thpt_exam_prep_app/widgets/app_password_field.dart';
 import 'package:thpt_exam_prep_app/widgets/app_text_field.dart';
 import 'package:thpt_exam_prep_app/widgets/gradient_header.dart';
 import 'package:thpt_exam_prep_app/widgets/primary_gradient_button.dart';
@@ -22,12 +24,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _nameController = TextEditingController();
 
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
-  UserRole _selectedRole = UserRole.student;
+  @override
+  void initState() {
+    super.initState();
+    SensitiveScreenProtectionService.instance.enable();
+  }
 
   @override
   void dispose() {
+    SensitiveScreenProtectionService.instance.disable();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -87,20 +92,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _passwordController.text,
       _confirmPasswordController.text,
       _nameController.text.trim(),
-      _selectedRole,
+      UserRole.student,
     );
 
     if (success && mounted) {
-      final user = authProvider.currentUser;
-      if (user != null) {
-        String nextRoute = AppRoutes.studentHome;
-        if (user.role == UserRole.teacher) {
-          nextRoute = AppRoutes.teacherDashboard;
-        } else if (user.role == UserRole.admin) {
-          nextRoute = AppRoutes.adminDashboard;
-        }
-        navigator.pushReplacementNamed(nextRoute);
-      }
+      navigator.pushReplacementNamed(AppRoutes.verifyEmail);
     }
   }
 
@@ -133,14 +129,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: [
                             GradientHeader(
                               title: 'Tạo tài khoản mới',
-                              subtitle: 'Bắt đầu hành trình ôn thi THPT của bạn',
+                              subtitle:
+                                  'Bắt đầu hành trình ôn thi THPT của bạn',
                               icon: Icons.person_add_alt_1_rounded,
                               gradient: AppGradients.warm,
                               trailing: IconButton(
                                 onPressed: authProvider.isLoading
                                     ? null
                                     : () => Navigator.of(context).pop(),
-                                icon: const Icon(Icons.close, color: Colors.white),
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                ),
                                 tooltip: 'Đóng',
                               ),
                             ),
@@ -168,90 +168,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               validator: _validateEmail,
                             ),
                             const SizedBox(height: AppSpacing.md),
-                            Text(
-                              'Vai trò',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            DropdownButtonFormField<UserRole>(
-                              initialValue: _selectedRole,
-                              decoration: const InputDecoration(
-                                prefixIcon: Icon(Icons.badge_outlined),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: UserRole.student,
-                                  child: Text('Học sinh'),
-                                ),
-                                DropdownMenuItem(
-                                  value: UserRole.teacher,
-                                  child: Text('Giáo viên'),
-                                ),
-                                DropdownMenuItem(
-                                  value: UserRole.admin,
-                                  child: Text('Quản trị viên'),
-                                ),
-                              ],
-                              onChanged: authProvider.isLoading
-                                  ? null
-                                  : (role) {
-                                      if (role != null) {
-                                        setState(() {
-                                          _selectedRole = role;
-                                        });
-                                      }
-                                    },
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            AppTextField(
+                            AppPasswordField(
                               controller: _passwordController,
                               label: 'Mật khẩu',
                               hintText: 'Tối thiểu 6 ký tự',
                               icon: Icons.lock_outline_rounded,
                               enabled: !authProvider.isLoading,
-                              obscureText: _obscurePassword,
                               validator: _validatePassword,
-                              suffixIcon: IconButton(
-                                tooltip: _obscurePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
                             ),
                             const SizedBox(height: AppSpacing.md),
-                            AppTextField(
+                            AppPasswordField(
                               controller: _confirmPasswordController,
                               label: 'Xác nhận mật khẩu',
                               hintText: 'Nhập lại mật khẩu',
                               icon: Icons.verified_user_outlined,
                               enabled: !authProvider.isLoading,
-                              obscureText: _obscureConfirmPassword,
                               validator: _validateConfirmPassword,
-                              suffixIcon: IconButton(
-                                tooltip: _obscureConfirmPassword
-                                    ? 'Hiện mật khẩu'
-                                    : 'Ẩn mật khẩu',
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons.visibility_off_outlined
-                                      : Icons.visibility_outlined,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
-                                  });
-                                },
-                              ),
                             ),
                             const SizedBox(height: AppSpacing.xl),
                             PrimaryGradientButton(
@@ -280,7 +212,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1024px-Google_%22G%22_logo.svg.png',
                                   height: 24,
                                   width: 24,
-                                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 28),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.g_mobiledata, size: 28),
                                 ),
                                 label: const Text(
                                   'Đăng ký với Google',
@@ -293,17 +226,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 onPressed: authProvider.isLoading
                                     ? null
                                     : () async {
-                                        final success = await authProvider.loginWithGoogle();
+                                        final success = await authProvider
+                                            .loginWithGoogle();
                                         if (success && mounted) {
                                           final user = authProvider.currentUser;
                                           if (user != null) {
-                                            String nextRoute = AppRoutes.studentHome;
+                                            String nextRoute =
+                                                AppRoutes.studentHome;
                                             if (user.role == UserRole.teacher) {
-                                              nextRoute = AppRoutes.teacherDashboard;
-                                            } else if (user.role == UserRole.admin) {
-                                              nextRoute = AppRoutes.adminDashboard;
+                                              nextRoute =
+                                                  AppRoutes.teacherDashboard;
+                                            } else if (user.role ==
+                                                UserRole.admin) {
+                                              nextRoute =
+                                                  AppRoutes.adminDashboard;
                                             }
-                                            Navigator.of(context).pushReplacementNamed(nextRoute);
+                                            Navigator.of(
+                                              context,
+                                            ).pushReplacementNamed(nextRoute);
                                           }
                                         }
                                       },
@@ -320,7 +260,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     onPressed: authProvider.isLoading
                                         ? null
                                         : () => Navigator.of(context)
-                                            .pushReplacementNamed(AppRoutes.login),
+                                              .pushReplacementNamed(
+                                                AppRoutes.login,
+                                              ),
                                     child: const Text('Đăng nhập'),
                                   ),
                                 ],
@@ -352,7 +294,7 @@ class _ErrorBanner extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.redSoft,
-        border: Border.all(color: AppColors.error.withOpacity(0.22)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.22)),
         borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Row(
@@ -364,9 +306,9 @@ class _ErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

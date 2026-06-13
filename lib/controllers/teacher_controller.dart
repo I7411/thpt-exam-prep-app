@@ -44,8 +44,6 @@ class TeacherQuestionSummary {
   });
 }
 
-
-
 class TeacherController extends ChangeNotifier {
   bool _isLoading = false;
   String? _teacherId;
@@ -67,8 +65,10 @@ class TeacherController extends ChangeNotifier {
   List<TeacherClass> get classes => List.unmodifiable(_classes);
   List<Subject> get subjects => List.unmodifiable(_subjects);
   List<Exam> get assignedExams => List.unmodifiable(_assignedExams);
-  List<TeacherQuestionSummary> get questionBank => List.unmodifiable(_questionBank);
-  Map<String, List<TeacherStudentSummary>> get studentsByClass => _studentsByClass;
+  List<TeacherQuestionSummary> get questionBank =>
+      List.unmodifiable(_questionBank);
+  Map<String, List<TeacherStudentSummary>> get studentsByClass =>
+      _studentsByClass;
   int get totalStudents => _totalStudents;
   List<Exam> get createdExams => List.unmodifiable(_createdExams);
 
@@ -110,7 +110,9 @@ class TeacherController extends ChangeNotifier {
       // Print debug logs in debug mode (development)
       if (kDebugMode) {
         debugPrint('--- Teacher Dashboard Query ---');
-        debugPrint('Current FirebaseAuth UID: ${FirebaseAuth.instance.currentUser?.uid}');
+        debugPrint(
+          'Current FirebaseAuth UID: ${FirebaseAuth.instance.currentUser?.uid}',
+        );
         debugPrint('Teacher model id: ${teacher.id}');
         debugPrint('Firestore collection queried: teacher_student_requests');
         debugPrint('Accepted student query result length: $_totalStudents');
@@ -131,8 +133,10 @@ class TeacherController extends ChangeNotifier {
 
       _classes = loadedClasses;
       _subjects = loadedSubjects;
-      _assignedExams = allExams.where((exam) => subjectIds.contains(exam.subjectId)).toList();
-      
+      _assignedExams = allExams
+          .where((exam) => subjectIds.contains(exam.subjectId))
+          .toList();
+
       _questionBank = await _loadQuestionBank(
         service,
         _assignedExams,
@@ -151,28 +155,36 @@ class TeacherController extends ChangeNotifier {
         final List<AppUser> students = [];
         for (var i = 0; i < teacherClass.studentIds.length; i += 10) {
           final batch = teacherClass.studentIds.sublist(
-            i, 
-            i + 10 > teacherClass.studentIds.length ? teacherClass.studentIds.length : i + 10
+            i,
+            i + 10 > teacherClass.studentIds.length
+                ? teacherClass.studentIds.length
+                : i + 10,
           );
           final snapshot = await FirebaseFirestore.instance
               .collection('users')
               .where('uid', whereIn: batch)
               .get();
-          students.addAll(snapshot.docs.map((doc) => AppUser.fromFirestore(doc)));
+          students.addAll(
+            snapshot.docs.map((doc) => AppUser.fromFirestore(doc)),
+          );
         }
 
         // Fetch students' progress stats
         final List<StudentProgress> progressList = [];
         for (var i = 0; i < teacherClass.studentIds.length; i += 10) {
           final batch = teacherClass.studentIds.sublist(
-            i, 
-            i + 10 > teacherClass.studentIds.length ? teacherClass.studentIds.length : i + 10
+            i,
+            i + 10 > teacherClass.studentIds.length
+                ? teacherClass.studentIds.length
+                : i + 10,
           );
           final snapshot = await FirebaseFirestore.instance
               .collection('progress_stats')
               .where('studentId', whereIn: batch)
               .get();
-          progressList.addAll(snapshot.docs.map((doc) => StudentProgress.fromFirestore(doc)));
+          progressList.addAll(
+            snapshot.docs.map((doc) => StudentProgress.fromFirestore(doc)),
+          );
         }
 
         // Build summaries
@@ -197,10 +209,12 @@ class TeacherController extends ChangeNotifier {
               ),
             );
           } else {
-            final subjectStat = progress.subjectProgress.cast<ProgressStat?>().firstWhere(
-              (p) => p?.subjectId == teacherClass.subjectId,
-              orElse: () => null,
-            );
+            final subjectStat = progress.subjectProgress
+                .cast<ProgressStat?>()
+                .firstWhere(
+                  (p) => p?.subjectId == teacherClass.subjectId,
+                  orElse: () => null,
+                );
 
             if (subjectStat == null) {
               summaries.add(
@@ -235,12 +249,11 @@ class TeacherController extends ChangeNotifier {
         _studentsByClass[teacherClass.id] = summaries;
       }
 
-
-      
       // Load teacher's created exams from Firestore
       final allExamsList = await service.exam.getAllExams();
-      _createdExams = allExamsList.where((exam) => exam.creatorId == teacher.id).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _createdExams =
+          allExamsList.where((exam) => exam.creatorId == teacher.id).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       debugPrint('Không tải được dữ liệu giáo viên: $e');
     } finally {
@@ -423,19 +436,26 @@ class TeacherController extends ChangeNotifier {
             'classIds': FieldValue.arrayRemove([classId]),
           });
 
-      final studentDoc = await FirebaseFirestore.instance.collection('users').doc(studentId).get();
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(studentId)
+          .get();
       if (studentDoc.exists) {
         final data = studentDoc.data()!;
         final currentPrimary = data['primaryClassId'] as String?;
         if (currentPrimary == classId) {
-          final currentClassIds = (data['classIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [];
-          final newPrimary = currentClassIds.isNotEmpty ? currentClassIds.first : null;
+          final currentClassIds =
+              (data['classIds'] as List<dynamic>?)
+                  ?.map((e) => e as String)
+                  .toList() ??
+              [];
+          final newPrimary = currentClassIds.isNotEmpty
+              ? currentClassIds.first
+              : null;
           await FirebaseFirestore.instance
               .collection('users')
               .doc(studentId)
-              .update({
-                'primaryClassId': newPrimary,
-              });
+              .update({'primaryClassId': newPrimary});
         }
       }
 
@@ -466,8 +486,10 @@ class TeacherController extends ChangeNotifier {
       final List<AppUser> students = [];
       for (var i = 0; i < targetClass.studentIds.length; i += 10) {
         final batch = targetClass.studentIds.sublist(
-          i, 
-          i + 10 > targetClass.studentIds.length ? targetClass.studentIds.length : i + 10
+          i,
+          i + 10 > targetClass.studentIds.length
+              ? targetClass.studentIds.length
+              : i + 10,
         );
         final snapshot = await FirebaseFirestore.instance
             .collection('users')
@@ -480,14 +502,18 @@ class TeacherController extends ChangeNotifier {
       final List<StudentProgress> progressList = [];
       for (var i = 0; i < targetClass.studentIds.length; i += 10) {
         final batch = targetClass.studentIds.sublist(
-          i, 
-          i + 10 > targetClass.studentIds.length ? targetClass.studentIds.length : i + 10
+          i,
+          i + 10 > targetClass.studentIds.length
+              ? targetClass.studentIds.length
+              : i + 10,
         );
         final snapshot = await FirebaseFirestore.instance
             .collection('progress_stats')
             .where('studentId', whereIn: batch)
             .get();
-        progressList.addAll(snapshot.docs.map((doc) => StudentProgress.fromFirestore(doc)));
+        progressList.addAll(
+          snapshot.docs.map((doc) => StudentProgress.fromFirestore(doc)),
+        );
       }
 
       final items = <ClassLeaderboardItem>[];
@@ -598,8 +624,6 @@ class TeacherController extends ChangeNotifier {
     return entries;
   }
 
-
-
   Subject? _findSubject(List<Subject> subjects, String subjectId) {
     try {
       return subjects.firstWhere((subject) => subject.id == subjectId);
@@ -638,8 +662,9 @@ class TeacherController extends ChangeNotifier {
     if (_teacherId == null) return;
     try {
       final allExamsList = await RepositoryService.instance.exam.getAllExams();
-      _createdExams = allExamsList.where((exam) => exam.creatorId == _teacherId).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _createdExams =
+          allExamsList.where((exam) => exam.creatorId == _teacherId).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       notifyListeners();
     } catch (e) {
       debugPrint('Lỗi tải lại danh sách đề thi: $e');
@@ -656,7 +681,7 @@ class TeacherController extends ChangeNotifier {
     if (_teacherId == null) return null;
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       final examId = 'exam_${DateTime.now().millisecondsSinceEpoch}';
       final newExam = Exam(
@@ -695,7 +720,10 @@ class TeacherController extends ChangeNotifier {
     try {
       final exam = await RepositoryService.instance.exam.getExamById(examId);
       if (exam != null) {
-        final updatedExam = exam.copyWith(status: 'published', updatedAt: DateTime.now());
+        final updatedExam = exam.copyWith(
+          status: 'published',
+          updatedAt: DateTime.now(),
+        );
         await RepositoryService.instance.exam.updateExam(updatedExam);
         await refreshCreatedExams();
       }
@@ -715,7 +743,10 @@ class TeacherController extends ChangeNotifier {
     try {
       final exam = await RepositoryService.instance.exam.getExamById(examId);
       if (exam != null) {
-        final updatedExam = exam.copyWith(status: 'draft', updatedAt: DateTime.now());
+        final updatedExam = exam.copyWith(
+          status: 'draft',
+          updatedAt: DateTime.now(),
+        );
         await RepositoryService.instance.exam.updateExam(updatedExam);
         await refreshCreatedExams();
       }
@@ -765,17 +796,43 @@ class TeacherController extends ChangeNotifier {
 
       final nextOrderNumber = exam.questionCount + 1;
       final options = [
-        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_0', label: 'A', content: wrong1, isCorrect: false),
-        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_1', label: 'B', content: wrong2, isCorrect: false),
-        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_2', label: 'C', content: correctAnswer, isCorrect: true),
-        AnswerOption(id: 'opt_${examId}_${nextOrderNumber}_3', label: 'D', content: wrong3, isCorrect: false),
+        AnswerOption(
+          id: 'opt_${examId}_${nextOrderNumber}_0',
+          label: 'A',
+          content: wrong1,
+          isCorrect: false,
+        ),
+        AnswerOption(
+          id: 'opt_${examId}_${nextOrderNumber}_1',
+          label: 'B',
+          content: wrong2,
+          isCorrect: false,
+        ),
+        AnswerOption(
+          id: 'opt_${examId}_${nextOrderNumber}_2',
+          label: 'C',
+          content: correctAnswer,
+          isCorrect: true,
+        ),
+        AnswerOption(
+          id: 'opt_${examId}_${nextOrderNumber}_3',
+          label: 'D',
+          content: wrong3,
+          isCorrect: false,
+        ),
       ]..shuffle();
 
       final labeledOptions = <AnswerOption>[];
       for (int i = 0; i < options.length; i++) {
         labeledOptions.add(
           options[i].copyWith(
-            label: i == 0 ? 'A' : i == 1 ? 'B' : i == 2 ? 'C' : 'D',
+            label: i == 0
+                ? 'A'
+                : i == 1
+                ? 'B'
+                : i == 2
+                ? 'C'
+                : 'D',
           ),
         );
       }

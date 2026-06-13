@@ -1,5 +1,6 @@
 /// Mock data for study documents
 library;
+
 import 'package:thpt_exam_prep_app/models.dart';
 
 class MockDocumentsData {
@@ -9,7 +10,8 @@ class MockDocumentsData {
       topicId: 'topic_001',
       subjectId: 'subj_001',
       title: 'Hàm số bậc nhất và bậc hai',
-      description: 'Tài liệu chi tiết về hàm số bậc nhất, bậc hai và các tính chất',
+      description:
+          'Tài liệu chi tiết về hàm số bậc nhất, bậc hai và các tính chất',
       content: '''
 Hàm số bậc nhất: y = ax + b (a ≠ 0)
 - Tập xác định: D = ℝ
@@ -38,7 +40,8 @@ Hàm số bậc hai: y = ax² + bx + c (a ≠ 0)
       topicId: 'topic_001',
       subjectId: 'subj_001',
       title: 'Phương trình và bất phương trình',
-      description: 'Các phương pháp giải phương trình và bất phương trình cơ bản',
+      description:
+          'Các phương pháp giải phương trình và bất phương trình cơ bản',
       content: '''
 Phương trình bậc nhất: ax + b = 0
 Cách giải: x = -b/a (a ≠ 0)
@@ -66,7 +69,8 @@ ax + b > 0 ⟺ x < -b/a (nếu a < 0)
       topicId: 'topic_002',
       subjectId: 'subj_002',
       title: 'Phân tích tác phẩm: Trích Chinh Phụ Ngâm',
-      description: 'Phân tích chuyên sâu bài thơ Trích Chinh Phụ Ngâm của Đỗ Phủ',
+      description:
+          'Phân tích chuyên sâu bài thơ Trích Chinh Phụ Ngâm của Đỗ Phủ',
       content: '''
 Tác giả: Đỗ Phủ
 Thể loại: Thơ cổ điển
@@ -216,7 +220,8 @@ Enzyme:
       topicId: 'topic_007',
       subjectId: 'subj_007',
       title: 'Lịch sử: Cách mạng Tháng Tám 1945',
-      description: 'Quá trình diễn ra của Cách mạng Tháng Tám 1945 và ý nghĩa lịch sử',
+      description:
+          'Quá trình diễn ra của Cách mạng Tháng Tám 1945 và ý nghĩa lịch sử',
       content: '''
 Bối cảnh lịch sử:
 - Nhật Bản sắp thua cuộc Thế chiến II
@@ -246,4 +251,3 @@ Kết quả:
     ),
   ];
 }
-

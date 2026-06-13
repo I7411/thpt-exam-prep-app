@@ -7,14 +7,10 @@ import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/exam_controller.dart';
 import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
 
-
 class ExamTakingScreen extends StatefulWidget {
   final Exam exam;
 
-  const ExamTakingScreen({
-    super.key,
-    required this.exam,
-  });
+  const ExamTakingScreen({super.key, required this.exam});
 
   @override
   State<ExamTakingScreen> createState() => _ExamTakingScreenState();
@@ -25,6 +21,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   bool _isLoadingExam = true;
   bool _providerAttached = false;
   bool _navigatedToResult = false;
+
   /// Local flag to prevent double-tap on submit while dialog is open
   /// or the submit flow is running.
   bool _isSubmitting = false;
@@ -32,7 +29,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   @override
   void initState() {
     super.initState();
-    }
+  }
 
   @override
   void didChangeDependencies() {
@@ -49,13 +46,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   Future<void> _loadExam() async {
     final authProvider = context.read<AuthController>();
     final studentId = authProvider.currentUser?.id ?? 'student_001';
-    
-    await _examProvider.startExam(
-      exam: widget.exam,
-      studentId: studentId,
-    );
+
+    await _examProvider.startExam(exam: widget.exam, studentId: studentId);
     if (!mounted) return;
-    
+
     if (_examProvider.questions.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -84,13 +78,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
     String contentText = 'Bạn có chắc muốn nộp bài ngay bây giờ?';
     if (unansweredQuestions > 0) {
-      contentText += '\n\nBạn vẫn còn $unansweredQuestions câu hỏi chưa trả lời.';
+      contentText +=
+          '\n\nBạn vẫn còn $unansweredQuestions câu hỏi chưa trả lời.';
     }
     contentText += '\n\nSau khi nộp bài, bạn sẽ xem được kết quả đánh giá.';
 
     debugPrint('[ExamSubmit] Confirm dialog opened');
 
-    final shouldSubmit = await showDialog<bool>(
+    final shouldSubmit =
+        await showDialog<bool>(
           context: context,
           barrierDismissible: false,
           builder: (dialogContext) {
@@ -127,7 +123,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       // submitExam() now returns immediately after building the result and
       // calling notifyListeners(). Background I/O happens inside the controller.
       await provider.submitExam(confirmed: true);
-      debugPrint('[ExamSubmit] submitExam() returned — navigation will fire via addPostFrameCallback');
+      debugPrint(
+        '[ExamSubmit] submitExam() returned — navigation will fire via addPostFrameCallback',
+      );
     } catch (e, st) {
       debugPrint('[ExamSubmit] Error during submit: $e');
       debugPrint('[ExamSubmit] StackTrace: $st');
@@ -171,9 +169,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
         if (_isLoadingExam || !provider.hasCurrentExam) {
           return Scaffold(
-            appBar: AppBar(
-              title: Text(widget.exam.title),
-            ),
+            appBar: AppBar(title: Text(widget.exam.title)),
             body: const Center(child: CircularProgressIndicator()),
           );
         }
@@ -186,7 +182,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         }
 
         // True when we should block the submit button.
-        final submitBlocked = provider.isSubmitted || provider.isSubmitting || _isSubmitting;
+        final submitBlocked =
+            provider.isSubmitted || provider.isSubmitting || _isSubmitting;
 
         return Scaffold(
           appBar: AppBar(
@@ -221,13 +218,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                       Text(
                         currentQuestion.content,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              height: 1.4,
-                            ),
+                          fontWeight: FontWeight.w700,
+                          height: 1.4,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       ...currentQuestion.options.map((option) {
-                        final selectedId = provider.selectedOptionFor(currentQuestion.id);
+                        final selectedId = provider.selectedOptionFor(
+                          currentQuestion.id,
+                        );
                         final isSelected = selectedId == option.id;
                         final isCorrect = option.isCorrect;
                         final isLocked = provider.isSubmitted;
@@ -237,7 +236,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                             onTap: isLocked
                                 ? null
                                 : () {
-                                    provider.selectOption(currentQuestion.id, option.id);
+                                    provider.selectOption(
+                                      currentQuestion.id,
+                                      option.id,
+                                    );
                                   },
                             borderRadius: BorderRadius.circular(14),
                             child: Container(
@@ -275,7 +277,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                                       option.label,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w700,
-                                        color: isSelected ? Colors.white : Colors.black87,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                     ),
                                   ),
@@ -283,15 +287,22 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                                   Expanded(
                                     child: Text(
                                       option.content,
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                            height: 1.4,
-                                          ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(height: 1.4),
                                     ),
                                   ),
                                   if (isLocked && isCorrect)
-                                    const Icon(Icons.check_circle, color: AppColors.success),
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: AppColors.success,
+                                    ),
                                   if (isLocked && isSelected && !isCorrect)
-                                    const Icon(Icons.cancel, color: AppColors.error),
+                                    const Icon(
+                                      Icons.cancel,
+                                      color: AppColors.error,
+                                    ),
                                 ],
                               ),
                             ),
@@ -308,9 +319,11 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.08),
+                            color: AppColors.success.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                            border: Border.all(
+                              color: AppColors.success.withValues(alpha: 0.2),
+                            ),
                           ),
                           child: const Text(
                             'Bài đã được nộp, không thể sửa đáp án nữa.',
@@ -336,7 +349,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Icon(Icons.send_rounded),
@@ -344,8 +359,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   provider.isSubmitted
                       ? 'Đã nộp bài'
                       : _isSubmitting
-                          ? 'Đang nộp bài...'
-                          : 'Nộp bài',
+                      ? 'Đang nộp bài...'
+                      : 'Nộp bài',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -371,8 +386,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary.withOpacity(0.12),
-            AppColors.secondary.withOpacity(0.08),
+            AppColors.primary.withValues(alpha: 0.12),
+            AppColors.secondary.withValues(alpha: 0.08),
           ],
         ),
       ),
@@ -381,17 +396,23 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         spacing: 12,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          _InfoPill(label: '${provider.currentQuestionIndex + 1}/${provider.questions.length} câu'),
+          _InfoPill(
+            label:
+                '${provider.currentQuestionIndex + 1}/${provider.questions.length} câu',
+          ),
           _InfoPill(label: '${provider.answeredCount} đã trả lời'),
           _InfoPill(label: provider.remainingTimeLabel),
-          if (provider.isSubmitted)
-            const _InfoPill(label: 'Đã nộp bài'),
+          if (provider.isSubmitted) const _InfoPill(label: 'Đã nộp bài'),
         ],
       ),
     );
   }
 
-  Widget _buildQuestionHeader(BuildContext context, ExamController provider, Question question) {
+  Widget _buildQuestionHeader(
+    BuildContext context,
+    ExamController provider,
+    Question question,
+  ) {
     return Row(
       children: [
         Container(
@@ -399,7 +420,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Text(
@@ -411,9 +432,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         Expanded(
           child: Text(
             'Câu ${question.orderNumber}',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -434,9 +455,9 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         children: [
           Text(
             'Bảng số câu',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -458,14 +479,14 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                     color: isCurrent
                         ? AppColors.primary
                         : isAnswered
-                            ? AppColors.success.withOpacity(0.15)
-                            : Colors.white,
+                        ? AppColors.success.withValues(alpha: 0.15)
+                        : Colors.white,
                     border: Border.all(
                       color: isCurrent
                           ? AppColors.primary
                           : isAnswered
-                              ? AppColors.success
-                              : Colors.grey.shade300,
+                          ? AppColors.success
+                          : Colors.grey.shade300,
                     ),
                   ),
                   child: Text(
@@ -475,8 +496,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                       color: isCurrent
                           ? Colors.white
                           : isAnswered
-                              ? AppColors.success
-                              : Colors.black87,
+                          ? AppColors.success
+                          : Colors.black87,
                     ),
                   ),
                 ),
@@ -488,12 +509,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     );
   }
 
-  Widget _buildNavigationButtons(BuildContext context, ExamController provider) {
+  Widget _buildNavigationButtons(
+    BuildContext context,
+    ExamController provider,
+  ) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: provider.currentQuestionIndex == 0 || provider.isSubmitted
+            onPressed:
+                provider.currentQuestionIndex == 0 || provider.isSubmitted
                 ? null
                 : provider.previousQuestion,
             icon: const Icon(Icons.chevron_left),
@@ -509,7 +534,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: provider.currentQuestionIndex >= provider.questions.length - 1 || provider.isSubmitted
+            onPressed:
+                provider.currentQuestionIndex >=
+                        provider.questions.length - 1 ||
+                    provider.isSubmitted
                 ? null
                 : provider.nextQuestion,
             icon: const Icon(Icons.chevron_right),
@@ -549,13 +577,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     required bool isLocked,
   }) {
     if (!isLocked) {
-      return isSelected ? AppColors.primary.withOpacity(0.08) : Colors.white;
+      return isSelected
+          ? AppColors.primary.withValues(alpha: 0.08)
+          : Colors.white;
     }
     if (isCorrect) {
-      return AppColors.success.withOpacity(0.08);
+      return AppColors.success.withValues(alpha: 0.08);
     }
     if (isSelected) {
-      return AppColors.error.withOpacity(0.08);
+      return AppColors.error.withValues(alpha: 0.08);
     }
     return Colors.white;
   }
@@ -574,16 +604,16 @@ class _TimerBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isUrgent
-            ? AppColors.error.withOpacity(0.1)
-            : AppColors.primary.withOpacity(0.1),
+            ? AppColors.error.withValues(alpha: 0.1)
+            : AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: isUrgent ? AppColors.error : AppColors.primary,
-            ),
+          fontWeight: FontWeight.w700,
+          color: isUrgent ? AppColors.error : AppColors.primary,
+        ),
       ),
     );
   }
@@ -605,9 +635,9 @@ class _InfoPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

@@ -31,7 +31,7 @@ class MockTeacherRepository implements TeacherRepository {
           .where('teacherIds', arrayContains: teacherId)
           .get()
           .timeout(const Duration(seconds: 12));
-      
+
       if (snapshot.docs.isEmpty) {
         // Fallback to teacherId query
         final snapshot2 = await FirebaseFirestore.instance
@@ -39,9 +39,13 @@ class MockTeacherRepository implements TeacherRepository {
             .where('teacherId', isEqualTo: teacherId)
             .get()
             .timeout(const Duration(seconds: 12));
-        return snapshot2.docs.map((doc) => TeacherClass.fromFirestore(doc)).toList();
+        return snapshot2.docs
+            .map((doc) => TeacherClass.fromFirestore(doc))
+            .toList();
       }
-      return snapshot.docs.map((doc) => TeacherClass.fromFirestore(doc)).toList();
+      return snapshot.docs
+          .map((doc) => TeacherClass.fromFirestore(doc))
+          .toList();
     } catch (e) {
       debugPrint('Lỗi lấy danh sách lớp học: $e');
       return [];
@@ -104,7 +108,9 @@ class MockTeacherRepository implements TeacherRepository {
   }
 
   @override
-  Future<List<ExamAttempt>> getStudentAttemptsByTeacher(String teacherId) async {
+  Future<List<ExamAttempt>> getStudentAttemptsByTeacher(
+    String teacherId,
+  ) async {
     await Future.delayed(Duration(milliseconds: 300));
     return _attempts;
   }

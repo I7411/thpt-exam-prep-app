@@ -225,7 +225,7 @@ class _QuickActionsCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: targetRole,
+                        initialValue: targetRole,
                         decoration: const InputDecoration(
                           labelText: 'Đối tượng nhận',
                           border: OutlineInputBorder(),
@@ -246,7 +246,7 @@ class _QuickActionsCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<NotificationType>(
-                        value: type,
+                        initialValue: type,
                         decoration: const InputDecoration(
                           labelText: 'Loại thông báo',
                           border: OutlineInputBorder(),

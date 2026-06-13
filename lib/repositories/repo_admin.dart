@@ -1,5 +1,6 @@
 /// Admin repository for admin-specific operations
 library;
+
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:thpt_exam_prep_app/models.dart';
@@ -69,8 +70,12 @@ class MockAdminRepository implements AdminRepository {
     _users.add(user);
     _report = _report.copyWith(
       totalUsers: _report.totalUsers + 1,
-      totalStudents: user.role == UserRole.student ? _report.totalStudents + 1 : _report.totalStudents,
-      totalTeachers: user.role == UserRole.teacher ? _report.totalTeachers + 1 : _report.totalTeachers,
+      totalStudents: user.role == UserRole.student
+          ? _report.totalStudents + 1
+          : _report.totalStudents,
+      totalTeachers: user.role == UserRole.teacher
+          ? _report.totalTeachers + 1
+          : _report.totalTeachers,
     );
   }
 
@@ -222,7 +227,10 @@ class FirestoreAdminRepository implements AdminRepository {
 
   @override
   Future<void> updateUser(AppUser user) async {
-    await _firestore.collection('users').doc(user.id).update(user.toFirestore());
+    await _firestore
+        .collection('users')
+        .doc(user.id)
+        .update(user.toFirestore());
   }
 
   @override
@@ -254,4 +262,3 @@ class FirestoreAdminRepository implements AdminRepository {
     }
   }
 }
-

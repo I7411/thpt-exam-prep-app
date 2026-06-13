@@ -7,6 +7,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
+  static const String verifyEmail = '/verify-email';
 
   // Student Routes
   static const String studentHome = '/student/home';
@@ -25,7 +26,13 @@ class AppRoutes {
   static const String studentExamReviewMode = '/student/exam-review-mode';
   static const String studentExamQuizReview = '/student/exam-quiz-review';
   static const String studentExamBlastGame = '/student/exam-blast-game';
-  static const String studentExamBlockPuzzleGame = '/student/exam-block-puzzle-game';
+  static const String studentExamBlockPuzzleGame =
+      '/student/exam-block-puzzle-game';
+
+  // Study Reminders
+  static const String reminderList = '/reminder/list';
+  static const String reminderForm = '/reminder/form';
+  static const String reminderAlarmRinging = '/reminder/alarm-ringing';
 
   // Exam flow aliases
   static const String examList = studentExams;
@@ -62,6 +69,7 @@ class AppRoutes {
       login,
       register,
       forgotPassword,
+      verifyEmail,
       studentHome,
       studentSubjects,
       studentDocuments,
@@ -78,6 +86,9 @@ class AppRoutes {
       studentExamQuizReview,
       studentExamBlastGame,
       studentExamBlockPuzzleGame,
+      reminderList,
+      reminderForm,
+      reminderAlarmRinging,
       teacherDashboard,
       teacherClasses,
       teacherClassDetail,

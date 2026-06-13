@@ -21,7 +21,8 @@ class SubjectCard extends StatefulWidget {
   State<SubjectCard> createState() => _SubjectCardState();
 }
 
-class _SubjectCardState extends State<SubjectCard> with SingleTickerProviderStateMixin {
+class _SubjectCardState extends State<SubjectCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -32,9 +33,10 @@ class _SubjectCardState extends State<SubjectCard> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -66,7 +68,7 @@ class _SubjectCardState extends State<SubjectCard> with SingleTickerProviderStat
                 gradient: AppGradients.subject(widget.color),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.color.withOpacity(0.3),
+                    color: widget.color.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -83,10 +85,14 @@ class _SubjectCardState extends State<SubjectCard> with SingleTickerProviderStat
                           width: 46,
                           height: 46,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.22),
+                            color: Colors.white.withValues(alpha: 0.22),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Icon(widget.icon, size: 26, color: Colors.white),
+                          child: Icon(
+                            widget.icon,
+                            size: 26,
+                            color: Colors.white,
+                          ),
                         ),
                         const Spacer(),
                         const Icon(
@@ -102,23 +108,27 @@ class _SubjectCardState extends State<SubjectCard> with SingleTickerProviderStat
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                          ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     if (widget.progress != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text(
                           widget.progress!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
                               ),

@@ -1,5 +1,6 @@
 /// Mock data for progress, notifications, and users
 library;
+
 import 'package:thpt_exam_prep_app/models.dart';
 
 class MockProgressData {
@@ -87,7 +88,8 @@ class MockNotificationsData {
       id: 'notif_003',
       userId: 'student_001',
       title: 'Thông báo công bố đáp án',
-      message: 'Đáp án Đề thi thử Toán kỳ 1 đã được công bố. Kiểm tra bài của bạn!',
+      message:
+          'Đáp án Đề thi thử Toán kỳ 1 đã được công bố. Kiểm tra bài của bạn!',
       type: NotificationType.announcement,
       actionUrl: '/student/exam-result/attempt_001',
       isRead: true,
@@ -98,7 +100,8 @@ class MockNotificationsData {
       id: 'notif_004',
       userId: 'student_001',
       title: 'Nhắc nhở học tập',
-      message: 'Bạn chưa học bất cứ điều gì hôm nay. Hãy dành thời gian ôn tập!',
+      message:
+          'Bạn chưa học bất cứ điều gì hôm nay. Hãy dành thời gian ôn tập!',
       type: NotificationType.info,
       actionUrl: '/student/subjects',
       isRead: false,
@@ -109,7 +112,8 @@ class MockNotificationsData {
       id: 'notif_005',
       userId: 'student_001',
       title: 'Cảnh báo: Tiến độ chậm',
-      message: 'Tiến độ học Tiếng Anh của bạn chỉ ở mức 55%. Hãy tăng cường học tập!',
+      message:
+          'Tiến độ học Tiếng Anh của bạn chỉ ở mức 55%. Hãy tăng cường học tập!',
       type: NotificationType.warning,
       actionUrl: '/student/progress',
       isRead: true,
@@ -199,4 +203,3 @@ class MockUsersData {
     generatedAt: DateTime.now(),
   );
 }
-

@@ -11,6 +11,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
+import 'package:thpt_exam_prep_app/models.dart';
+import 'package:thpt_exam_prep_app/services/ringtone_catalog_service.dart';
 
 class NotificationService {
   NotificationService._internal();
@@ -27,7 +29,8 @@ class NotificationService {
 
   String? get fcmToken => _fcmToken;
 
-  void Function(int id, String title, String body, String? payload)? onForegroundNotification;
+  void Function(int id, String title, String body, String? payload)?
+  onForegroundNotification;
 
   // Dialog duplicate protection cache
   final Set<String> _shownDialogIds = {};
@@ -161,8 +164,10 @@ class NotificationService {
       enableVibration: true,
     );
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(androidNotificationChannel);
@@ -203,21 +208,28 @@ class NotificationService {
 
       // Handle FCM foreground messages
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('Nhận được thông báo FCM ở chế độ hoạt động (foreground): ${message.messageId}');
-        
+        debugPrint(
+          'Nhận được thông báo FCM ở chế độ hoạt động (foreground): ${message.messageId}',
+        );
+
         final notificationId = message.messageId ?? '';
         final relatedId = message.data['relatedId'] ?? '';
-        
+
         // Duplicate check
-        if (_isDuplicate(notificationId) || (relatedId.isNotEmpty && _isDuplicate(relatedId))) {
+        if (_isDuplicate(notificationId) ||
+            (relatedId.isNotEmpty && _isDuplicate(relatedId))) {
           return;
         }
 
         final notification = message.notification;
         if (notification != null) {
-          final title = notification.title ?? message.data['title'] ?? 'Thông báo mới';
+          final title =
+              notification.title ?? message.data['title'] ?? 'Thông báo mới';
           final body = notification.body ?? message.data['body'] ?? '';
-          final route = message.data['route'] ?? message.data['actionUrl'] ?? AppRoutes.studentNotifications;
+          final route =
+              message.data['route'] ??
+              message.data['actionUrl'] ??
+              AppRoutes.studentNotifications;
 
           showLocalNotification(
             id: notification.hashCode,
@@ -225,11 +237,15 @@ class NotificationService {
             body: body,
             payload: route,
           );
-        } else if (message.data.containsKey('title') || message.data.containsKey('body')) {
+        } else if (message.data.containsKey('title') ||
+            message.data.containsKey('body')) {
           // Fallback for data-only payload
           final title = message.data['title'] ?? 'Thông báo';
           final body = message.data['body'] ?? '';
-          final route = message.data['route'] ?? message.data['actionUrl'] ?? AppRoutes.studentNotifications;
+          final route =
+              message.data['route'] ??
+              message.data['actionUrl'] ??
+              AppRoutes.studentNotifications;
 
           showLocalNotification(
             id: message.hashCode,
@@ -242,16 +258,26 @@ class NotificationService {
 
       // Handle FCM notification tap when app is in background
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        debugPrint('Đã nhấp vào thông báo FCM khi app chạy ngầm: ${message.messageId}');
-        final route = message.data['route'] ?? message.data['actionUrl'] ?? AppRoutes.studentNotifications;
+        debugPrint(
+          'Đã nhấp vào thông báo FCM khi app chạy ngầm: ${message.messageId}',
+        );
+        final route =
+            message.data['route'] ??
+            message.data['actionUrl'] ??
+            AppRoutes.studentNotifications;
         _handleTap(route);
       });
 
       // Handle FCM notification tap when app is terminated
       final initialMessage = await messaging.getInitialMessage();
       if (initialMessage != null) {
-        debugPrint('Đã nhấp vào thông báo FCM khi app đã bị đóng hẳn: ${initialMessage.messageId}');
-        final route = initialMessage.data['route'] ?? initialMessage.data['actionUrl'] ?? AppRoutes.studentNotifications;
+        debugPrint(
+          'Đã nhấp vào thông báo FCM khi app đã bị đóng hẳn: ${initialMessage.messageId}',
+        );
+        final route =
+            initialMessage.data['route'] ??
+            initialMessage.data['actionUrl'] ??
+            AppRoutes.studentNotifications;
         _pendingPayload = route;
       }
     } catch (e) {
@@ -271,11 +297,11 @@ class NotificationService {
             .collection('tokens')
             .doc(token)
             .set({
-          'token': token,
-          'platform': 'android',
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+              'token': token,
+              'platform': 'android',
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
         debugPrint('Đã lưu FCM token lên Firestore cho userId: $userId');
       }
     } catch (e) {
@@ -408,17 +434,163 @@ class NotificationService {
 
     const notificationDetails = NotificationDetails(android: androidDetails);
 
-    await _plugin.show(
-      id,
-      title,
-      body,
-      notificationDetails,
-      payload: payload,
-    );
+    await _plugin.show(id, title, body, notificationDetails, payload: payload);
   }
 
   Future<void> cancelAllNotifications() async {
     await _plugin.cancelAll();
+  }
+
+  Future<void> scheduleReminder(StudyReminder reminder) async {
+    if (!reminder.isEnabled) return;
+    
+    final ringtone = RingtoneCatalogService.getByAssetPath(reminder.ringtoneAsset);
+    final channelId = 'study_reminders_${ringtone.androidRawName}';
+    final channelName = 'Nhắc học - ${ringtone.name}';
+    final soundName = ringtone.androidRawName;
+
+    // Register a specific channel for this sound
+    final androidNotificationChannel = AndroidNotificationChannel(
+      channelId,
+      channelName,
+      description: 'Kênh thông báo nhắc học dùng nhạc chuông ${ringtone.name}',
+      importance: Importance.max,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound(soundName),
+      enableVibration: reminder.vibrationEnabled,
+    );
+
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(androidNotificationChannel);
+    }
+
+    final androidDetails = AndroidNotificationDetails(
+      channelId,
+      channelName,
+      channelDescription: 'Kênh nhắc học',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound(soundName),
+      enableVibration: reminder.vibrationEnabled,
+    );
+
+    final notificationDetails = NotificationDetails(android: androidDetails);
+    
+    // Payload contains type and reminderId
+    final payload = '{"type":"study_reminder","reminderId":${reminder.id}}';
+
+    if (reminder.weekdays.isEmpty) {
+      // Once
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduledTime = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        reminder.hour,
+        reminder.minute,
+      );
+      if (scheduledTime.isBefore(now)) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+      
+      final notificationId = reminder.id * 10;
+      await _plugin.cancel(notificationId);
+      await _plugin.zonedSchedule(
+        notificationId,
+        reminder.title,
+        reminder.description ?? 'Đến giờ học tập rồi!',
+        scheduledTime,
+        notificationDetails,
+        payload: payload,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      debugPrint('Scheduled single reminder ${reminder.id} at $scheduledTime');
+    } else if (reminder.weekdays.length == 7) {
+      // Daily
+      final now = tz.TZDateTime.now(tz.local);
+      var scheduledTime = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        reminder.hour,
+        reminder.minute,
+      );
+      if (scheduledTime.isBefore(now)) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+
+      final notificationId = reminder.id * 10;
+      await _plugin.cancel(notificationId);
+      await _plugin.zonedSchedule(
+        notificationId,
+        reminder.title,
+        reminder.description ?? 'Đến giờ học tập hằng ngày!',
+        scheduledTime,
+        notificationDetails,
+        payload: payload,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      debugPrint('Scheduled daily reminder ${reminder.id} at $scheduledTime');
+    } else {
+      // Selected weekdays
+      // Cancel any old ones first
+      for (int w = 1; w <= 7; w++) {
+        await _plugin.cancel(reminder.id * 10 + w);
+      }
+
+      for (final weekday in reminder.weekdays) {
+        final notificationId = reminder.id * 10 + weekday;
+        
+        final now = tz.TZDateTime.now(tz.local);
+        var scheduledTime = tz.TZDateTime(
+          tz.local,
+          now.year,
+          now.month,
+          now.day,
+          reminder.hour,
+          reminder.minute,
+        );
+        if (scheduledTime.isBefore(now)) {
+          scheduledTime = scheduledTime.add(const Duration(days: 1));
+        }
+        while (scheduledTime.weekday != weekday) {
+          scheduledTime = scheduledTime.add(const Duration(days: 1));
+        }
+
+        await _plugin.zonedSchedule(
+          notificationId,
+          reminder.title,
+          reminder.description ?? 'Đến giờ học tập theo lịch!',
+          scheduledTime,
+          notificationDetails,
+          payload: payload,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        );
+        debugPrint('Scheduled weekly reminder ${reminder.id} weekday $weekday at $scheduledTime');
+      }
+    }
+  }
+
+  Future<void> cancelReminder(int reminderId) async {
+    await _plugin.cancel(reminderId * 10);
+    for (int w = 1; w <= 7; w++) {
+      await _plugin.cancel(reminderId * 10 + w);
+    }
+    debugPrint('Cancelled reminder $reminderId');
   }
 
   NotificationDetails _notificationDetails() {
@@ -435,9 +607,10 @@ class NotificationService {
   }
 
   Future<void> _requestPermissions() async {
-    final androidImplementation =
-        _plugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidImplementation = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
 
     if (androidImplementation == null) return;
 

@@ -31,14 +31,24 @@ class TeacherClass {
     return TeacherClass(
       id: json['id'] as String? ?? '',
       teacherId: json['teacherId'] as String? ?? '',
-      teacherIds: (json['teacherIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      studentIds: (json['studentIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      teacherIds:
+          (json['teacherIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      studentIds:
+          (json['studentIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       className: json['className'] as String? ?? '',
       subjectId: json['subjectId'] as String? ?? '',
       description: json['description'] as String? ?? '',
       studentCount: json['studentCount'] as int? ?? 0,
       createdAt: _parseDateTime(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? _parseDateTime(json['updatedAt']) : null,
+      updatedAt: json['updatedAt'] != null
+          ? _parseDateTime(json['updatedAt'])
+          : null,
     );
   }
 
@@ -59,19 +69,31 @@ class TeacherClass {
   }
 
   /// Create TeacherClass from Firestore DocumentSnapshot
-  factory TeacherClass.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory TeacherClass.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final data = doc.data()!;
     return TeacherClass(
       id: doc.id,
       teacherId: data['teacherId'] as String? ?? '',
-      teacherIds: (data['teacherIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      studentIds: (data['studentIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      teacherIds:
+          (data['teacherIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      studentIds:
+          (data['studentIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       className: data['className'] as String? ?? '',
       subjectId: data['subjectId'] as String? ?? '',
       description: data['description'] as String? ?? '',
       studentCount: data['studentCount'] as int? ?? 0,
       createdAt: _parseDateTime(data['createdAt']),
-      updatedAt: data['updatedAt'] != null ? _parseDateTime(data['updatedAt']) : null,
+      updatedAt: data['updatedAt'] != null
+          ? _parseDateTime(data['updatedAt'])
+          : null,
     );
   }
 
@@ -86,7 +108,9 @@ class TeacherClass {
       'description': description,
       'studentCount': studentIds.length,
       'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+      'updatedAt': updatedAt != null
+          ? Timestamp.fromDate(updatedAt!)
+          : FieldValue.serverTimestamp(),
     };
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:thpt_exam_prep_app/core/routes/app_routes.dart';
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/controllers/auth_controller.dart';
@@ -31,7 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     try {
       final authProvider = context.read<AuthController>();
-      final restored = await authProvider.restoreSession();
+      final restored = await authProvider.restoreRememberedSession();
 
       if (!mounted) return;
 
@@ -47,6 +48,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (!authProvider.isAuthenticated || authProvider.currentUser == null) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        return;
+      }
+
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final email = firebaseUser?.email ?? '';
+      final isDemo = email.trim().toLowerCase().endsWith('.demo@thptsmartlearn.vn') ||
+                     email.trim().toLowerCase() == 'student.demo@thptsmartlearn.vn' ||
+                     email.trim().toLowerCase() == 'teacher.demo@thptsmartlearn.vn' ||
+                     email.trim().toLowerCase() == 'admin.demo@thptsmartlearn.vn';
+      if (firebaseUser != null && !firebaseUser.emailVerified && !isDemo) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.verifyEmail);
         return;
       }
 
@@ -87,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.school, size: 60, color: Colors.white),

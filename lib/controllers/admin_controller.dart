@@ -97,12 +97,24 @@ class AdminController extends ChangeNotifier {
       );
 
       _report = loadedReport.copyWith(
-        totalDocuments: loadedReport.totalDocuments > 0 ? loadedReport.totalDocuments : loadedDocuments.length,
-        totalExams: loadedReport.totalExams > 0 ? loadedReport.totalExams : loadedExams.length,
-        totalUsers: loadedReport.totalUsers > 0 ? loadedReport.totalUsers : loadedUsers.length,
-        totalStudents: loadedReport.totalStudents > 0 ? loadedReport.totalStudents : loadedUsers.where((user) => user.role == UserRole.student).length,
-        totalTeachers: loadedReport.totalTeachers > 0 ? loadedReport.totalTeachers : loadedUsers.where((user) => user.role == UserRole.teacher).length,
-        totalExamAttempts: loadedReport.totalExamAttempts > 0 ? loadedReport.totalExamAttempts : MockExamsData.questions.length * 6,
+        totalDocuments: loadedReport.totalDocuments > 0
+            ? loadedReport.totalDocuments
+            : loadedDocuments.length,
+        totalExams: loadedReport.totalExams > 0
+            ? loadedReport.totalExams
+            : loadedExams.length,
+        totalUsers: loadedReport.totalUsers > 0
+            ? loadedReport.totalUsers
+            : loadedUsers.length,
+        totalStudents: loadedReport.totalStudents > 0
+            ? loadedReport.totalStudents
+            : loadedUsers.where((user) => user.role == UserRole.student).length,
+        totalTeachers: loadedReport.totalTeachers > 0
+            ? loadedReport.totalTeachers
+            : loadedUsers.where((user) => user.role == UserRole.teacher).length,
+        totalExamAttempts: loadedReport.totalExamAttempts > 0
+            ? loadedReport.totalExamAttempts
+            : MockExamsData.questions.length * 6,
       );
       _users = loadedUsers;
       _documents = loadedDocuments;
@@ -241,8 +253,9 @@ class AdminController extends ChangeNotifier {
         name: 'TempUserApp',
         options: Firebase.app().options,
       );
-      final userCredential = await FirebaseAuth.instanceFor(app: tempApp)
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final userCredential = await FirebaseAuth.instanceFor(
+        app: tempApp,
+      ).createUserWithEmailAndPassword(email: email, password: password);
       final uid = userCredential.user!.uid;
 
       // Save profile to Firestore
@@ -312,7 +325,8 @@ class AdminController extends ChangeNotifier {
     notifyListeners();
     try {
       final service = RepositoryService.instance;
-      final notificationRepo = service.notification as FirestoreNotificationRepository;
+      final notificationRepo =
+          service.notification as FirestoreNotificationRepository;
       await notificationRepo.createBroadcastNotification(
         title: title,
         body: body,

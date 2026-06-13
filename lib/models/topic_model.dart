@@ -1,4 +1,4 @@
-﻿/// Topic model (Chá»§ Ä‘á» há»c)
+/// Topic model (Chá»§ Ä‘á» há»c)
 class Topic {
   final String id;
   final String subjectId;
@@ -27,7 +27,9 @@ class Topic {
       description: json['description'] as String? ?? '',
       orderNumber: json['orderNumber'] as int? ?? 0,
       documentCount: json['documentCount'] as int? ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -68,4 +70,3 @@ class Topic {
   @override
   String toString() => 'Topic(id: $id, name: $name)';
 }
-

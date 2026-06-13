@@ -15,8 +15,6 @@ class SubjectListScreen extends StatefulWidget {
 }
 
 class _SubjectListScreenState extends State<SubjectListScreen> {
-  
-
   @override
   void initState() {
     super.initState();
@@ -72,7 +70,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                       borderRadius: BorderRadius.circular(AppRadius.panel),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.18),
+                          color: AppColors.primary.withValues(alpha: 0.18),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -84,7 +82,7 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: const Icon(
@@ -96,7 +94,8 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                         Expanded(
                           child: Text(
                             'Chọn môn học để xem tài liệu và đề thi thử phù hợp.',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,
                                 ),
@@ -116,27 +115,24 @@ class _SubjectListScreenState extends State<SubjectListScreen> {
                     crossAxisSpacing: 12,
                     childAspectRatio: 0.95,
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final subject = subjects[index];
-                      final config = _subjectConfig(subject.name);
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final subject = subjects[index];
+                    final config = _subjectConfig(subject.name);
 
-                      return SubjectCard(
-                        name: subject.name,
-                        icon: config.icon,
-                        color: config.color,
-                        progress: '${subject.totalDocuments} tài liệu',
-                        onTap: () {
-                          Navigator.pushNamed(
-                            context,
-                            AppRoutes.studentDocuments,
-                            arguments: subject.id,
-                          );
-                        },
-                      );
-                    },
-                    childCount: subjects.length,
-                  ),
+                    return SubjectCard(
+                      name: subject.name,
+                      icon: config.icon,
+                      color: config.color,
+                      progress: '${subject.totalDocuments} tài liệu',
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.studentDocuments,
+                          arguments: subject.id,
+                        );
+                      },
+                    );
+                  }, childCount: subjects.length),
                 ),
               ),
             ],

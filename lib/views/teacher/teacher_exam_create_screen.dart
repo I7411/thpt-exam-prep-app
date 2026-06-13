@@ -192,7 +192,7 @@ class _TeacherExamCreateScreenState extends State<TeacherExamCreateScreen> {
 
                       // Subject dropdown
                       DropdownButtonFormField<String>(
-                        value: _selectedSubjectId,
+                        initialValue: _selectedSubjectId,
                         decoration: const InputDecoration(
                           labelText: 'Môn học',
                           prefixIcon: Icon(Icons.book_outlined),

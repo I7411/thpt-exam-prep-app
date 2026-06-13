@@ -13,7 +13,8 @@ class ApiException implements Exception {
   const ApiException(this.message, {this.statusCode, this.body});
 
   @override
-  String toString() => 'ApiException(statusCode: $statusCode, message: $message, body: $body)';
+  String toString() =>
+      'ApiException(statusCode: $statusCode, message: $message, body: $body)';
 }
 
 class ApiService {
@@ -24,14 +25,21 @@ class ApiService {
   Uri _buildUri(String path, [Map<String, dynamic>? queryParameters]) {
     final baseUri = Uri.parse(AppConfig.apiBaseUrl);
     final normalizedPath = path.startsWith('/') ? path.substring(1) : path;
-    final resolvedPath = baseUri.path.endsWith('/') ? '${baseUri.path}$normalizedPath' : '${baseUri.path}/$normalizedPath';
+    final resolvedPath = baseUri.path.endsWith('/')
+        ? '${baseUri.path}$normalizedPath'
+        : '${baseUri.path}/$normalizedPath';
     return baseUri.replace(
       path: resolvedPath,
-      queryParameters: queryParameters?.map((key, value) => MapEntry(key, value.toString())),
+      queryParameters: queryParameters?.map(
+        (key, value) => MapEntry(key, value.toString()),
+      ),
     );
   }
 
-  Map<String, String> _defaultHeaders({Map<String, String>? headers, bool hasBody = false}) {
+  Map<String, String> _defaultHeaders({
+    Map<String, String>? headers,
+    bool hasBody = false,
+  }) {
     final merged = <String, String>{
       'Accept': 'application/json',
       if (hasBody) 'Content-Type': 'application/json; charset=utf-8',
@@ -106,7 +114,10 @@ class ApiService {
     Map<String, dynamic>? queryParameters,
   }) async {
     final uri = _buildUri(path, queryParameters);
-    final requestHeaders = _defaultHeaders(headers: headers, hasBody: body != null);
+    final requestHeaders = _defaultHeaders(
+      headers: headers,
+      hasBody: body != null,
+    );
 
     try {
       http.Response response;
@@ -137,9 +148,13 @@ class ApiService {
 
       return _handleResponse<T>(response);
     } on TimeoutException {
-      throw const ApiException('Kết nối quá thời gian chờ. Vui lòng thử lại sau.');
+      throw const ApiException(
+        'Kết nối quá thời gian chờ. Vui lòng thử lại sau.',
+      );
     } on SocketException {
-      throw const ApiException('Không có kết nối mạng hoặc không truy cập được backend.');
+      throw const ApiException(
+        'Không có kết nối mạng hoặc không truy cập được backend.',
+      );
     } on HttpException {
       throw const ApiException('Lỗi giao thức HTTP khi gọi API.');
     } on FormatException {

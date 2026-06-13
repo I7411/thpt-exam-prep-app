@@ -15,6 +15,7 @@ class AppUser {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isActive;
+  final int sessionVersion;
 
   // New fields for class system
   final List<String> classIds;
@@ -34,6 +35,7 @@ class AppUser {
     required this.createdAt,
     this.updatedAt,
     this.isActive = true,
+    this.sessionVersion = 0,
     this.classIds = const [],
     this.primaryClassId,
     this.managedClassIds = const [],
@@ -51,12 +53,25 @@ class AppUser {
       role: UserRole.fromValue(json['role'] as String? ?? 'student'),
       schoolName: json['schoolName'] as String?,
       className: json['className'] as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
       isActive: json['isActive'] as bool? ?? true,
-      classIds: (json['classIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      sessionVersion: json['sessionVersion'] as int? ?? 0,
+      classIds:
+          (json['classIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       primaryClassId: json['primaryClassId'] as String?,
-      managedClassIds: (json['managedClassIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      managedClassIds:
+          (json['managedClassIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -76,9 +91,18 @@ class AppUser {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       isActive: data['isActive'] as bool? ?? true,
-      classIds: (data['classIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      sessionVersion: data['sessionVersion'] as int? ?? 0,
+      classIds:
+          (data['classIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       primaryClassId: data['primaryClassId'] as String?,
-      managedClassIds: (data['managedClassIds'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      managedClassIds:
+          (data['managedClassIds'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
   }
 
@@ -97,6 +121,7 @@ class AppUser {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'isActive': isActive,
+      'sessionVersion': sessionVersion,
       'classIds': classIds,
       'primaryClassId': primaryClassId,
       'managedClassIds': managedClassIds,
@@ -116,8 +141,11 @@ class AppUser {
       'schoolName': schoolName,
       'className': className,
       'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : FieldValue.serverTimestamp(),
+      'updatedAt': updatedAt != null
+          ? Timestamp.fromDate(updatedAt!)
+          : FieldValue.serverTimestamp(),
       'isActive': isActive,
+      'sessionVersion': sessionVersion,
       'classIds': classIds,
       'primaryClassId': primaryClassId,
       'managedClassIds': managedClassIds,
@@ -138,6 +166,7 @@ class AppUser {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    int? sessionVersion,
     List<String>? classIds,
     String? primaryClassId,
     List<String>? managedClassIds,
@@ -155,6 +184,7 @@ class AppUser {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      sessionVersion: sessionVersion ?? this.sessionVersion,
       classIds: classIds ?? this.classIds,
       primaryClassId: primaryClassId ?? this.primaryClassId,
       managedClassIds: managedClassIds ?? this.managedClassIds,
@@ -162,5 +192,6 @@ class AppUser {
   }
 
   @override
-  String toString() => 'AppUser(id: $id, email: $email, fullName: $fullName, role: ${role.toValue()})';
+  String toString() =>
+      'AppUser(id: $id, email: $email, fullName: $fullName, role: ${role.toValue()})';
 }

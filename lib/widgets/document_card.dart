@@ -25,7 +25,8 @@ class DocumentCard extends StatefulWidget {
   State<DocumentCard> createState() => _DocumentCardState();
 }
 
-class _DocumentCardState extends State<DocumentCard> with SingleTickerProviderStateMixin {
+class _DocumentCardState extends State<DocumentCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -36,9 +37,10 @@ class _DocumentCardState extends State<DocumentCard> with SingleTickerProviderSt
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.97,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -77,7 +79,10 @@ class _DocumentCardState extends State<DocumentCard> with SingleTickerProviderSt
                       gradient: AppGradients.warm,
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    child: const Icon(Icons.menu_book_rounded, color: Colors.white),
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -88,8 +93,14 @@ class _DocumentCardState extends State<DocumentCard> with SingleTickerProviderSt
                           spacing: 8,
                           runSpacing: 6,
                           children: [
-                            _Chip(label: widget.subject, color: AppColors.primary),
-                            _Chip(label: widget.duration, color: AppColors.secondary),
+                            _Chip(
+                              label: widget.subject,
+                              color: AppColors.primary,
+                            ),
+                            _Chip(
+                              label: widget.duration,
+                              color: AppColors.secondary,
+                            ),
                           ],
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -97,25 +108,25 @@ class _DocumentCardState extends State<DocumentCard> with SingleTickerProviderSt
                           widget.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w900,
-                              ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w900),
                         ),
-                        if (widget.preview != null && widget.preview!.trim().isNotEmpty) ...[
+                        if (widget.preview != null &&
+                            widget.preview!.trim().isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.xs),
                           Text(
                             widget.preview!,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.muted,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.muted),
                           ),
                         ],
                         const Spacer(),
                         Text(
                           'Đọc thêm',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -127,8 +138,12 @@ class _DocumentCardState extends State<DocumentCard> with SingleTickerProviderSt
                     onPressed: widget.onMarkTap,
                     tooltip: widget.isMarked ? 'Bỏ đánh dấu' : 'Đánh dấu',
                     icon: Icon(
-                      widget.isMarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
-                      color: widget.isMarked ? AppColors.accent : AppColors.muted,
+                      widget.isMarked
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_outline_rounded,
+                      color: widget.isMarked
+                          ? AppColors.accent
+                          : AppColors.muted,
                     ),
                   ),
                 ],
@@ -145,17 +160,14 @@ class _Chip extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _Chip({
-    required this.label,
-    required this.color,
-  });
+  const _Chip({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
@@ -163,9 +175,9 @@ class _Chip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w900,
-            ),
+          color: color,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }

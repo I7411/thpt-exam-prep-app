@@ -11,38 +11,35 @@ abstract class NotificationRepository {
   Future<void> markAllAsRead(String userId);
   Future<void> createNotification(NotificationItem notification);
   Future<void> deleteNotification(String notificationId);
+  Future<void> deleteAllNotifications(String userId);
 }
 
 /// Mock implementation
 class MockNotificationRepository implements NotificationRepository {
-  final List<NotificationItem> _notifications = List.from(MockNotificationsData.notifications);
+  final List<NotificationItem> _notifications = List.from(
+    MockNotificationsData.notifications,
+  );
 
   @override
   Stream<List<NotificationItem>> streamNotificationsByUser(String userId) {
     return Stream.value(
-      _notifications
-          .where((n) => n.userId == userId)
-          .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+      _notifications.where((n) => n.userId == userId).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
     );
   }
 
   @override
   Future<List<NotificationItem>> getNotificationsByUser(String userId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _notifications
-        .where((n) => n.userId == userId)
-        .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return _notifications.where((n) => n.userId == userId).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override
   Future<List<NotificationItem>> getUnreadNotifications(String userId) async {
     await Future.delayed(const Duration(milliseconds: 300));
-    return _notifications
-        .where((n) => n.userId == userId && !n.isRead)
-        .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return _notifications.where((n) => n.userId == userId && !n.isRead).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override
@@ -88,6 +85,12 @@ class MockNotificationRepository implements NotificationRepository {
     await Future.delayed(const Duration(milliseconds: 300));
     _notifications.removeWhere((n) => n.id == notificationId);
   }
+
+  @override
+  Future<void> deleteAllNotifications(String userId) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _notifications.removeWhere((n) => n.userId == userId);
+  }
 }
 
 /// Real Firestore Notification Repository
@@ -102,23 +105,30 @@ class FirestoreNotificationRepository implements NotificationRepository {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return NotificationItem(
-          id: doc.id,
-          userId: data['receiverId'] ?? '',
-          title: data['title'] ?? '',
-          message: data['body'] ?? '',
-          type: NotificationType.fromValue(data['type'] ?? 'info'),
-          actionUrl: data['actionUrl'] ?? (data['relatedId'] != null ? '/student/exam-detail/${data['relatedId']}' : null),
-          isRead: data['isRead'] ?? false,
-          createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          readAt: data['readAt'] != null ? (data['readAt'] as Timestamp).toDate() : null,
-          senderId: data['senderId'] as String?,
-          senderRole: data['senderRole'] as String?,
-        );
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return NotificationItem(
+              id: doc.id,
+              userId: data['receiverId'] ?? '',
+              title: data['title'] ?? '',
+              message: data['body'] ?? '',
+              type: NotificationType.fromValue(data['type'] ?? 'info'),
+              actionUrl:
+                  data['actionUrl'] ??
+                  (data['relatedId'] != null
+                      ? '/student/exam-detail/${data['relatedId']}'
+                      : null),
+              isRead: data['isRead'] ?? false,
+              createdAt:
+                  (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              readAt: data['readAt'] != null
+                  ? (data['readAt'] as Timestamp).toDate()
+                  : null,
+              senderId: data['senderId'] as String?,
+              senderRole: data['senderRole'] as String?,
+            );
+          }).toList();
+        });
   }
 
   @override
@@ -137,10 +147,17 @@ class FirestoreNotificationRepository implements NotificationRepository {
         title: data['title'] ?? '',
         message: data['body'] ?? '',
         type: NotificationType.fromValue(data['type'] ?? 'info'),
-        actionUrl: data['actionUrl'] ?? (data['relatedId'] != null ? '/student/exam-detail/${data['relatedId']}' : null),
+        actionUrl:
+            data['actionUrl'] ??
+            (data['relatedId'] != null
+                ? '/student/exam-detail/${data['relatedId']}'
+                : null),
         isRead: data['isRead'] ?? false,
-        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        readAt: data['readAt'] != null ? (data['readAt'] as Timestamp).toDate() : null,
+        createdAt:
+            (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        readAt: data['readAt'] != null
+            ? (data['readAt'] as Timestamp).toDate()
+            : null,
         senderId: data['senderId'] as String?,
         senderRole: data['senderRole'] as String?,
       );
@@ -164,9 +181,14 @@ class FirestoreNotificationRepository implements NotificationRepository {
         title: data['title'] ?? '',
         message: data['body'] ?? '',
         type: NotificationType.fromValue(data['type'] ?? 'info'),
-        actionUrl: data['actionUrl'] ?? (data['relatedId'] != null ? '/student/exam-detail/${data['relatedId']}' : null),
+        actionUrl:
+            data['actionUrl'] ??
+            (data['relatedId'] != null
+                ? '/student/exam-detail/${data['relatedId']}'
+                : null),
         isRead: data['isRead'] ?? false,
-        createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        createdAt:
+            (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         readAt: null,
         senderId: data['senderId'] as String?,
         senderRole: data['senderRole'] as String?,
@@ -187,10 +209,7 @@ class FirestoreNotificationRepository implements NotificationRepository {
 
   @override
   Future<void> markAsRead(String notificationId) async {
-    await _firestore
-        .collection('notifications')
-        .doc(notificationId)
-        .update({
+    await _firestore.collection('notifications').doc(notificationId).update({
       'isRead': true,
       'readAt': FieldValue.serverTimestamp(),
     });
@@ -234,6 +253,20 @@ class FirestoreNotificationRepository implements NotificationRepository {
   @override
   Future<void> deleteNotification(String notificationId) async {
     await _firestore.collection('notifications').doc(notificationId).delete();
+  }
+
+  @override
+  Future<void> deleteAllNotifications(String userId) async {
+    final snapshot = await _firestore
+        .collection('notifications')
+        .where('receiverId', isEqualTo: userId)
+        .get();
+
+    final batch = _firestore.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 
   Future<void> createBroadcastNotification({

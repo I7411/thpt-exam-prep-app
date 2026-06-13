@@ -1,5 +1,6 @@
-﻿/// Subject repository for managing subjects
+/// Subject repository for managing subjects
 library;
+
 import 'package:thpt_exam_prep_app/models.dart';
 import 'package:thpt_exam_prep_app/data/mock/mock_subjects.dart';
 
@@ -52,4 +53,3 @@ class MockSubjectRepository implements SubjectRepository {
     _subjects.removeWhere((s) => s.id == id);
   }
 }
-

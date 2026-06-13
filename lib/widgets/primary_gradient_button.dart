@@ -21,7 +21,8 @@ class PrimaryGradientButton extends StatefulWidget {
   State<PrimaryGradientButton> createState() => _PrimaryGradientButtonState();
 }
 
-class _PrimaryGradientButtonState extends State<PrimaryGradientButton> with SingleTickerProviderStateMixin {
+class _PrimaryGradientButtonState extends State<PrimaryGradientButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -32,9 +33,10 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> with Sing
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -75,7 +77,9 @@ class _PrimaryGradientButtonState extends State<PrimaryGradientButton> with Sing
                   ? null
                   : [
                       BoxShadow(
-                        color: widget.gradient.colors.last.withOpacity(0.3),
+                        color: widget.gradient.colors.last.withValues(
+                          alpha: 0.3,
+                        ),
                         blurRadius: 16,
                         offset: const Offset(0, 8),
                       ),

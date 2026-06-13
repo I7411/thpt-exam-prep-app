@@ -61,7 +61,11 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
 
     final success = await context
         .read<TeacherStudentConnectionController>()
-        .sendConnectionRequest(_emailController.text, teacher: teacher, classId: _selectedClassId);
+        .sendConnectionRequest(
+          _emailController.text,
+          teacher: teacher,
+          classId: _selectedClassId,
+        );
 
     if (!mounted || !success) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -386,7 +390,7 @@ class _RequestTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.amberSoft,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.accent.withOpacity(0.22)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.22)),
       ),
       child: Row(
         children: [
@@ -475,7 +479,7 @@ class _MetricChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Chip(
       label: Text(label),
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: color.withValues(alpha: 0.1),
       labelStyle: TextStyle(color: color, fontWeight: FontWeight.w800),
       side: BorderSide.none,
       visualDensity: VisualDensity.compact,
@@ -506,9 +510,9 @@ class _MessageBanner extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [

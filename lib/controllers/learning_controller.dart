@@ -6,12 +6,12 @@ import 'package:thpt_exam_prep_app/controllers/progress_controller.dart';
 
 class LearningController extends ChangeNotifier {
   final RepositoryService _repositoryService = RepositoryService.instance;
-  
+
   bool _isLoading = false;
   String? _errorMessage;
 
   List<Subject> _subjects = [];
-List<StudyDocument> _documents = [];
+  List<StudyDocument> _documents = [];
   final List<StudyDocument> _learnedDocuments = [];
   final Set<String> _favoriteDocumentIds = {};
 
@@ -20,7 +20,8 @@ List<StudyDocument> _documents = [];
 
   List<Subject> get subjects => List.unmodifiable(_subjects);
   List<StudyDocument> get documents => List.unmodifiable(_documents);
-  List<StudyDocument> get learnedDocuments => List.unmodifiable(_learnedDocuments);
+  List<StudyDocument> get learnedDocuments =>
+      List.unmodifiable(_learnedDocuments);
   Set<String> get favoriteDocumentIds => Set.unmodifiable(_favoriteDocumentIds);
 
   Future<void> loadFavorites(String userId) async {
@@ -68,7 +69,9 @@ List<StudyDocument> _documents = [];
       if (subjectId.isEmpty) {
         _documents = await _repositoryService.document.getAllDocuments();
       } else {
-        _documents = await _repositoryService.document.getDocumentsBySubject(subjectId);
+        _documents = await _repositoryService.document.getDocumentsBySubject(
+          subjectId,
+        );
       }
     } catch (e) {
       _errorMessage = 'Không thể tải tài liệu: $e';
@@ -110,7 +113,11 @@ List<StudyDocument> _documents = [];
     }
   }
 
-  Future<void> toggleFavorite(String userId, String documentId, bool isFavorite) async {
+  Future<void> toggleFavorite(
+    String userId,
+    String documentId,
+    bool isFavorite,
+  ) async {
     if (userId.isEmpty || documentId.isEmpty) return;
     try {
       final docRef = FirebaseFirestore.instance
@@ -133,15 +140,19 @@ List<StudyDocument> _documents = [];
     }
   }
 
-  Future<bool> markDocumentAsLearned(StudyDocument document, String userId, ProgressController progressCtrl) async {
+  Future<bool> markDocumentAsLearned(
+    StudyDocument document,
+    String userId,
+    ProgressController progressCtrl,
+  ) async {
     if (userId.isEmpty) return false;
     try {
       final success = await progressCtrl.markDocumentAsLearned(document);
       if (success) {
-         if (!_learnedDocuments.any((doc) => doc.id == document.id)) {
-            _learnedDocuments.add(document);
-            notifyListeners();
-         }
+        if (!_learnedDocuments.any((doc) => doc.id == document.id)) {
+          _learnedDocuments.add(document);
+          notifyListeners();
+        }
       }
       return success;
     } catch (e) {
@@ -169,13 +180,16 @@ List<StudyDocument> _documents = [];
         } else if (learnedAtVal is String) {
           learnedAt = DateTime.tryParse(learnedAtVal) ?? DateTime.now();
         }
-        
+
         learnedList.add({
           'materialId': data['materialId'] as String? ?? '',
           'learnedAt': learnedAt,
         });
       }
-      learnedList.sort((a, b) => (b['learnedAt'] as DateTime).compareTo(a['learnedAt'] as DateTime));
+      learnedList.sort(
+        (a, b) =>
+            (b['learnedAt'] as DateTime).compareTo(a['learnedAt'] as DateTime),
+      );
       return learnedList;
     } catch (e) {
       debugPrint('Error getting learned history: $e');

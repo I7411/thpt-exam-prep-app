@@ -1,2 +1,1 @@
-﻿export 'views/placeholder_screen.dart';
-
+export 'views/placeholder_screen.dart';

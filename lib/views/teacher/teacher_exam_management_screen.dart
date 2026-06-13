@@ -11,10 +11,12 @@ class TeacherExamManagementScreen extends StatefulWidget {
   const TeacherExamManagementScreen({super.key});
 
   @override
-  State<TeacherExamManagementScreen> createState() => _TeacherExamManagementScreenState();
+  State<TeacherExamManagementScreen> createState() =>
+      _TeacherExamManagementScreenState();
 }
 
-class _TeacherExamManagementScreenState extends State<TeacherExamManagementScreen> {
+class _TeacherExamManagementScreenState
+    extends State<TeacherExamManagementScreen> {
   bool _isRefreshing = false;
 
   @override
@@ -45,23 +47,25 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
 
   void _showErrorSnackBar(String errorMsg) {
     String message = 'Không thể thực hiện thao tác. Vui lòng thử lại.';
-    if (errorMsg.contains('permission-denied') || errorMsg.contains('không có quyền')) {
+    if (errorMsg.contains('permission-denied') ||
+        errorMsg.contains('không có quyền')) {
       message = 'Bạn không có quyền thực hiện thao tác này.';
-    } else if (errorMsg.contains('network-request-failed') || errorMsg.contains('kết nối mạng')) {
+    } else if (errorMsg.contains('network-request-failed') ||
+        errorMsg.contains('kết nối mạng')) {
       message = 'Không có kết nối mạng. Vui lòng thử lại.';
     } else {
       message = errorMsg.replaceAll('Exception: ', '');
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
-  Future<void> _togglePublishStatus(TeacherController provider, Exam exam) async {
+  Future<void> _togglePublishStatus(
+    TeacherController provider,
+    Exam exam,
+  ) async {
     try {
       if (exam.isPublished) {
         await provider.unpublishExam(exam.id);
@@ -103,7 +107,9 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa đề thi "${exam.title}" không?'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa đề thi "${exam.title}" không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -143,10 +149,7 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
       appBar: AppBar(
         title: const Text('Quản lý đề thi'),
         actions: [
-          IconButton(
-            onPressed: _loadExams,
-            icon: const Icon(Icons.refresh),
-          ),
+          IconButton(onPressed: _loadExams, icon: const Icon(Icons.refresh)),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -165,16 +168,16 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
           child: _isRefreshing && teacherProvider.createdExams.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : teacherProvider.createdExams.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                      itemCount: teacherProvider.createdExams.length,
-                      itemBuilder: (context, index) {
-                        final exam = teacherProvider.createdExams[index];
-                        return _buildExamCard(teacherProvider, exam);
-                      },
-                    ),
+              ? _buildEmptyState()
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                  itemCount: teacherProvider.createdExams.length,
+                  itemBuilder: (context, index) {
+                    final exam = teacherProvider.createdExams[index];
+                    return _buildExamCard(teacherProvider, exam);
+                  },
+                ),
         ),
       ),
     );
@@ -208,16 +211,16 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
                 const SizedBox(height: 8),
                 const Text(
                   'Hãy tạo đề kiểm tra đầu tiên của bạn.',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: AppColors.muted, fontSize: 15),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    await Navigator.pushNamed(context, AppRoutes.teacherExamCreate);
+                    await Navigator.pushNamed(
+                      context,
+                      AppRoutes.teacherExamCreate,
+                    );
                     _loadExams();
                   },
                   icon: const Icon(Icons.add),
@@ -247,7 +250,7 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -266,7 +269,10 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.shade50,
                         borderRadius: BorderRadius.circular(8),
@@ -282,15 +288,22 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
                     ),
                     // Status Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDraft ? Colors.grey.shade100 : Colors.green.shade50,
+                        color: isDraft
+                            ? Colors.grey.shade100
+                            : Colors.green.shade50,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         isDraft ? 'Bản nháp' : 'Đã phát hành',
                         style: TextStyle(
-                          color: isDraft ? Colors.grey.shade700 : Colors.green.shade700,
+                          color: isDraft
+                              ? Colors.grey.shade700
+                              : Colors.green.shade700,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -313,35 +326,53 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
                     exam.description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 13,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                 ],
                 const SizedBox(height: 12),
                 // Meta info
                 Row(
                   children: [
-                    Icon(Icons.timer_outlined, size: 16, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.timer_outlined,
+                      size: 16,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${exam.durationMinutes} phút',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.quiz_outlined, size: 16, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.quiz_outlined,
+                      size: 16,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${exam.questionCount} câu hỏi',
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey.shade500),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: Colors.grey.shade500,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       createdDateStr,
-                      style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -360,10 +391,7 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
                     await Navigator.pushNamed(
                       context,
                       AppRoutes.teacherQuestionCreate,
-                      arguments: {
-                        'examId': exam.id,
-                        'examTitle': exam.title,
-                      },
+                      arguments: {'examId': exam.id, 'examTitle': exam.title},
                     );
                     _loadExams();
                   },
@@ -376,12 +404,16 @@ class _TeacherExamManagementScreenState extends State<TeacherExamManagementScree
                 TextButton.icon(
                   onPressed: () => _togglePublishStatus(provider, exam),
                   icon: Icon(
-                    isDraft ? Icons.publish_outlined : Icons.unpublished_outlined,
+                    isDraft
+                        ? Icons.publish_outlined
+                        : Icons.unpublished_outlined,
                     size: 18,
                   ),
                   label: Text(isDraft ? 'Phát hành' : 'Hủy phát hành'),
                   style: TextButton.styleFrom(
-                    foregroundColor: isDraft ? Colors.green.shade700 : Colors.orange.shade800,
+                    foregroundColor: isDraft
+                        ? Colors.green.shade700
+                        : Colors.orange.shade800,
                   ),
                 ),
                 TextButton.icon(
